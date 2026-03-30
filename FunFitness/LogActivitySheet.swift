@@ -91,6 +91,7 @@ struct LogActivitySheet: View {
             }
             .navigationTitle("Log Activity")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -121,30 +122,37 @@ struct LogActivitySheet: View {
         let activity = ActivityLog(type: selectedType, value: value)
         modelContext.insert(activity)
         
-        // Recalculate totals
-        viewModel.calculateTotals(activities: activities + [activity])
+        // Force save to ensure the activity is persisted
+        try? modelContext.save()
         
-        // Check for new milestones
-        let previousTotal = selectedType == .distance ? previousDistance : previousWeight
-        let newTotal = selectedType == .distance ? viewModel.totalDistance : viewModel.totalWeight
-        
-        let newMilestones = viewModel.checkForMilestones(
-            type: selectedType,
-            previousTotal: previousTotal,
-            newTotal: newTotal
-        )
-        
-        // Save unlocked achievements
-        for milestone in newMilestones {
-            let achievement = UnlockedAchievement(milestoneId: milestone.id)
-            modelContext.insert(achievement)
-            viewModel.unlockedAchievementIds.insert(milestone.id)
-        }
-        
-        // Queue milestones for celebration
-        if !newMilestones.isEmpty {
-            viewModel.pendingMilestones = newMilestones
-            viewModel.showMilestoneModal = true
+        // Wait a moment for SwiftData to process, then recalculate with fresh query
+        // The activities query will automatically update, so we just need to trigger recalculation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Recalculate totals with current activities (query will be updated by now)
+            viewModel.calculateTotals(activities: activities)
+            
+            // Check for new milestones
+            let previousTotal = selectedType == .distance ? previousDistance : previousWeight
+            let newTotal = selectedType == .distance ? viewModel.totalDistance : viewModel.totalWeight
+            
+            let newMilestones = viewModel.checkForMilestones(
+                type: selectedType,
+                previousTotal: previousTotal,
+                newTotal: newTotal
+            )
+            
+            // Save unlocked achievements
+            for milestone in newMilestones {
+                let achievement = UnlockedAchievement(milestoneId: milestone.id)
+                modelContext.insert(achievement)
+                viewModel.unlockedAchievementIds.insert(milestone.id)
+            }
+            
+            // Queue milestones for celebration
+            if !newMilestones.isEmpty {
+                viewModel.pendingMilestones = newMilestones
+                viewModel.showMilestoneModal = true
+            }
         }
         
         dismiss()

@@ -108,50 +108,60 @@ struct ConfettiView: View {
     let trigger: Int
     
     @State private var particles: [ConfettiParticle] = []
+    @State private var viewWidth: CGFloat = 0
     
     var body: some View {
-        TimelineView(.animation) { timeline in
-            Canvas { context, size in
-                let now = timeline.date.timeIntervalSinceReferenceDate
-                
-                for particle in particles {
-                    let progress = now - particle.creationTime
+        GeometryReader { geometry in
+            TimelineView(.animation) { timeline in
+                Canvas { context, size in
+                    let now = timeline.date.timeIntervalSinceReferenceDate
                     
-                    if progress < particle.lifetime {
-                        let yOffset = progress * particle.speed
-                        let rotation = progress * particle.rotationSpeed
-                        let opacity = 1.0 - (progress / particle.lifetime)
+                    for particle in particles {
+                        let progress = now - particle.creationTime
                         
-                        var particleContext = context
-                        particleContext.opacity = opacity
-                        
-                        let position = CGPoint(
-                            x: particle.x + sin(progress * particle.wobble) * 20,
-                            y: particle.y + yOffset
-                        )
-                        
-                        particleContext.translateBy(x: position.x, y: position.y)
-                        particleContext.rotate(by: .degrees(rotation))
-                        
-                        particleContext.fill(
-                            Circle().path(in: CGRect(x: -3, y: -3, width: 6, height: 6)),
-                            with: .color(particle.color)
-                        )
+                        if progress < particle.lifetime {
+                            let yOffset = progress * particle.speed
+                            let rotation = progress * particle.rotationSpeed
+                            let opacity = 1.0 - (progress / particle.lifetime)
+                            
+                            var particleContext = context
+                            particleContext.opacity = opacity
+                            
+                            let position = CGPoint(
+                                x: particle.x + sin(progress * particle.wobble) * 20,
+                                y: particle.y + yOffset
+                            )
+                            
+                            particleContext.translateBy(x: position.x, y: position.y)
+                            particleContext.rotate(by: .degrees(rotation))
+                            
+                            particleContext.fill(
+                                Circle().path(in: CGRect(x: -3, y: -3, width: 6, height: 6)),
+                                with: .color(particle.color)
+                            )
+                        }
                     }
                 }
             }
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .onChange(of: trigger) {
-            generateParticles()
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .onAppear {
+                viewWidth = geometry.size.width
+            }
+            .onChange(of: geometry.size.width) {
+                viewWidth = geometry.size.width
+            }
+            .onChange(of: trigger) {
+                generateParticles()
+            }
         }
     }
     
     private func generateParticles() {
+        let width = viewWidth > 0 ? viewWidth : 400 // Fallback width
         particles = (0..<60).map { _ in
             ConfettiParticle(
-                x: Double.random(in: 0...UIScreen.main.bounds.width),
+                x: Double.random(in: 0...width),
                 y: -20,
                 speed: Double.random(in: 100...250),
                 lifetime: Double.random(in: 2...4),

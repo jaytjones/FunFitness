@@ -62,6 +62,7 @@ struct ProgressView: View {
             }
             .navigationTitle("Progress")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -75,9 +76,6 @@ struct ProgressView: View {
             }
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
-            }
-            .onAppear {
-                viewModel.calculateTotals(activities: activities)
             }
         }
     }

@@ -12,7 +12,9 @@ import SwiftData
 struct FunFitnessApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            UserProfile.self,
+            ActivityLog.self,
+            UnlockedAchievement.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

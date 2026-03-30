@@ -66,6 +66,7 @@ struct HomeView: View {
             }
             .navigationTitle("FunFitness")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -79,10 +80,6 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
-            }
-            .onAppear {
-                viewModel.calculateTotals(activities: activities)
-                viewModel.loadUnlockedAchievements(achievements)
             }
         }
     }

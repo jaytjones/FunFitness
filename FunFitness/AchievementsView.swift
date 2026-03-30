@@ -99,6 +99,7 @@ struct AchievementsView: View {
             }
             .navigationTitle("Achievements")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
