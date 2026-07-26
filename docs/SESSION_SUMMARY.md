@@ -78,22 +78,18 @@
 
 | Item | Context |
 |------|---------|
-| **DEVELOPMENT_TEAM conflict** | Build settings show `2XT4CUP82M`. The Next Steps doc noted a possible conflict with `H5QYL4ZQ73`. Verify which team ID to use before submitting to App Store. |
-| **Light mode** | Currently forced dark via `.preferredColorScheme(.dark)` in ContentView. Light mode was broken before this refactor. No light mode designs exist. Decision: support light mode, or ship as intentionally dark-only? |
-| **App icon** | User deferred ("I'll add it later"). Required before App Store submission. |
-| **CloudKit / push notifications** | Entitlements were cleaned of CloudKit entries. If CloudKit sync is planned for a future version, the entitlement and capability need to be re-added deliberately with a provisioning profile update. |
+| **App icon** | User deferred. Required before App Store submission. |
+| **Light mode** | Deferred — "fast follow" per user. Currently forced dark via `.preferredColorScheme(.dark)`. |
 
 ### Technical Debt (Non-Blocking)
 
 | Item | File | Notes |
 |------|------|-------|
-| `PrivacyInfo.xcprivacy` manifest | — | Required for App Store if any profile fields (name, email, age, weight) are kept. Apple will reject without it if the app collects personal data. |
-| `SWIFT_VERSION = 5.0` | Build settings | Next Steps doc flagged. Swift 5 vs Swift 6 concurrency model — migration to Swift 6 strict concurrency checking is a larger task. `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` covers the common cases but strict checking may reveal edge cases. |
-| Docs folder cleanup | `FunFitness/FunFitness/docs/` | `BUG_FIXES.md`, `ACCESSIBILITY_FIX.md`, `EMAIL_VALIDATION.md`, `PROFILE_UPDATES.md`, `README.md` live inside the app target folder and are included in the build. They should be moved to the top-level `/docs` directory and removed from the Xcode target. |
-| README factual corrections | `README.md` | States iOS 17, UserDefaults, and "App Store Ready". Should say iOS 18, SwiftData, remove "App Store Ready" claim. |
+| `SWIFT_VERSION = 5.0` | Build settings | Swift 5 vs Swift 6 strict concurrency — migration is a larger task. `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` covers the common cases but strict checking may reveal edge cases. |
 | `accessibilityIdentifier`s | All views | Not set anywhere. Needed if UI automation tests (`FunFitnessUITests`) are written. |
 | `onChange(of:)` in HomeView/ProgressView animations | `HomeView.swift`, `ProgressView.swift` | `accessibilityReduceMotion` check was added to MilestoneView but remaining animation sites in HomeView/ProgressView were not audited. |
 | `@ScaledMetric` in ProfileView | `ProfileView.swift` | Some fixed sizes remain (avatar 80pt, stat box paddings). Lower priority than correctness fixes. |
+| App Store Connect privacy nutrition labels | App Store Connect | Manual entry required; mirrors the `PrivacyInfo.xcprivacy` data types already in the project. |
 
 ---
 
@@ -104,3 +100,17 @@
 - **Idempotent reconciliation** — achievement unlocking is `reconcileAchievements()` in ContentView, safe to call on any data change. Replaces the timed `asyncAfter` approach that was racy.
 - **`@Attribute(originalName:)` for migration** — SwiftData lightweight migration handles the `heightFeet → heightInches` rename without needing `VersionedSchema`. Same approach works for any future simple renames.
 - **SharedComponents as a single file** — `Color(hex:)`, `FitnessProgressStyle`, `SelectionChip`, `FlowLayout` all in one file. If the file grows unwieldy, split by component type.
+
+---
+
+## Decisions Resolved — 2026-07-25
+
+| Decision | Resolution |
+|----------|-----------|
+| **DEVELOPMENT_TEAM conflict** (`2XT4CUP82M` vs `H5QYL4ZQ73`) | Both IDs belong to the same developer. All 8 build configuration entries updated to `H5QYL4ZQ73` (the release/distribution team). |
+| **Light mode** | Deferred as a fast follow — not needed for V1. App intentionally dark-only for now. |
+| **App icon** | Deferred — user will add manually before submission. |
+| **CloudKit entitlement cleanup** | Accepted — CloudKit container IDs, CloudKit service, and `aps-environment` removed from `FunFitness.entitlements`. Re-add deliberately if CloudKit sync is added in a future version. |
+| **PrivacyInfo.xcprivacy** | Created at `FunFitness/FunFitness/PrivacyInfo.xcprivacy`. Declares: Name, Email, Health (age/height/weight), Fitness (activity data), Photos (avatar). All: not linked to identity, not tracking, purpose = app functionality. Still need to fill in App Store Connect privacy nutrition labels manually (mirrors this file). |
+| **Docs folder cleanup** | `ACCESSIBILITY_FIX.md`, `BUG_FIXES.md`, `EMAIL_VALIDATION.md`, `PROFILE_UPDATES.md` moved from `FunFitness/FunFitness/` (inside app target) to `FunFitness/docs/`. Old `README.md` deleted from app target; corrected version written to `FunFitness/docs/README.md`. |
+| **README corrections** | iOS 17 → 18, Xcode 15 → 16, removed "UserDefaults" claim, removed "App Store Ready" section, removed dead controls (Sign Out, Notifications, Privacy), added ActivityHistorySheet and ShareLink to feature list, corrected project structure diagram. |

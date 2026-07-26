@@ -7,7 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		86687D3F3015871000E05A84 /* ACCESSIBILITY_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D173015871000E05A84 /* ACCESSIBILITY_FIX.md */; };
+		86687D413015871000E05A84 /* BUG_FIXES.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D1C3015871000E05A84 /* BUG_FIXES.md */; };
+		86687D423015871000E05A84 /* EMAIL_VALIDATION.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D1F3015871000E05A84 /* EMAIL_VALIDATION.md */; };
+		86687D443015871000E05A84 /* PROFILE_UPDATES.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D293015871000E05A84 /* PROFILE_UPDATES.md */; };
 		86687D4E3015872C00E05A84 /* 20260724 Next Steps.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D4C3015872C00E05A84 /* 20260724 Next Steps.md */; };
+		86687D563015A7B700E05A84 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D553015A7B700E05A84 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,7 +33,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		86687D173015871000E05A84 /* ACCESSIBILITY_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACCESSIBILITY_FIX.md; sourceTree = "<group>"; };
+		86687D1C3015871000E05A84 /* BUG_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BUG_FIXES.md; sourceTree = "<group>"; };
+		86687D1F3015871000E05A84 /* EMAIL_VALIDATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = EMAIL_VALIDATION.md; sourceTree = "<group>"; };
+		86687D293015871000E05A84 /* PROFILE_UPDATES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_UPDATES.md; sourceTree = "<group>"; };
 		86687D4C3015872C00E05A84 /* 20260724 Next Steps.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 Next Steps.md"; sourceTree = "<group>"; };
+		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		86EEF7E42F79F3E00076F515 /* FunFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7F52F79F3E10076F515 /* FunFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,6 +104,11 @@
 			isa = PBXGroup;
 			children = (
 				86687D4C3015872C00E05A84 /* 20260724 Next Steps.md */,
+				86687D173015871000E05A84 /* ACCESSIBILITY_FIX.md */,
+				86687D1C3015871000E05A84 /* BUG_FIXES.md */,
+				86687D1F3015871000E05A84 /* EMAIL_VALIDATION.md */,
+				86687D293015871000E05A84 /* PROFILE_UPDATES.md */,
+				86687D553015A7B700E05A84 /* README.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -239,7 +254,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86687D3F3015871000E05A84 /* ACCESSIBILITY_FIX.md in Resources */,
 				86687D4E3015872C00E05A84 /* 20260724 Next Steps.md in Resources */,
+				86687D413015871000E05A84 /* BUG_FIXES.md in Resources */,
+				86687D423015871000E05A84 /* EMAIL_VALIDATION.md in Resources */,
+				86687D563015A7B700E05A84 /* README.md in Resources */,
+				86687D443015871000E05A84 /* PROFILE_UPDATES.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
