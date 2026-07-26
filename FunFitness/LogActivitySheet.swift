@@ -11,20 +11,20 @@ import SwiftData
 struct LogActivitySheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query private var activities: [ActivityLog]
-    
+
     @Bindable var viewModel: AppViewModel
-    
+
     @State private var selectedType: ActivityType = .distance
     @State private var inputValue: String = ""
     @State private var showValidationError = false
-    
+    @FocusState private var isInputFocused: Bool
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(hex: "#0D0D1A")
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 24) {
                     // Activity Type Toggle
                     Picker("Activity Type", selection: $selectedType) {
@@ -37,13 +37,13 @@ struct LogActivitySheet: View {
                         inputValue = ""
                         showValidationError = false
                     }
-                    
+
                     // Input Field
                     VStack(alignment: .leading, spacing: 8) {
                         Text(selectedType == .distance ? "Distance (miles)" : "Weight (lbs)")
                             .font(.headline)
                             .foregroundStyle(.white)
-                        
+
                         TextField(
                             selectedType == .distance ? "0.0" : "0",
                             text: $inputValue
@@ -53,12 +53,14 @@ struct LogActivitySheet: View {
                         .foregroundStyle(.white)
                         .padding()
                         .background(Color(hex: "#1A1A2E"))
-                        .cornerRadius(14)
+                        .clipShape(.rect(cornerRadius: 14))
                         .overlay(
                             RoundedRectangle(cornerRadius: 14)
                                 .stroke(showValidationError ? Color.red : Color.clear, lineWidth: 2)
                         )
-                        
+                        .focused($isInputFocused)
+                        .accessibilityIdentifier("activityValueInput")
+
                         if showValidationError {
                             Text("Please enter a valid value greater than 0")
                                 .font(.caption)
@@ -66,9 +68,9 @@ struct LogActivitySheet: View {
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     Spacer()
-                    
+
                     // Submit Button
                     Button {
                         logActivity()
@@ -77,15 +79,17 @@ struct LogActivitySheet: View {
                             Text(selectedType == .distance ? "Log Distance" : "Log Weight")
                                 .font(.headline)
                             Text(selectedType == .distance ? "🏃" : "💪")
+                                .accessibilityHidden(true)
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(hex: "#5B21B6"))
-                        .cornerRadius(14)
+                        .clipShape(.rect(cornerRadius: 14))
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
+                    .accessibilityIdentifier("logActivityButton")
                 }
                 .padding(.top)
             }
@@ -100,61 +104,55 @@ struct LogActivitySheet: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(Color(hex: "#9CA3AF"))
                     }
+                    .accessibilityLabel("Close")
+                }
+                // Done button dismisses the number keyboard (which has no return key)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { isInputFocused = false }
+                        .foregroundStyle(Color(hex: "#A78BFA"))
                 }
             }
+            .onAppear { isInputFocused = true }
         }
         .presentationDetents([.medium, .large])
     }
-    
+
     private func logActivity() {
         guard let value = Double(inputValue), value > 0 else {
             showValidationError = true
             return
         }
-        
         showValidationError = false
-        
-        // Store previous totals for milestone checking
-        let previousDistance = viewModel.totalDistance
-        let previousWeight = viewModel.totalWeight
-        
-        // Create and save activity
+
+        // Capture totals BEFORE the insert so milestone range is correct
+        let previousTotal = selectedType == .distance ? viewModel.totalDistance : viewModel.totalWeight
+        let newTotal = previousTotal + value
+
+        // Persist
         let activity = ActivityLog(type: selectedType, value: value)
         modelContext.insert(activity)
-        
-        // Force save to ensure the activity is persisted
         try? modelContext.save()
-        
-        // Wait a moment for SwiftData to process, then recalculate with fresh query
-        // The activities query will automatically update, so we just need to trigger recalculation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Recalculate totals with current activities (query will be updated by now)
-            viewModel.calculateTotals(activities: activities)
-            
-            // Check for new milestones
-            let previousTotal = selectedType == .distance ? previousDistance : previousWeight
-            let newTotal = selectedType == .distance ? viewModel.totalDistance : viewModel.totalWeight
-            
-            let newMilestones = viewModel.checkForMilestones(
-                type: selectedType,
-                previousTotal: previousTotal,
-                newTotal: newTotal
-            )
-            
-            // Save unlocked achievements
-            for milestone in newMilestones {
-                let achievement = UnlockedAchievement(milestoneId: milestone.id)
-                modelContext.insert(achievement)
-                viewModel.unlockedAchievementIds.insert(milestone.id)
-            }
-            
-            // Queue milestones for celebration
-            if !newMilestones.isEmpty {
-                viewModel.pendingMilestones = newMilestones
-                viewModel.showMilestoneModal = true
-            }
+
+        // Update vm immediately so computed totals and the history sheet reflect the change
+        // before ContentView's @Query fires its onChange
+        viewModel.activities.append(activity)
+
+        // Check and record milestones synchronously — no asyncAfter race condition
+        let newMilestones = viewModel.checkForMilestones(
+            type: selectedType,
+            previousTotal: previousTotal,
+            newTotal: newTotal
+        )
+        for milestone in newMilestones {
+            modelContext.insert(UnlockedAchievement(milestoneId: milestone.id))
+            viewModel.unlockedAchievementIds.insert(milestone.id)
         }
-        
+        if !newMilestones.isEmpty {
+            viewModel.pendingMilestones = newMilestones
+            viewModel.showMilestoneModal = true
+        }
+
         dismiss()
     }
 }

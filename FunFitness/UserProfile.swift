@@ -14,19 +14,20 @@ final class UserProfile {
     var name: String
     var email: String
     var age: Int?
-    var heightFeet: String?
+    // Stores height in inches as a numeric string; @Attribute maps from the old "heightFeet" column name
+    @Attribute(originalName: "heightFeet") var heightInches: String?
     var weightLbs: Double?
     var fitnessGoal: String
-    var avatarImageData: Data?
+    @Attribute(.externalStorage) var avatarImageData: Data?
     var activeTheme: String // "animals" | "cities" | "landmarks"
     var createdAt: Date
-    
+
     init(
         id: UUID = UUID(),
         name: String = "",
         email: String = "",
         age: Int? = nil,
-        heightFeet: String? = nil,
+        heightInches: String? = nil,
         weightLbs: Double? = nil,
         fitnessGoal: String = "Stay Active",
         avatarImageData: Data? = nil,
@@ -37,7 +38,7 @@ final class UserProfile {
         self.name = name
         self.email = email
         self.age = age
-        self.heightFeet = heightFeet
+        self.heightInches = heightInches
         self.weightLbs = weightLbs
         self.fitnessGoal = fitnessGoal
         self.avatarImageData = avatarImageData

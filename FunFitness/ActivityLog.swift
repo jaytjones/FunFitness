@@ -20,7 +20,7 @@ final class ActivityLog {
     var value: Double // Miles (distance) or pounds (weight)
     var loggedAt: Date
     var notes: String?
-    
+
     init(
         id: UUID = UUID(),
         type: ActivityType,
@@ -34,8 +34,15 @@ final class ActivityLog {
         self.loggedAt = loggedAt
         self.notes = notes
     }
-    
+
     var activityType: ActivityType {
         ActivityType(rawValue: type) ?? .distance
+    }
+}
+
+// Equatable by ID so onChange(of: activities) fires on any insert or delete
+extension ActivityLog: Equatable {
+    static func == (lhs: ActivityLog, rhs: ActivityLog) -> Bool {
+        lhs.id == rhs.id
     }
 }

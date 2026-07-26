@@ -8,55 +8,51 @@
 import Foundation
 import SwiftData
 
+@MainActor
 @Observable
-class AppViewModel {
-    var totalDistance: Double = 0.0
-    var totalWeight: Double = 0.0
-    var totalActivities: Int = 0
-    var isActiveThisWeek: Bool = false
+final class AppViewModel {
+    // Source of truth — synced from ContentView's @Query result
+    var activities: [ActivityLog] = []
+
+    // MARK: - Computed totals (never cached; always derived from activities)
+
+    var totalDistance: Double {
+        activities.lazy.filter { $0.activityType == .distance }.reduce(0) { $0 + $1.value }
+    }
+
+    var totalWeight: Double {
+        activities.lazy.filter { $0.activityType == .weight }.reduce(0) { $0 + $1.value }
+    }
+
+    var totalActivities: Int { activities.count }
+
+    var isActiveThisWeek: Bool {
+        let calendar = Calendar.current
+        let thisWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        return activities.contains { activity in
+            let activityWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: activity.loggedAt)
+            return activityWeek == thisWeek
+        }
+    }
+
+    // MARK: - Stored state
+
     var unlockedAchievementIds: Set<String> = []
     var activeTheme: Theme = .animals
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
-    
-    func calculateTotals(activities: [ActivityLog]) {
-        totalDistance = activities
-            .filter { $0.activityType == .distance }
-            .reduce(0) { $0 + $1.value }
-        
-        totalWeight = activities
-            .filter { $0.activityType == .weight }
-            .reduce(0) { $0 + $1.value }
-        
-        totalActivities = activities.count
-        
-        // Check if any activity was logged this week
-        let calendar = Calendar.current
-        let startOfWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
-        
-        isActiveThisWeek = activities.contains { activity in
-            let activityWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: activity.loggedAt)
-            return activityWeek == startOfWeek
-        }
-    }
-    
-    func loadUnlockedAchievements(_ achievements: [UnlockedAchievement]) {
-        unlockedAchievementIds = Set(achievements.map { $0.milestoneId })
-    }
-    
-    func checkForMilestones(
-        type: ActivityType,
-        previousTotal: Double,
-        newTotal: Double
-    ) -> [Milestone] {
-        return ComparisonEngine.checkForNewMilestones(
+
+    // MARK: - Milestone helpers
+
+    func checkForMilestones(type: ActivityType, previousTotal: Double, newTotal: Double) -> [Milestone] {
+        ComparisonEngine.checkForNewMilestones(
             type: type,
             previousTotal: previousTotal,
             newTotal: newTotal,
             unlockedIds: unlockedAchievementIds
         )
     }
-    
+
     func remainingToNextMilestone(type: ActivityType) -> (milestone: Milestone?, remaining: Double) {
         let currentTotal = type == .distance ? totalDistance : totalWeight
         guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
@@ -64,22 +60,27 @@ class AppViewModel {
         }
         return (next, next.threshold - currentTotal)
     }
-    
+
     func progressToNextMilestone(type: ActivityType) -> Double {
         let currentTotal = type == .distance ? totalDistance : totalWeight
         guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
             return 1.0
         }
-        
-        // Find the previous milestone threshold
         let milestones = type == .distance ? ComparisonEngine.distanceMilestones : ComparisonEngine.weightMilestones
+        // milestones are sorted ascending by threshold (enforced by static let)
         let previousThreshold = milestones
             .filter { $0.threshold < next.threshold }
             .last?.threshold ?? 0.0
-        
         let range = next.threshold - previousThreshold
         let progress = currentTotal - previousThreshold
-        
         return range > 0 ? min(max(progress / range, 0), 1.0) : 0.0
+    }
+
+    // Returns the set of milestone IDs that have been earned based on current totals.
+    // Used by ContentView to idempotently reconcile achievements after launch or data changes.
+    func earnedMilestoneIds() -> Set<String> {
+        let earnedDist = ComparisonEngine.distanceMilestones.filter { $0.threshold <= totalDistance }.map(\.id)
+        let earnedWt  = ComparisonEngine.weightMilestones.filter  { $0.threshold <= totalWeight  }.map(\.id)
+        return Set(earnedDist + earnedWt)
     }
 }

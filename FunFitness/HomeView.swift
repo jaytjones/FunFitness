@@ -13,18 +13,17 @@ struct HomeView: View {
     @Query private var activities: [ActivityLog]
     @Query private var achievements: [UnlockedAchievement]
     @Bindable var viewModel: AppViewModel
-    
+
     @State private var showLogSheet = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(hex: "#0D0D1A")
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Distance Card
                         StatCard(
                             title: "Distance Tracking",
                             subtitle: "Running & Walking",
@@ -32,13 +31,12 @@ struct HomeView: View {
                             value: viewModel.totalDistance,
                             unit: "mi",
                             progress: viewModel.progressToNextMilestone(type: .distance),
-                            nextMilestone: viewModel.remainingToNextMilestone(type: .distance).milestone?.getTitle(for: viewModel.activeTheme) ?? "Complete!",
+                            nextMilestone: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "Complete!",
                             remaining: viewModel.remainingToNextMilestone(type: .distance).remaining,
                             remainingUnit: "mi",
                             gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
                         )
-                        
-                        // Weight Card
+
                         StatCard(
                             title: "Weight Tracking",
                             subtitle: "Strength Training",
@@ -46,18 +44,17 @@ struct HomeView: View {
                             value: viewModel.totalWeight,
                             unit: "lbs",
                             progress: viewModel.progressToNextMilestone(type: .weight),
-                            nextMilestone: viewModel.remainingToNextMilestone(type: .weight).milestone?.getTitle(for: viewModel.activeTheme) ?? "Complete!",
+                            nextMilestone: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "Complete!",
                             remaining: viewModel.remainingToNextMilestone(type: .weight).remaining,
                             remainingUnit: "lbs",
                             gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
                         )
-                        
-                        // Theme Selector
+
                         ThemeSelector(selectedTheme: $viewModel.activeTheme)
-                        
-                        // Achievement Preview
+
                         AchievementPreview(
                             unlockedCount: achievements.count,
+                            totalCount: ComparisonEngine.allMilestones.count,
                             theme: viewModel.activeTheme
                         )
                     }
@@ -74,8 +71,9 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#5B21B6"))
+                            .foregroundStyle(Color(hex: "#A78BFA"))
                     }
+                    .accessibilityLabel("Log activity")
                 }
             }
             .sheet(isPresented: $showLogSheet) {
@@ -86,6 +84,7 @@ struct HomeView: View {
 }
 
 // MARK: - Stat Card
+
 struct StatCard: View {
     let title: String
     let subtitle: String
@@ -97,12 +96,13 @@ struct StatCard: View {
     let remaining: Double
     let remainingUnit: String
     let gradientColors: [Color]
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(icon)
                     .font(.title)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.headline)
@@ -113,31 +113,22 @@ struct StatCard: View {
                 }
                 Spacer()
             }
-            
+
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(String(format: "%.1f", value))
-                    .font(.system(size: 36, weight: .bold))
+                    .font(.title)
+                    .fontWeight(.bold)
                     .foregroundStyle(.white)
                 Text(unit)
                     .font(.title3)
                     .foregroundStyle(Color(hex: "#9CA3AF"))
             }
-            
-            // Progress Bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 8)
-                    
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                        .frame(width: geometry.size.width * progress, height: 8)
-                        .animation(.easeInOut(duration: 0.6), value: progress)
-                }
-            }
-            .frame(height: 8)
-            
+
+            SwiftUI.ProgressView(value: progress)
+                .progressViewStyle(FitnessProgressStyle(tint: .white))
+                .accessibilityLabel("\(title) progress")
+                .accessibilityValue(String(format: "%.0f percent", progress * 100))
+
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Next Milestone")
@@ -149,9 +140,15 @@ struct StatCard: View {
                         .lineLimit(1)
                 }
                 Spacer()
-                Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                if remaining > 0 {
+                    Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                } else {
+                    Text("All milestones complete!")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             }
         }
         .padding()
@@ -162,25 +159,29 @@ struct StatCard: View {
                 endPoint: .bottomTrailing
             )
         )
-        .cornerRadius(20)
+        .clipShape(.rect(cornerRadius: 20))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(String(format: "%.1f", value)) \(unit). \(Int(progress * 100))% to next milestone.")
     }
 }
 
 // MARK: - Theme Selector
+
 struct ThemeSelector: View {
     @Binding var selectedTheme: Theme
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Achievement Theme")
                 .font(.headline)
                 .foregroundStyle(.white)
-            
+
             HStack(spacing: 12) {
                 ForEach(Theme.allCases, id: \.self) { theme in
-                    ThemeChip(
-                        theme: theme,
+                    SelectionChip(
+                        title: theme.displayName,
                         isSelected: selectedTheme == theme,
+                        selectedBackground: Color(hex: "#D946EF"),
                         action: { selectedTheme = theme }
                     )
                 }
@@ -188,103 +189,57 @@ struct ThemeSelector: View {
         }
         .padding()
         .background(Color(hex: "#1A1A2E"))
-        .cornerRadius(20)
-    }
-}
-
-struct ThemeChip: View {
-    let theme: Theme
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(theme.displayName)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundStyle(isSelected ? .white : Color(hex: "#9CA3AF"))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    isSelected ? Color(hex: "#D946EF") : Color.white.opacity(0.1)
-                )
-                .cornerRadius(14)
-        }
-        .buttonStyle(.plain)
+        .clipShape(.rect(cornerRadius: 20))
     }
 }
 
 // MARK: - Achievement Preview
+
 struct AchievementPreview: View {
     let unlockedCount: Int
+    let totalCount: Int
     let theme: Theme
-    
+
     var body: some View {
         VStack(spacing: 16) {
             if unlockedCount == 0 {
                 VStack(spacing: 12) {
                     Text("🎯")
                         .font(.system(size: 48))
+                        .accessibilityHidden(true)
                     Text("Log your first activity to unlock achievements!")
                         .font(.subheadline)
                         .foregroundStyle(Color(hex: "#9CA3AF"))
                         .multilineTextAlignment(.center)
-                    
+
                     HStack(spacing: 8) {
                         ForEach(["🏃", "💪", "🎯", "⚡️", "🔥", "🏆"], id: \.self) { emoji in
                             Text(emoji)
                                 .font(.title2)
                                 .opacity(0.3)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color(hex: "#1A1A2E"))
-                .cornerRadius(20)
+                .clipShape(.rect(cornerRadius: 20))
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Recent Achievements")
                         .font(.headline)
                         .foregroundStyle(.white)
-                    Text("\(unlockedCount) of 12 unlocked")
+                    Text("\(unlockedCount) of \(totalCount) unlocked")
                         .font(.caption)
                         .foregroundStyle(Color(hex: "#9CA3AF"))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .background(Color(hex: "#1A1A2E"))
-                .cornerRadius(20)
+                .clipShape(.rect(cornerRadius: 20))
             }
         }
-    }
-}
-
-// MARK: - Color Extension
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }
 

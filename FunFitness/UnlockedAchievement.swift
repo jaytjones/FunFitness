@@ -12,15 +12,12 @@ import SwiftData
 final class UnlockedAchievement {
     var milestoneId: String // References milestone definition (e.g. "D1", "W2")
     var unlockedAt: Date
-    var celebrationSeen: Bool
-    
+
     init(
         milestoneId: String,
-        unlockedAt: Date = Date(),
-        celebrationSeen: Bool = false
+        unlockedAt: Date = Date()
     ) {
         self.milestoneId = milestoneId
         self.unlockedAt = unlockedAt
-        self.celebrationSeen = celebrationSeen
     }
 }
