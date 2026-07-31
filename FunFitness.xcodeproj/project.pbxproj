@@ -8,14 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		86687D563015A7B700E05A84 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D553015A7B700E05A84 /* README.md */; };
-		86B3D033301C659300E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D032301C659300E76696 /* FunFitness_Sequenced_Development_Plan.md */; };
-		86B3D034301C659300E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D02F301C659300E76696 /* 20260724 CC Refactor Plan.md */; };
-		86B3D035301C659300E76696 /* FunFitness_Action_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D031301C659300E76696 /* FunFitness_Action_Plan.md */; };
-		86B3D036301C659300E76696 /* 20260724 CC Refactor Results.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D030301C659300E76696 /* 20260724 CC Refactor Results.md */; };
-		86B3D06B301C66BD00E76696 /* 20260724 CC Refactor Results 2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D068301C66BD00E76696 /* 20260724 CC Refactor Results 2.md */; };
-		86B3D06C301C66BD00E76696 /* FunFitness_Action_Plan 2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D069301C66BD00E76696 /* FunFitness_Action_Plan 2.md */; };
-		86B3D06D301C66BD00E76696 /* 20260724 CC Refactor Plan 2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D067301C66BD00E76696 /* 20260724 CC Refactor Plan 2.md */; };
-		86B3D06E301C66BD00E76696 /* FunFitness_Sequenced_Development_Plan 2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06A301C66BD00E76696 /* FunFitness_Sequenced_Development_Plan 2.md */; };
+		86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */; };
+		86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */; };
+		86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */; };
+		86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,14 +33,10 @@
 
 /* Begin PBXFileReference section */
 		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		86B3D02F301C659300E76696 /* 20260724 CC Refactor Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Plan.md"; sourceTree = "<group>"; };
-		86B3D030301C659300E76696 /* 20260724 CC Refactor Results.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results.md"; sourceTree = "<group>"; };
-		86B3D031301C659300E76696 /* FunFitness_Action_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Action_Plan.md; sourceTree = "<group>"; };
-		86B3D032301C659300E76696 /* FunFitness_Sequenced_Development_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Sequenced_Development_Plan.md; sourceTree = "<group>"; };
-		86B3D067301C66BD00E76696 /* 20260724 CC Refactor Plan 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Plan 2.md"; sourceTree = "<group>"; };
-		86B3D068301C66BD00E76696 /* 20260724 CC Refactor Results 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results 2.md"; sourceTree = "<group>"; };
-		86B3D069301C66BD00E76696 /* FunFitness_Action_Plan 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "FunFitness_Action_Plan 2.md"; sourceTree = "<group>"; };
-		86B3D06A301C66BD00E76696 /* FunFitness_Sequenced_Development_Plan 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "FunFitness_Sequenced_Development_Plan 2.md"; sourceTree = "<group>"; };
+		86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Plan.md"; sourceTree = "<group>"; };
+		86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results.md"; sourceTree = "<group>"; };
+		86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Action_Plan.md; sourceTree = "<group>"; };
+		86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Sequenced_Development_Plan.md; sourceTree = "<group>"; };
 		86EEF7E42F79F3E00076F515 /* FunFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7F52F79F3E10076F515 /* FunFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -109,11 +101,11 @@
 		86687D4D3015872C00E05A84 /* docs */ = {
 			isa = PBXGroup;
 			children = (
-				86B3D067301C66BD00E76696 /* 20260724 CC Refactor Plan 2.md */,
-				86B3D068301C66BD00E76696 /* 20260724 CC Refactor Results 2.md */,
-				86B3D069301C66BD00E76696 /* FunFitness_Action_Plan 2.md */,
-				86B3D06A301C66BD00E76696 /* FunFitness_Sequenced_Development_Plan 2.md */,
 				86687D553015A7B700E05A84 /* README.md */,
+				86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */,
+				86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */,
+				86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */,
+				86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -125,10 +117,6 @@
 				86EEF7F82F79F3E10076F515 /* FunFitnessTests */,
 				86EEF8022F79F3E10076F515 /* FunFitnessUITests */,
 				86687D4D3015872C00E05A84 /* docs */,
-				86B3D02F301C659300E76696 /* 20260724 CC Refactor Plan.md */,
-				86B3D030301C659300E76696 /* 20260724 CC Refactor Results.md */,
-				86B3D031301C659300E76696 /* FunFitness_Action_Plan.md */,
-				86B3D032301C659300E76696 /* FunFitness_Sequenced_Development_Plan.md */,
 				86EEF7E52F79F3E00076F515 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -263,15 +251,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				86B3D06B301C66BD00E76696 /* 20260724 CC Refactor Results 2.md in Resources */,
-				86B3D06C301C66BD00E76696 /* FunFitness_Action_Plan 2.md in Resources */,
-				86B3D06D301C66BD00E76696 /* 20260724 CC Refactor Plan 2.md in Resources */,
-				86B3D06E301C66BD00E76696 /* FunFitness_Sequenced_Development_Plan 2.md in Resources */,
+				86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */,
+				86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */,
+				86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,
+				86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */,
 				86687D563015A7B700E05A84 /* README.md in Resources */,
-				86B3D033301C659300E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,
-				86B3D034301C659300E76696 /* 20260724 CC Refactor Plan.md in Resources */,
-				86B3D035301C659300E76696 /* FunFitness_Action_Plan.md in Resources */,
-				86B3D036301C659300E76696 /* 20260724 CC Refactor Results.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
