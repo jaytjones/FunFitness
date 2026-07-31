@@ -37,7 +37,7 @@ struct AchievementsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#0D0D1A")
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -47,6 +47,7 @@ struct AchievementsView: View {
                             totalCount: ComparisonEngine.allMilestones.count,
                             percentage: completionPercentage
                         )
+                        .accessibilityIdentifier("achievementsProgressBanner")
 
                         if achievements.isEmpty {
                             EmptyAchievementsState()
@@ -54,7 +55,7 @@ struct AchievementsView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Unlocked")
                                     .font(.headline)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                                     .padding(.horizontal)
 
                                 ForEach(unlockedMilestones, id: \.milestone.id) { item in
@@ -71,7 +72,7 @@ struct AchievementsView: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Locked")
                                         .font(.headline)
-                                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                                        .foregroundStyle(.secondary)
                                         .padding(.horizontal)
 
                                     ForEach(lockedMilestones) { milestone in
@@ -91,7 +92,6 @@ struct AchievementsView: View {
             }
             .navigationTitle("Achievements")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -130,7 +130,7 @@ struct ProgressBanner: View {
                         .foregroundStyle(.white)
                     Text("\(unlockedCount) of \(totalCount) unlocked")
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer()
                 Text("\(percentage)%")
@@ -173,11 +173,11 @@ struct EmptyAchievementsState: View {
             Text("No Achievements Yet")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Text("Start logging your activities to unlock fun achievements and comparisons!")
                 .font(.subheadline)
-                .foregroundStyle(Color(hex: "#9CA3AF"))
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -193,7 +193,7 @@ struct EmptyAchievementsState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
-        .background(Color(hex: "#1A1A2E"))
+        .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 20))
     }
 }
@@ -218,12 +218,12 @@ struct AchievementCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(milestone.title)
                     .font(.headline)
-                    .foregroundStyle(isLocked ? Color(hex: "#9CA3AF") : .white)
+                    .foregroundStyle(isLocked ? .secondary : .primary)
 
                 if !isLocked {
                     Text(milestone.getComparison(for: theme))
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
 
                     if let date = unlockedAt {
@@ -235,7 +235,7 @@ struct AchievementCard: View {
                 } else {
                     Text("Reach \(String(format: "%.0f", milestone.threshold)) \(milestone.unit == .miles ? "miles" : "lbs") to unlock")
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -243,7 +243,7 @@ struct AchievementCard: View {
 
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                    .foregroundStyle(.secondary)
                     .opacity(0.5)
                     .accessibilityHidden(true)
             } else {
@@ -253,7 +253,7 @@ struct AchievementCard: View {
             }
         }
         .padding()
-        .background(Color(hex: "#1A1A2E"))
+        .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 20))
         .opacity(isLocked ? 0.6 : 1.0)
         .accessibilityElement(children: .combine)

@@ -35,6 +35,28 @@ extension Color {
     }
 }
 
+// MARK: - Adaptive semantic colors
+
+extension Color {
+    /// Primary screen background — dark navy in dark mode, system grouped background in light mode.
+    static var appBackground: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 13/255, green: 13/255, blue: 26/255, alpha: 1)
+                : UIColor.systemGroupedBackground
+        })
+    }
+
+    /// Card / secondary surface — dark navy in dark mode, secondary grouped background in light mode.
+    static var appCard: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 26/255, green: 26/255, blue: 46/255, alpha: 1)
+                : UIColor.secondarySystemGroupedBackground
+        })
+    }
+}
+
 // MARK: - Progress bar style used on tracking cards
 
 struct FitnessProgressStyle: ProgressViewStyle {
@@ -69,10 +91,10 @@ struct SelectionChip: View {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundStyle(isSelected ? .white : Color(hex: "#9CA3AF"))
+                .foregroundStyle(isSelected ? .white : .secondary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? selectedBackground : Color.white.opacity(0.1))
+                .background(isSelected ? selectedBackground : Color.primary.opacity(0.08))
                 .clipShape(.rect(cornerRadius: 14))
         }
         .buttonStyle(.plain)
@@ -119,7 +141,7 @@ struct FlowLayout: Layout {
                 lineHeight = max(lineHeight, size.height)
                 currentX += size.width + spacing
             }
-            self.size = CGSize(width: maxWidth, height: currentY + lineHeight)
+            size = CGSize(width: maxWidth, height: currentY + lineHeight)
         }
     }
 }

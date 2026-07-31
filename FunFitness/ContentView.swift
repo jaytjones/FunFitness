@@ -43,7 +43,6 @@ struct ContentView: View {
                         .tag(3)
                 }
                 .tint(Color(hex: "#A78BFA"))
-                .preferredColorScheme(.dark)
                 .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
                     if currentMilestoneIndex < viewModel.pendingMilestones.count {
                         let milestone = viewModel.pendingMilestones[currentMilestoneIndex]
@@ -86,14 +85,26 @@ struct ContentView: View {
         }
     }
 
-    // Idempotent — inserts any earned achievements that aren't yet recorded.
-    // Safe to call at launch and after every write; won't duplicate existing records.
+    // Bidirectional reconciliation — inserts any earned achievements that aren't yet recorded,
+    // and removes any recorded achievements no longer supported by the current totals.
+    // Safe to call at launch and after every write (add, edit, or delete activity).
     private func reconcileAchievements() {
         let earned = viewModel.earnedMilestoneIds()
-        let missing = earned.subtracting(viewModel.unlockedAchievementIds)
+        let recorded = Set(achievements.map(\.milestoneId))
+
+        let missing = earned.subtracting(recorded)
         for id in missing {
             modelContext.insert(UnlockedAchievement(milestoneId: id))
             viewModel.unlockedAchievementIds.insert(id)
+        }
+
+        let stale = recorded.subtracting(earned)
+        if !stale.isEmpty {
+            let staleRecords = achievements.filter { stale.contains($0.milestoneId) }
+            for record in staleRecords {
+                modelContext.delete(record)
+                viewModel.unlockedAchievementIds.remove(record.milestoneId)
+            }
         }
     }
 }

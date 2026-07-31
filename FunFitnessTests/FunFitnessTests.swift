@@ -14,8 +14,8 @@ import Testing
 struct ComparisonEngineTests {
 
     @Test func allMilestonesCountIsExpected() {
-        // 6 distance + 6 weight
-        #expect(ComparisonEngine.allMilestones.count == 12)
+        // 11 distance + 11 weight = 22 total (includes intermediate milestones added in 1.1)
+        #expect(ComparisonEngine.allMilestones.count == 22)
     }
 
     @Test func byIdContainsAllMilestones() {
@@ -50,6 +50,22 @@ struct ComparisonEngineTests {
     @Test func allMilestoneTitlesNonEmpty() {
         for m in ComparisonEngine.allMilestones {
             #expect(!m.title.isEmpty, "Milestone \(m.id) has empty title")
+        }
+    }
+
+    @Test func allMilestoneTickersNonEmpty() {
+        for m in ComparisonEngine.allMilestones {
+            for theme in Theme.allCases {
+                #expect(!m.getTicker(for: theme).isEmpty, "Milestone \(m.id) has empty ticker for theme \(theme)")
+            }
+        }
+    }
+
+    @Test func allMilestoneComparisonTextsNonEmpty() {
+        for m in ComparisonEngine.allMilestones {
+            for theme in Theme.allCases {
+                #expect(!m.getComparison(for: theme).isEmpty, "Milestone \(m.id) has empty comparison for theme \(theme)")
+            }
         }
     }
 
@@ -100,6 +116,17 @@ struct ComparisonEngineTests {
         for m in result {
             #expect(m.unit == .miles)
         }
+    }
+
+    // Intermediate milestones (1.1) appear in sorted order between originals
+    @Test func intermediateMilestonesArePresentAndSorted() {
+        let thresholds = ComparisonEngine.distanceMilestones.map(\.threshold)
+        #expect(thresholds.contains(2.5))
+        #expect(thresholds.contains(10.0))
+        #expect(thresholds.contains(17.5))
+        #expect(thresholds.contains(35.0))
+        #expect(thresholds.contains(75.0))
+        #expect(thresholds == thresholds.sorted())
     }
 }
 
@@ -175,5 +202,38 @@ struct AppViewModelTests {
         let earned = vm.earnedMilestoneIds()
         #expect(earned.contains(d.id))
         #expect(earned.contains(w.id))
+    }
+
+    // MARK: Absurdity Ticker
+
+    @Test func absurdityTickerReturnsNilForZeroTotal() {
+        let vm = AppViewModel()
+        vm.activities = []
+        #expect(vm.absurdityTickerText(for: .distance) == nil)
+        #expect(vm.absurdityTickerText(for: .weight) == nil)
+    }
+
+    @Test func absurdityTickerReturnsTextForPositiveTotal() {
+        let vm = AppViewModel()
+        vm.activities = [ActivityLog(type: .distance, value: 0.5)]
+        let text = vm.absurdityTickerText(for: .distance)
+        #expect(text != nil)
+        #expect(text?.contains("You're") == true)
+        #expect(text?.contains("%") == true)
+    }
+
+    @Test func absurdityTickerPercentageIsBounded() {
+        let vm = AppViewModel()
+        // 0.5 miles toward D1 (1.0 threshold) = 50%
+        vm.activities = [ActivityLog(type: .distance, value: 0.5)]
+        let text = vm.absurdityTickerText(for: .distance)
+        #expect(text?.contains("50%") == true)
+    }
+
+    @Test func absurdityTickerReturnsNilWhenAllMilestonesCleared() {
+        let vm = AppViewModel()
+        // Well past the last milestone
+        vm.activities = [ActivityLog(type: .distance, value: 999_999)]
+        #expect(vm.absurdityTickerText(for: .distance) == nil)
     }
 }

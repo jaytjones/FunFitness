@@ -83,4 +83,21 @@ final class AppViewModel {
         let earnedWt  = ComparisonEngine.weightMilestones.filter  { $0.threshold <= totalWeight  }.map(\.id)
         return Set(earnedDist + earnedWt)
     }
+
+    // MARK: - Absurdity Ticker
+
+    /// Returns a fractional comparison string for the Home screen ticker, e.g.
+    /// "You're 43% of 2 blue whales 🐳". Returns nil if no activities are logged
+    /// or all milestones have been cleared.
+    func absurdityTickerText(for type: ActivityType) -> String? {
+        let currentTotal = type == .distance ? totalDistance : totalWeight
+        guard currentTotal > 0 else { return nil }
+        guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
+            return nil
+        }
+        let pct = Int(progressToNextMilestone(type: type) * 100)
+        let reference = next.getTicker(for: activeTheme)
+        let emoji = next.getEmoji(for: activeTheme)
+        return "You're \(pct)% of \(reference) \(emoji)"
+    }
 }

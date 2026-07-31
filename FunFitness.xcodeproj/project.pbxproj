@@ -12,6 +12,7 @@
 		86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */; };
 		86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */; };
 		86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */; };
+		86B3D078301C78A600E76696 /* 20260731_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D077301C78A600E76696 /* 20260731_session_summary.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +38,7 @@
 		86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results.md"; sourceTree = "<group>"; };
 		86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Action_Plan.md; sourceTree = "<group>"; };
 		86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Sequenced_Development_Plan.md; sourceTree = "<group>"; };
+		86B3D077301C78A600E76696 /* 20260731_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260731_session_summary.md; sourceTree = "<group>"; };
 		86EEF7E42F79F3E00076F515 /* FunFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7F52F79F3E10076F515 /* FunFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +108,7 @@
 				86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */,
 				86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */,
 				86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */,
+				86B3D077301C78A600E76696 /* 20260731_session_summary.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -210,7 +213,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					86EEF7E32F79F3E00076F515 = {
 						CreatedOnToolsVersion = 26.4;
@@ -256,6 +259,7 @@
 				86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,
 				86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */,
 				86687D563015A7B700E05A84 /* README.md in Resources */,
+				86B3D078301C78A600E76696 /* 20260731_session_summary.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -444,6 +448,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -501,6 +506,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};

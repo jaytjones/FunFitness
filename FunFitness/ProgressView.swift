@@ -20,7 +20,7 @@ struct ProgressTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#0D0D1A")
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -61,7 +61,6 @@ struct ProgressTabView: View {
             }
             .navigationTitle("Progress")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -113,7 +112,7 @@ struct OverallProgressCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Total Activities")
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                     Text("\(totalActivities)")
                         .font(.title)
                         .fontWeight(.bold)
@@ -129,7 +128,7 @@ struct OverallProgressCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("This Week")
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                     HStack(spacing: 6) {
                         Circle()
                             .fill(isActiveThisWeek ? Color.green : Color.gray)
@@ -183,28 +182,27 @@ struct TrackingCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
 
             Divider()
-                .background(Color.white.opacity(0.1))
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text("Total:")
                     .font(.subheadline)
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                    .foregroundStyle(.secondary)
                 Text(String(format: "%.1f", currentValue))
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(unit)
                     .font(.subheadline)
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                    .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -217,17 +215,17 @@ struct TrackingCard: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Next Milestone")
                             .font(.caption2)
-                            .foregroundStyle(Color(hex: "#9CA3AF"))
+                            .foregroundStyle(.secondary)
                         Text(nextMilestoneTitle)
                             .font(.caption)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .lineLimit(2)
                     }
                     Spacer()
                     if remaining > 0 {
                         Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
                             .font(.caption)
-                            .foregroundStyle(Color(hex: "#9CA3AF"))
+                            .foregroundStyle(.secondary)
                     } else {
                         Text("Complete!")
                             .font(.caption)
@@ -237,7 +235,7 @@ struct TrackingCard: View {
             }
         }
         .padding()
-        .background(Color(hex: "#1A1A2E"))
+        .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 20))
     }
 }

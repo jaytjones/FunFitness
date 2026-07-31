@@ -31,7 +31,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#0D0D1A")
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -80,10 +80,10 @@ struct ProfileView: View {
                                 Text(profile?.name ?? "User")
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                                 Text(profile?.fitnessGoal ?? "Stay Active")
                                     .font(.subheadline)
-                                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         .padding(.top)
@@ -100,7 +100,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Personal Information")
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
@@ -109,7 +109,7 @@ struct ProfileView: View {
                                     set: { profile?.name = $0 }
                                 ))
 
-                                Divider().background(Color.white.opacity(0.1))
+                                Divider()
 
                                 EditableEmailRow(
                                     title: "Email",
@@ -119,7 +119,7 @@ struct ProfileView: View {
                                     )
                                 )
 
-                                Divider().background(Color.white.opacity(0.1))
+                                Divider()
 
                                 EditableProfileRow(
                                     title: "Age",
@@ -130,7 +130,7 @@ struct ProfileView: View {
                                     keyboardType: .numberPad
                                 )
 
-                                Divider().background(Color.white.opacity(0.1))
+                                Divider()
 
                                 EditableNumberRow(
                                     title: "Height",
@@ -149,7 +149,7 @@ struct ProfileView: View {
                                     unit: "in"
                                 )
 
-                                Divider().background(Color.white.opacity(0.1))
+                                Divider()
 
                                 EditableNumberRow(
                                     title: "Weight",
@@ -160,7 +160,7 @@ struct ProfileView: View {
                                     unit: "lbs"
                                 )
                             }
-                            .background(Color(hex: "#1A1A2E"))
+                            .background(Color.appCard)
                             .clipShape(.rect(cornerRadius: 20))
                         }
 
@@ -168,7 +168,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Fitness Goal")
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .padding(.horizontal)
 
                             FlowLayout(spacing: 8) {
@@ -187,7 +187,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Settings")
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
@@ -197,7 +197,7 @@ struct ProfileView: View {
                                     iconColor: Color(hex: "#EA580C"),
                                     action: { showingClearActivityAlert = true }
                                 )
-                                Divider().background(Color.white.opacity(0.1))
+                                Divider()
                                 SettingsActionRow(
                                     title: "Clear All Data",
                                     icon: "exclamationmark.triangle.fill",
@@ -205,7 +205,7 @@ struct ProfileView: View {
                                     action: { showingClearAllDataAlert = true }
                                 )
                             }
-                            .background(Color(hex: "#1A1A2E"))
+                            .background(Color.appCard)
                             .clipShape(.rect(cornerRadius: 20))
                         }
                         .padding(.bottom)
@@ -214,7 +214,6 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -271,14 +270,14 @@ struct StatBox: View {
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text(title)
                 .font(.caption)
-                .foregroundStyle(Color(hex: "#9CA3AF"))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(hex: "#1A1A2E"))
+        .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 12))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
@@ -299,19 +298,19 @@ struct EditableProfileRow: View {
         HStack {
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(Color(hex: "#9CA3AF"))
+                .foregroundStyle(.secondary)
                 .frame(width: 80, alignment: .leading)
 
             if isEditing {
                 TextField(placeholder, text: $value)
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .keyboardType(keyboardType)
                     .focused($isFocused)
                     .onSubmit { isEditing = false }
             } else {
                 Text(value.isEmpty ? placeholder : value)
-                    .foregroundStyle(value.isEmpty ? Color(hex: "#9CA3AF") : .white)
+                    .foregroundStyle(value.isEmpty ? .secondary : .primary)
                 Spacer()
             }
 
@@ -345,13 +344,13 @@ struct EditableEmailRow: View {
             HStack {
                 Text(title)
                     .font(.subheadline)
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                    .foregroundStyle(.secondary)
                     .frame(width: 80, alignment: .leading)
 
                 if isEditing {
                     TextField("email@example.com", text: $editValue)
                         .textFieldStyle(.plain)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.emailAddress)
@@ -360,10 +359,10 @@ struct EditableEmailRow: View {
                 } else {
                     if value.isEmpty {
                         Text("Not set")
-                            .foregroundStyle(Color(hex: "#9CA3AF"))
+                            .foregroundStyle(.secondary)
                     } else {
                         Text(value)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                     Spacer()
                 }
@@ -433,28 +432,28 @@ struct EditableNumberRow: View {
         HStack {
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(Color(hex: "#9CA3AF"))
+                .foregroundStyle(.secondary)
                 .frame(width: 80, alignment: .leading)
 
             if isEditing {
                 HStack(spacing: 4) {
                     TextField("0", text: $editValue)
                         .textFieldStyle(.plain)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .keyboardType(.decimalPad)
                         .focused($isFocused)
                         .onSubmit { saveValue() }
                     Text(unit)
                         .font(.subheadline)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 if value > 0 {
                     Text(String(format: "%.0f %@", value, unit))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 } else {
                     Text("Not set")
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -499,7 +498,7 @@ struct SettingsActionRow: View {
                     .frame(width: 24)
                     .accessibilityHidden(true)
                 Text(title)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
             .padding()

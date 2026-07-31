@@ -19,7 +19,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#0D0D1A")
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -36,6 +36,7 @@ struct HomeView: View {
                             remainingUnit: "mi",
                             gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
                         )
+                        .accessibilityIdentifier("distanceStatCard")
 
                         StatCard(
                             title: "Weight Tracking",
@@ -49,6 +50,9 @@ struct HomeView: View {
                             remainingUnit: "lbs",
                             gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
                         )
+                        .accessibilityIdentifier("weightStatCard")
+
+                        AbsurdityTicker(viewModel: viewModel)
 
                         ThemeSelector(selectedTheme: $viewModel.activeTheme)
 
@@ -63,7 +67,6 @@ struct HomeView: View {
             }
             .navigationTitle("FunFitness")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -74,11 +77,65 @@ struct HomeView: View {
                             .foregroundStyle(Color(hex: "#A78BFA"))
                     }
                     .accessibilityLabel("Log activity")
+                    .accessibilityIdentifier("homeLogActivityButton")
                 }
             }
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
             }
+        }
+    }
+}
+
+// MARK: - Absurdity Ticker
+
+struct AbsurdityTicker: View {
+    let viewModel: AppViewModel
+
+    private var distanceText: String? { viewModel.absurdityTickerText(for: .distance) }
+    private var weightText: String? { viewModel.absurdityTickerText(for: .weight) }
+    private var hasContent: Bool { distanceText != nil || weightText != nil }
+
+    var body: some View {
+        if hasContent {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 6) {
+                    Text("🎯")
+                        .accessibilityHidden(true)
+                    Text("Right Now...")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white.opacity(0.75))
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    if let text = distanceText {
+                        Text(text)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                    }
+                    if let text = weightText {
+                        Text(text)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                [distanceText, weightText].compactMap { $0 }.joined(separator: ". ")
+            )
+            .accessibilityIdentifier("absurdityTicker")
         }
     }
 }
@@ -109,7 +166,7 @@ struct StatCard: View {
                         .foregroundStyle(.white)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer()
             }
@@ -121,7 +178,7 @@ struct StatCard: View {
                     .foregroundStyle(.white)
                 Text(unit)
                     .font(.title3)
-                    .foregroundStyle(Color(hex: "#9CA3AF"))
+                    .foregroundStyle(.white.opacity(0.7))
             }
 
             SwiftUI.ProgressView(value: progress)
@@ -133,7 +190,7 @@ struct StatCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Next Milestone")
                         .font(.caption2)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                     Text(nextMilestone)
                         .font(.caption)
                         .foregroundStyle(.white)
@@ -143,7 +200,7 @@ struct StatCard: View {
                 if remaining > 0 {
                     Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.white.opacity(0.7))
                 } else {
                     Text("All milestones complete!")
                         .font(.caption)
@@ -174,7 +231,7 @@ struct ThemeSelector: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Achievement Theme")
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             HStack(spacing: 12) {
                 ForEach(Theme.allCases, id: \.self) { theme in
@@ -188,7 +245,7 @@ struct ThemeSelector: View {
             }
         }
         .padding()
-        .background(Color(hex: "#1A1A2E"))
+        .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 20))
     }
 }
@@ -209,7 +266,7 @@ struct AchievementPreview: View {
                         .accessibilityHidden(true)
                     Text("Log your first activity to unlock achievements!")
                         .font(.subheadline)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
 
                     HStack(spacing: 8) {
@@ -223,20 +280,20 @@ struct AchievementPreview: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color(hex: "#1A1A2E"))
+                .background(Color.appCard)
                 .clipShape(.rect(cornerRadius: 20))
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Recent Achievements")
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("\(unlockedCount) of \(totalCount) unlocked")
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(Color(hex: "#1A1A2E"))
+                .background(Color.appCard)
                 .clipShape(.rect(cornerRadius: 20))
             }
         }

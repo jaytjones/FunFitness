@@ -40,9 +40,10 @@ final class ActivityLog {
     }
 }
 
-// Equatable by ID so onChange(of: activities) fires on any insert or delete
+// Equatable by id + value + loggedAt so onChange(of: activities) fires on inserts,
+// deletes, AND in-place edits (value or date corrections).
 extension ActivityLog: Equatable {
     static func == (lhs: ActivityLog, rhs: ActivityLog) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.value == rhs.value && lhs.loggedAt == rhs.loggedAt
     }
 }

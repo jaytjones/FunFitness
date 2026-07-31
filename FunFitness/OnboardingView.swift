@@ -23,7 +23,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#0D0D1A")
+            Color.appBackground
                 .ignoresSafeArea()
 
             VStack(spacing: 32) {
@@ -37,11 +37,11 @@ struct OnboardingView: View {
                     Text("FunFitness")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text("Turn your progress into fun comparisons")
                         .font(.subheadline)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                 }
@@ -52,13 +52,13 @@ struct OnboardingView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What's your name?")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         TextField("Enter your name", text: $name)
                             .font(.body)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .padding()
-                            .background(Color(hex: "#1A1A2E"))
+                            .background(Color.appCard)
                             .clipShape(.rect(cornerRadius: 14))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
@@ -75,7 +75,7 @@ struct OnboardingView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What's your fitness goal?")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         FlowLayout(spacing: 8) {
                             ForEach(fitnessGoals, id: \.self) { goal in

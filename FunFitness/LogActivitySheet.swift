@@ -16,13 +16,14 @@ struct LogActivitySheet: View {
 
     @State private var selectedType: ActivityType = .distance
     @State private var inputValue: String = ""
+    @State private var logDate: Date = Date()
     @State private var showValidationError = false
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#0D0D1A")
+                Color.appBackground
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
@@ -42,7 +43,7 @@ struct LogActivitySheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(selectedType == .distance ? "Distance (miles)" : "Weight (lbs)")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         TextField(
                             selectedType == .distance ? "0.0" : "0",
@@ -50,9 +51,9 @@ struct LogActivitySheet: View {
                         )
                         .keyboardType(selectedType == .distance ? .decimalPad : .numberPad)
                         .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding()
-                        .background(Color(hex: "#1A1A2E"))
+                        .background(Color.appCard)
                         .clipShape(.rect(cornerRadius: 14))
                         .overlay(
                             RoundedRectangle(cornerRadius: 14)
@@ -66,6 +67,24 @@ struct LogActivitySheet: View {
                                 .font(.caption)
                                 .foregroundStyle(.red)
                         }
+                    }
+                    .padding(.horizontal)
+
+                    // Date Picker (for backdating)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Date & Time")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        DatePicker(
+                            "Activity date",
+                            selection: $logDate,
+                            in: ...Date(),
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .tint(Color(hex: "#A78BFA"))
+                        .accessibilityIdentifier("activityDatePicker")
                     }
                     .padding(.horizontal)
 
@@ -95,14 +114,13 @@ struct LogActivitySheet: View {
             }
             .navigationTitle("Log Activity")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(Color(hex: "#9CA3AF"))
+                            .foregroundStyle(.secondary)
                     }
                     .accessibilityLabel("Close")
                 }
@@ -113,7 +131,10 @@ struct LogActivitySheet: View {
                         .foregroundStyle(Color(hex: "#A78BFA"))
                 }
             }
-            .onAppear { isInputFocused = true }
+            .onAppear {
+                isInputFocused = true
+                logDate = Date()
+            }
         }
         .presentationDetents([.medium, .large])
     }
@@ -130,7 +151,7 @@ struct LogActivitySheet: View {
         let newTotal = previousTotal + value
 
         // Persist
-        let activity = ActivityLog(type: selectedType, value: value)
+        let activity = ActivityLog(type: selectedType, value: value, loggedAt: logDate)
         modelContext.insert(activity)
         try? modelContext.save()
 
