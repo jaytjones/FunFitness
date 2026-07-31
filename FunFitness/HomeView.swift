@@ -2,8 +2,6 @@
 //  HomeView.swift
 //  FunFitness
 //
-//  Created by Jay Jones on 3/29/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -15,6 +13,9 @@ struct HomeView: View {
     @Bindable var viewModel: AppViewModel
 
     @State private var showLogSheet = false
+    @State private var showShieldConfirm = false
+
+    private var pref: UnitPreference { viewModel.unitPreference }
 
     var body: some View {
         NavigationStack {
@@ -24,16 +25,20 @@ struct HomeView: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
+                        StreakCard(viewModel: viewModel, onActivateShield: {
+                            showShieldConfirm = true
+                        })
+
+                        SillyTitleBanner(viewModel: viewModel)
+
                         StatCard(
                             title: "Distance Tracking",
                             subtitle: "Running & Walking",
                             icon: "🏃",
-                            value: viewModel.totalDistance,
-                            unit: "mi",
+                            displayValue: viewModel.displayDistance(viewModel.totalDistance),
                             progress: viewModel.progressToNextMilestone(type: .distance),
                             nextMilestone: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "Complete!",
-                            remaining: viewModel.remainingToNextMilestone(type: .distance).remaining,
-                            remainingUnit: "mi",
+                            remainingDisplay: remainingLabel(for: .distance),
                             gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
                         )
                         .accessibilityIdentifier("distanceStatCard")
@@ -42,12 +47,10 @@ struct HomeView: View {
                             title: "Weight Tracking",
                             subtitle: "Strength Training",
                             icon: "💪",
-                            value: viewModel.totalWeight,
-                            unit: "lbs",
+                            displayValue: viewModel.displayWeight(viewModel.totalWeight),
                             progress: viewModel.progressToNextMilestone(type: .weight),
                             nextMilestone: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "Complete!",
-                            remaining: viewModel.remainingToNextMilestone(type: .weight).remaining,
-                            remainingUnit: "lbs",
+                            remainingDisplay: remainingLabel(for: .weight),
                             gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
                         )
                         .accessibilityIdentifier("weightStatCard")
@@ -83,7 +86,130 @@ struct HomeView: View {
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
             }
+            .alert("Use Streak Shield?", isPresented: $showShieldConfirm) {
+                Button("Use Shield", role: .none) {
+                    // Activate shield via ContentView helper surfaced through EnvironmentObject
+                    // pattern is: shield activation lives in ContentView, triggered here via a
+                    // published flag on the viewModel.
+                    viewModel.pendingShieldActivation = true
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("A streak shield protects your streak for one missed week. You have \(viewModel.shieldsAvailable) shield\(viewModel.shieldsAvailable == 1 ? "" : "s") available. Shields regenerate monthly.")
+            }
         }
+    }
+
+    private func remainingLabel(for type: ActivityType) -> String {
+        let remaining = viewModel.remainingToNextMilestone(type: type).remaining
+        guard remaining > 0 else { return "" }
+        if type == .distance {
+            return "\(UnitConverter.distanceString(remaining, pref: pref)) to go"
+        } else {
+            return "\(UnitConverter.weightString(remaining, pref: pref)) to go"
+        }
+    }
+}
+
+// MARK: - Streak Card
+
+struct StreakCard: View {
+    let viewModel: AppViewModel
+    let onActivateShield: () -> Void
+
+    private var streakEmoji: String {
+        viewModel.currentStreak == 0 ? "💤" : viewModel.currentStreak >= 8 ? "🔥🔥" : "🔥"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(streakEmoji)
+                    .font(.title2)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Weekly Streak")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    Text(viewModel.isActiveThisWeekStreak ? "Active this week ✓" : "No activity yet this week")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.75))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(viewModel.currentStreak)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("week\(viewModel.currentStreak == 1 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.75))
+                }
+            }
+
+            HStack {
+                Label("Best: \(viewModel.longestStreak) wk\(viewModel.longestStreak == 1 ? "" : "s")", systemImage: "trophy.fill")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.75))
+                Spacer()
+                if viewModel.shieldsAvailable > 0 && !viewModel.isActiveThisWeekStreak && viewModel.currentStreak > 0 {
+                    Button(action: onActivateShield) {
+                        Label("Use Shield (\(viewModel.shieldsAvailable))", systemImage: "shield.fill")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(.white.opacity(0.2))
+                            .clipShape(.capsule)
+                    }
+                    .accessibilityLabel("Use streak shield")
+                }
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: viewModel.currentStreak == 0
+                    ? [Color(hex: "374151"), Color(hex: "1F2937")]
+                    : [Color(hex: "EA580C"), Color(hex: "DC2626")],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(.rect(cornerRadius: 20))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Weekly streak: \(viewModel.currentStreak) weeks. Best: \(viewModel.longestStreak).")
+        .accessibilityIdentifier("streakCard")
+    }
+}
+
+// MARK: - Silly Title Banner
+
+struct SillyTitleBanner: View {
+    let viewModel: AppViewModel
+
+    var body: some View {
+        let title = viewModel.sillyTitle
+        HStack(spacing: 12) {
+            Text(title.rankEmoji)
+                .font(.title2)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title.title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                Text("\(title.rank) Rank · \(viewModel.unlockedAchievementIds.count) badge\(viewModel.unlockedAchievementIds.count == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding()
+        .background(Color.appCard)
+        .clipShape(.rect(cornerRadius: 20))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Title: \(title.title). \(title.rank) rank.")
+        .accessibilityIdentifier("sillyTitleBanner")
     }
 }
 
@@ -93,31 +219,25 @@ struct AbsurdityTicker: View {
     let viewModel: AppViewModel
 
     private var distanceText: String? { viewModel.absurdityTickerText(for: .distance) }
-    private var weightText: String? { viewModel.absurdityTickerText(for: .weight) }
-    private var hasContent: Bool { distanceText != nil || weightText != nil }
+    private var weightText: String?   { viewModel.absurdityTickerText(for: .weight) }
+    private var hasContent: Bool      { distanceText != nil || weightText != nil }
 
     var body: some View {
         if hasContent {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 6) {
-                    Text("🎯")
-                        .accessibilityHidden(true)
+                    Text("🎯").accessibilityHidden(true)
                     Text("Right Now...")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white.opacity(0.75))
                 }
-
                 VStack(alignment: .leading, spacing: 8) {
                     if let text = distanceText {
-                        Text(text)
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                        Text(text).font(.headline).foregroundStyle(.white)
                     }
                     if let text = weightText {
-                        Text(text)
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                        Text(text).font(.headline).foregroundStyle(.white)
                     }
                 }
             }
@@ -126,15 +246,12 @@ struct AbsurdityTicker: View {
             .background(
                 LinearGradient(
                     colors: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: .topLeading, endPoint: .bottomTrailing
                 )
             )
             .clipShape(.rect(cornerRadius: 20))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(
-                [distanceText, weightText].compactMap { $0 }.joined(separator: ". ")
-            )
+            .accessibilityLabel([distanceText, weightText].compactMap { $0 }.joined(separator: ". "))
             .accessibilityIdentifier("absurdityTicker")
         }
     }
@@ -146,12 +263,10 @@ struct StatCard: View {
     let title: String
     let subtitle: String
     let icon: String
-    let value: Double
-    let unit: String
+    let displayValue: String
     let progress: Double
     let nextMilestone: String
-    let remaining: Double
-    let remainingUnit: String
+    let remainingDisplay: String
     let gradientColors: [Color]
 
     var body: some View {
@@ -171,15 +286,10 @@ struct StatCard: View {
                 Spacer()
             }
 
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(String(format: "%.1f", value))
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-                Text(unit)
-                    .font(.title3)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+            Text(displayValue)
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
 
             SwiftUI.ProgressView(value: progress)
                 .progressViewStyle(FitnessProgressStyle(tint: .white))
@@ -197,8 +307,8 @@ struct StatCard: View {
                         .lineLimit(1)
                 }
                 Spacer()
-                if remaining > 0 {
-                    Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
+                if !remainingDisplay.isEmpty {
+                    Text(remainingDisplay)
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
                 } else {
@@ -218,7 +328,7 @@ struct StatCard: View {
         )
         .clipShape(.rect(cornerRadius: 20))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(String(format: "%.1f", value)) \(unit). \(Int(progress * 100))% to next milestone.")
+        .accessibilityLabel("\(title): \(displayValue). \(Int(progress * 100))% to next milestone.")
     }
 }
 

@@ -2,8 +2,6 @@
 //  ProfileView.swift
 //  FunFitness
 //
-//  Created by Jay Jones on 3/29/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -19,13 +17,40 @@ struct ProfileView: View {
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showingClearActivityAlert = false
-    @State private var showingClearAllDataAlert = false
-    @State private var showLogSheet = false
+    @State private var showingClearAllDataAlert  = false
+    @State private var showLogSheet  = false
+    @State private var showExportSheet = false
+    @State private var exportURL: URL? = nil
 
     private var profile: UserProfile? { profiles.first }
+    private var pref: UnitPreference   { profile?.unitPref ?? .imperial }
 
-    private var totalMiles: Double {
+    private var totalDistanceKm: Double {
         activities.filter { $0.activityType == .distance }.reduce(0) { $0 + $1.value }
+    }
+
+    // Profile completeness: fraction of optional fields filled in
+    private var profileCompleteness: Double {
+        guard let profile else { return 0 }
+        let checks: [Bool] = [
+            !profile.name.isEmpty,
+            !profile.email.isEmpty,
+            profile.dateOfBirth != nil,
+            (profile.heightCm ?? 0) > 0,
+            (profile.weightKg ?? 0) > 0
+        ]
+        let filled = checks.filter { $0 }.count
+        return Double(filled) / Double(checks.count)
+    }
+
+    private var profileCompletenessLabel: String {
+        let pct = Int(profileCompleteness * 100)
+        switch pct {
+        case 100: return "Complete"
+        case 80...: return "\(pct)% — almost there!"
+        case 60...: return "\(pct)% complete"
+        default:    return "\(pct)% — add more details"
+        }
     }
 
     var body: some View {
@@ -36,6 +61,7 @@ struct ProfileView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
+
                         // Avatar and Name
                         VStack(spacing: 12) {
                             PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
@@ -85,13 +111,30 @@ struct ProfileView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+
+                            // Profile completeness meter
+                            if profileCompleteness < 1.0 {
+                                VStack(spacing: 6) {
+                                    SwiftUI.ProgressView(value: profileCompleteness)
+                                        .progressViewStyle(FitnessProgressStyle(tint: Color(hex: "#A78BFA")))
+                                        .accessibilityLabel("Profile completeness")
+                                        .accessibilityValue(profileCompletenessLabel)
+                                    Text(profileCompletenessLabel)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.horizontal, 32)
+                            }
                         }
                         .padding(.top)
 
                         // Stats Row
                         HStack(spacing: 16) {
                             StatBox(title: "Workouts", value: "\(activities.count)")
-                            StatBox(title: "Miles", value: String(format: "%.1f", totalMiles))
+                            StatBox(
+                                title: "Distance",
+                                value: UnitConverter.distanceString(totalDistanceKm, pref: pref)
+                            )
                             StatBox(title: "Badges", value: "\(achievements.count)")
                         }
                         .padding(.horizontal)
@@ -121,13 +164,11 @@ struct ProfileView: View {
 
                                 Divider()
 
-                                EditableProfileRow(
-                                    title: "Age",
-                                    value: Binding(
-                                        get: { profile?.age.map { "\($0)" } ?? "" },
-                                        set: { str in profile?.age = str.isEmpty ? nil : Int(str) }
-                                    ),
-                                    keyboardType: .numberPad
+                                DateOfBirthRow(
+                                    dateOfBirth: Binding(
+                                        get: { profile?.dateOfBirth },
+                                        set: { profile?.dateOfBirth = $0 }
+                                    )
                                 )
 
                                 Divider()
@@ -136,17 +177,17 @@ struct ProfileView: View {
                                     title: "Height",
                                     value: Binding(
                                         get: {
-                                            if let heightStr = profile?.heightInches,
-                                               let height = Double(heightStr.filter(\.isNumber)) {
-                                                return height
+                                            if let cm = profile?.heightCm, cm > 0 {
+                                                return pref == .imperial ? cm / 2.54 : cm
                                             }
                                             return 0
                                         },
                                         set: { newValue in
-                                            profile?.heightInches = newValue > 0 ? String(format: "%.0f", newValue) : nil
+                                            guard newValue > 0 else { profile?.heightCm = nil; return }
+                                            profile?.heightCm = pref == .imperial ? newValue * 2.54 : newValue
                                         }
                                     ),
-                                    unit: "in"
+                                    unit: pref == .imperial ? "in" : "cm"
                                 )
 
                                 Divider()
@@ -154,14 +195,44 @@ struct ProfileView: View {
                                 EditableNumberRow(
                                     title: "Weight",
                                     value: Binding(
-                                        get: { profile?.weightLbs ?? 0 },
-                                        set: { profile?.weightLbs = $0 > 0 ? $0 : nil }
+                                        get: {
+                                            if let kg = profile?.weightKg, kg > 0 {
+                                                return UnitConverter.fromKg(kg, to: pref)
+                                            }
+                                            return 0
+                                        },
+                                        set: { newValue in
+                                            guard newValue > 0 else { profile?.weightKg = nil; return }
+                                            profile?.weightKg = UnitConverter.toKg(newValue, from: pref)
+                                        }
                                     ),
-                                    unit: "lbs"
+                                    unit: pref.weightUnit
                                 )
                             }
                             .background(Color.appCard)
                             .clipShape(.rect(cornerRadius: 20))
+                        }
+
+                        // Units
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Units")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .padding(.horizontal)
+
+                            FlowLayout(spacing: 8) {
+                                ForEach(UnitPreference.allCases, id: \.self) { option in
+                                    SelectionChip(
+                                        title: option.displayName,
+                                        isSelected: pref == option,
+                                        action: {
+                                            profile?.unitPreference = option.rawValue
+                                            viewModel.unitPreference = option
+                                        }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal)
                         }
 
                         // Fitness Goal
@@ -183,6 +254,57 @@ struct ProfileView: View {
                             .padding(.horizontal)
                         }
 
+                        // Weekly Goals
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Weekly Goals")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .padding(.horizontal)
+
+                            VStack(spacing: 0) {
+                                EditableNumberRow(
+                                    title: "Distance",
+                                    value: Binding(
+                                        get: {
+                                            if let km = profile?.weeklyDistanceGoal, km > 0 {
+                                                return UnitConverter.fromKm(km, to: pref)
+                                            }
+                                            return 0
+                                        },
+                                        set: { newValue in
+                                            guard newValue > 0 else { profile?.weeklyDistanceGoal = nil; return }
+                                            profile?.weeklyDistanceGoal = UnitConverter.toKm(newValue, from: pref)
+                                        }
+                                    ),
+                                    unit: "\(pref.distanceUnit)/wk"
+                                )
+
+                                Divider()
+
+                                EditableNumberRow(
+                                    title: "Weight",
+                                    value: Binding(
+                                        get: {
+                                            if let kg = profile?.weeklyWeightGoal, kg > 0 {
+                                                return UnitConverter.fromKg(kg, to: pref)
+                                            }
+                                            return 0
+                                        },
+                                        set: { newValue in
+                                            guard newValue > 0 else { profile?.weeklyWeightGoal = nil; return }
+                                            profile?.weeklyWeightGoal = UnitConverter.toKg(newValue, from: pref)
+                                        }
+                                    ),
+                                    unit: "\(pref.weightUnit)/wk"
+                                )
+                            }
+                            .background(Color.appCard)
+                            .clipShape(.rect(cornerRadius: 20))
+                        }
+
+                        // Notifications
+                        NotificationSettingsSection(profile: profile)
+
                         // Settings
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Settings")
@@ -191,6 +313,13 @@ struct ProfileView: View {
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
+                                SettingsActionRow(
+                                    title: "Export Data (CSV)",
+                                    icon: "square.and.arrow.up",
+                                    iconColor: Color(hex: "#0284C7"),
+                                    action: { prepareAndShowExport() }
+                                )
+                                Divider()
                                 SettingsActionRow(
                                     title: "Clear Activity Data",
                                     icon: "trash.fill",
@@ -241,11 +370,21 @@ struct ProfileView: View {
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
             }
+            .sheet(isPresented: $showExportSheet, onDismiss: { exportURL = nil }) {
+                if let url = exportURL {
+                    ShareSheet(items: [url])
+                }
+            }
         }
     }
 
+    private func prepareAndShowExport() {
+        exportURL = ExportManager.csvFileURL(activities: activities, pref: pref)
+        if exportURL != nil { showExportSheet = true }
+    }
+
     private func clearActivityData() {
-        for activity in activities { modelContext.delete(activity) }
+        for activity in activities   { modelContext.delete(activity)    }
         for achievement in achievements { modelContext.delete(achievement) }
         viewModel.activities = []
         viewModel.unlockedAchievementIds.removeAll()
@@ -256,6 +395,73 @@ struct ProfileView: View {
         clearActivityData()
         if let profile { modelContext.delete(profile) }
         try? modelContext.save()
+    }
+}
+
+// MARK: - ShareSheet (UIActivityViewController wrapper)
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Date of Birth Row
+
+struct DateOfBirthRow: View {
+    @Binding var dateOfBirth: Date?
+    @State private var isEditing = false
+
+    private var displayText: String {
+        if let dob = dateOfBirth {
+            let age = Calendar.current.dateComponents([.year], from: dob, to: Date()).year ?? 0
+            return "\(dob.formatted(date: .abbreviated, time: .omitted)) (age \(age))"
+        }
+        return "Not set"
+    }
+
+    var body: some View {
+        HStack {
+            Text("Birthday")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 80, alignment: .leading)
+
+            if isEditing {
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { dateOfBirth ?? Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date() },
+                        set: { dateOfBirth = $0 }
+                    ),
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .tint(Color(hex: "#A78BFA"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(displayText)
+                    .foregroundStyle(dateOfBirth == nil ? .secondary : .primary)
+                Spacer()
+            }
+
+            Button {
+                isEditing.toggle()
+            } label: {
+                Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
+                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(isEditing ? "Save birthday" : "Edit birthday")
+        }
+        .padding()
     }
 }
 
@@ -271,6 +477,8 @@ struct StatBox: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -357,13 +565,8 @@ struct EditableEmailRow: View {
                         .focused($isFocused)
                         .onSubmit { saveValue() }
                 } else {
-                    if value.isEmpty {
-                        Text("Not set")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(value)
-                            .foregroundStyle(.primary)
-                    }
+                    Text(value.isEmpty ? "Not set" : value)
+                        .foregroundStyle(value.isEmpty ? .secondary : .primary)
                     Spacer()
                 }
 
@@ -398,15 +601,10 @@ struct EditableEmailRow: View {
     private func saveValue() {
         let trimmed = editValue.trimmingCharacters(in: .whitespaces).lowercased()
         if trimmed.isEmpty {
-            value = ""
-            isEditing = false
-            showValidationError = false
-            return
+            value = ""; isEditing = false; showValidationError = false; return
         }
         if isValidEmail(trimmed) {
-            value = trimmed
-            isEditing = false
-            showValidationError = false
+            value = trimmed; isEditing = false; showValidationError = false
         } else {
             showValidationError = true
         }
@@ -418,7 +616,7 @@ struct EditableEmailRow: View {
     }
 }
 
-// MARK: - Editable Number Row (staged-save for Height / Weight)
+// MARK: - Editable Number Row (staged-save; unit label provided by caller)
 
 struct EditableNumberRow: View {
     let title: String
@@ -449,7 +647,7 @@ struct EditableNumberRow: View {
                 }
             } else {
                 if value > 0 {
-                    Text(String(format: "%.0f %@", value, unit))
+                    Text(String(format: "%.1f %@", value, unit))
                         .foregroundStyle(.primary)
                 } else {
                     Text("Not set")
@@ -461,7 +659,7 @@ struct EditableNumberRow: View {
             Button {
                 if isEditing { saveValue() }
                 else {
-                    editValue = value > 0 ? String(format: "%.0f", value) : ""
+                    editValue = value > 0 ? String(format: "%.1f", value) : ""
                     isEditing = true
                     isFocused = true
                 }
@@ -479,6 +677,128 @@ struct EditableNumberRow: View {
     private func saveValue() {
         if let newValue = Double(editValue), newValue > 0 { value = newValue }
         isEditing = false
+    }
+}
+
+// MARK: - Notification Settings Section
+
+struct NotificationSettingsSection: View {
+    let profile: UserProfile?
+
+    @State private var isAuthorized = false
+    @State private var showPermissionPrompt = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Notifications")
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .padding(.horizontal)
+
+            VStack(spacing: 0) {
+                if !isAuthorized {
+                    Button {
+                        Task {
+                            let granted = await NotificationManager.shared.requestPermission()
+                            isAuthorized = granted
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "bell.badge.fill")
+                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                .frame(width: 24)
+                            Text("Enable Notifications")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                        .padding()
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    NotificationToggleRow(
+                        title: "Streak At Risk",
+                        subtitle: "Thursday nudge if you haven't logged yet",
+                        icon: "flame.fill",
+                        iconColor: Color(hex: "#EA580C"),
+                        isOn: Binding(
+                            get: { profile?.notifyStreakAtRisk ?? false },
+                            set: { profile?.notifyStreakAtRisk = $0 }
+                        )
+                    )
+                    Divider()
+                    NotificationToggleRow(
+                        title: "Milestone Nudge",
+                        subtitle: "Alert when you're close to your next badge",
+                        icon: "trophy.fill",
+                        iconColor: Color(hex: "#D97706"),
+                        isOn: Binding(
+                            get: { profile?.notifyMilestoneNudge ?? false },
+                            set: { profile?.notifyMilestoneNudge = $0 }
+                        )
+                    )
+                    Divider()
+                    NotificationToggleRow(
+                        title: "Weekly Recap",
+                        subtitle: "Sunday summary of your week",
+                        icon: "calendar.badge.checkmark",
+                        iconColor: Color(hex: "#0284C7"),
+                        isOn: Binding(
+                            get: { profile?.notifyWeeklyRecap ?? false },
+                            set: { profile?.notifyWeeklyRecap = $0 }
+                        )
+                    )
+                    Divider()
+                    NotificationToggleRow(
+                        title: "Comparison of the Day",
+                        subtitle: "Daily motivational fact (may be funny)",
+                        icon: "lightbulb.fill",
+                        iconColor: Color(hex: "#7C3AED"),
+                        isOn: Binding(
+                            get: { profile?.notifyComparisonOfDay ?? false },
+                            set: { profile?.notifyComparisonOfDay = $0 }
+                        )
+                    )
+                }
+            }
+            .background(Color.appCard)
+            .clipShape(.rect(cornerRadius: 20))
+        }
+        .task {
+            isAuthorized = await NotificationManager.shared.isAuthorized()
+        }
+    }
+}
+
+struct NotificationToggleRow: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let iconColor: Color
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(Color(hex: "#A78BFA"))
+        }
+        .padding()
     }
 }
 

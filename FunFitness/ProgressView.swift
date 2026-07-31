@@ -2,20 +2,21 @@
 //  ProgressView.swift
 //  FunFitness
 //
-//  Created by Jay Jones on 3/29/26.
+//  Renamed from ProgressView to avoid shadowing SwiftUI.ProgressView (which enables
+//  accessible ProgressView(value:) usage and removes the GeometryReader workaround)
 //
 
 import SwiftUI
 import SwiftData
 
-// Renamed from ProgressView to avoid shadowing SwiftUI.ProgressView (which enables
-// accessible ProgressView(value:) usage and removes the GeometryReader workaround)
 struct ProgressTabView: View {
     @Query private var activities: [ActivityLog]
     @Bindable var viewModel: AppViewModel
 
     @State private var showLogSheet = false
     @State private var showHistory = false
+
+    private var pref: UnitPreference { viewModel.unitPreference }
 
     var body: some View {
         NavigationStack {
@@ -34,24 +35,20 @@ struct ProgressTabView: View {
                             title: "Distance Tracking",
                             subtitle: "Running & Walking",
                             icon: "🏃",
-                            currentValue: viewModel.totalDistance,
-                            unit: "mi",
+                            displayValue: viewModel.displayDistance(viewModel.totalDistance),
                             progress: viewModel.progressToNextMilestone(type: .distance),
                             nextMilestoneTitle: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "All Complete!",
-                            remaining: viewModel.remainingToNextMilestone(type: .distance).remaining,
-                            remainingUnit: "mi"
+                            remainingDisplay: remainingLabel(for: .distance)
                         )
 
                         TrackingCard(
                             title: "Weight Tracking",
                             subtitle: "Strength Training",
                             icon: "💪",
-                            currentValue: viewModel.totalWeight,
-                            unit: "lbs",
+                            displayValue: viewModel.displayWeight(viewModel.totalWeight),
                             progress: viewModel.progressToNextMilestone(type: .weight),
                             nextMilestoneTitle: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "All Complete!",
-                            remaining: viewModel.remainingToNextMilestone(type: .weight).remaining,
-                            remainingUnit: "lbs"
+                            remainingDisplay: remainingLabel(for: .weight)
                         )
 
                         MotivationalCard()
@@ -89,6 +86,16 @@ struct ProgressTabView: View {
             .sheet(isPresented: $showHistory) {
                 ActivityHistorySheet(viewModel: viewModel)
             }
+        }
+    }
+
+    private func remainingLabel(for type: ActivityType) -> String {
+        let remaining = viewModel.remainingToNextMilestone(type: type).remaining
+        guard remaining > 0 else { return "" }
+        if type == .distance {
+            return "\(UnitConverter.distanceString(remaining, pref: pref)) to go"
+        } else {
+            return "\(UnitConverter.weightString(remaining, pref: pref)) to go"
         }
     }
 }
@@ -166,12 +173,10 @@ struct TrackingCard: View {
     let title: String
     let subtitle: String
     let icon: String
-    let currentValue: Double
-    let unit: String
+    let displayValue: String
     let progress: Double
     let nextMilestoneTitle: String
-    let remaining: Double
-    let remainingUnit: String
+    let remainingDisplay: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -196,13 +201,10 @@ struct TrackingCard: View {
                 Text("Total:")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text(String(format: "%.1f", currentValue))
+                Text(displayValue)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
-                Text(unit)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -222,8 +224,8 @@ struct TrackingCard: View {
                             .lineLimit(2)
                     }
                     Spacer()
-                    if remaining > 0 {
-                        Text(String(format: "%.1f %@ to go", remaining, remainingUnit))
+                    if !remainingDisplay.isEmpty {
+                        Text(remainingDisplay)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -250,7 +252,6 @@ struct MotivationalCard: View {
         "Your future self will thank you.",
         "One workout at a time. You've got this!"
     ]
-    // Seeded once on creation — no flicker on layout passes
     @State private var message: String = ""
 
     var body: some View {

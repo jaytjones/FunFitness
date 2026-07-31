@@ -2,8 +2,6 @@
 //  AppViewModel.swift
 //  FunFitness
 //
-//  Created by Jay Jones on 3/29/26.
-//
 
 import Foundation
 import SwiftData
@@ -14,14 +12,15 @@ final class AppViewModel {
     // Source of truth — synced from ContentView's @Query result
     var activities: [ActivityLog] = []
 
-    // MARK: - Computed totals (never cached; always derived from activities)
+    // MARK: - Computed totals (derived from activities; never cached)
 
     var totalDistance: Double {
         activities.lazy.filter { $0.activityType == .distance }.reduce(0) { $0 + $1.value }
     }
 
+    // Accumulates value × (reps ?? 1) for each weight entry.
     var totalWeight: Double {
-        activities.lazy.filter { $0.activityType == .weight }.reduce(0) { $0 + $1.value }
+        activities.lazy.filter { $0.activityType == .weight }.reduce(0) { $0 + $1.effectiveValue }
     }
 
     var totalActivities: Int { activities.count }
@@ -39,8 +38,16 @@ final class AppViewModel {
 
     var unlockedAchievementIds: Set<String> = []
     var activeTheme: Theme = .animals
+    var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
+
+    // MARK: - Streak state (updated by ContentView after each activity change)
+    var currentStreak: Int = 0
+    var longestStreak: Int = 0
+    var isActiveThisWeekStreak: Bool = false
+    var shieldsAvailable: Int = 0
+    var pendingShieldActivation: Bool = false
 
     // MARK: - Milestone helpers
 
@@ -67,7 +74,6 @@ final class AppViewModel {
             return 1.0
         }
         let milestones = type == .distance ? ComparisonEngine.distanceMilestones : ComparisonEngine.weightMilestones
-        // milestones are sorted ascending by threshold (enforced by static let)
         let previousThreshold = milestones
             .filter { $0.threshold < next.threshold }
             .last?.threshold ?? 0.0
@@ -76,19 +82,15 @@ final class AppViewModel {
         return range > 0 ? min(max(progress / range, 0), 1.0) : 0.0
     }
 
-    // Returns the set of milestone IDs that have been earned based on current totals.
-    // Used by ContentView to idempotently reconcile achievements after launch or data changes.
     func earnedMilestoneIds() -> Set<String> {
         let earnedDist = ComparisonEngine.distanceMilestones.filter { $0.threshold <= totalDistance }.map(\.id)
-        let earnedWt  = ComparisonEngine.weightMilestones.filter  { $0.threshold <= totalWeight  }.map(\.id)
+        let earnedWt   = ComparisonEngine.weightMilestones.filter  { $0.threshold <= totalWeight  }.map(\.id)
         return Set(earnedDist + earnedWt)
     }
 
     // MARK: - Absurdity Ticker
 
-    /// Returns a fractional comparison string for the Home screen ticker, e.g.
-    /// "You're 43% of 2 blue whales 🐳". Returns nil if no activities are logged
-    /// or all milestones have been cleared.
+    /// "You're 43% of [ticker] [emoji]". Returns nil with no activities or past the last milestone.
     func absurdityTickerText(for type: ActivityType) -> String? {
         let currentTotal = type == .distance ? totalDistance : totalWeight
         guard currentTotal > 0 else { return nil }
@@ -99,5 +101,21 @@ final class AppViewModel {
         let reference = next.getTicker(for: activeTheme)
         let emoji = next.getEmoji(for: activeTheme)
         return "You're \(pct)% of \(reference) \(emoji)"
+    }
+
+    // MARK: - Unit-aware display helpers
+
+    func displayDistance(_ km: Double) -> String {
+        UnitConverter.distanceString(km, pref: unitPreference)
+    }
+
+    func displayWeight(_ kg: Double, reps: Int? = nil) -> String {
+        UnitConverter.weightString(kg, reps: reps, pref: unitPreference)
+    }
+
+    // MARK: - Silly Title
+
+    var sillyTitle: SillyTitle {
+        SillyTitleEngine.sillyTitle(unlockedCount: unlockedAchievementIds.count)
     }
 }

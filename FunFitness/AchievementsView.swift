@@ -62,6 +62,7 @@ struct AchievementsView: View {
                                     AchievementCard(
                                         milestone: item.milestone,
                                         theme: viewModel.activeTheme,
+                                        pref: viewModel.unitPreference,
                                         unlockedAt: item.unlockedAt,
                                         isLocked: false
                                     )
@@ -79,6 +80,7 @@ struct AchievementsView: View {
                                         AchievementCard(
                                             milestone: milestone,
                                             theme: viewModel.activeTheme,
+                                            pref: viewModel.unitPreference,
                                             unlockedAt: nil,
                                             isLocked: true
                                         )
@@ -203,10 +205,17 @@ struct EmptyAchievementsState: View {
 struct AchievementCard: View {
     let milestone: Milestone
     let theme: Theme
+    let pref: UnitPreference
     let unlockedAt: Date?
     let isLocked: Bool
 
     @ScaledMetric(relativeTo: .title2) private var emojiSize: CGFloat = 40
+
+    private var thresholdDisplay: String {
+        milestone.unit == .kilometers
+            ? UnitConverter.distanceString(milestone.threshold, pref: pref)
+            : UnitConverter.weightString(milestone.threshold, pref: pref)
+    }
 
     var body: some View {
         HStack(spacing: 16) {
@@ -233,7 +242,7 @@ struct AchievementCard: View {
                             .foregroundStyle(Color(hex: "#A78BFA"))
                     }
                 } else {
-                    Text("Reach \(String(format: "%.0f", milestone.threshold)) \(milestone.unit == .miles ? "miles" : "lbs") to unlock")
+                    Text("Reach \(thresholdDisplay) to unlock")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -258,7 +267,7 @@ struct AchievementCard: View {
         .opacity(isLocked ? 0.6 : 1.0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isLocked
-            ? "\(milestone.title) — locked. Reach \(String(format: "%.0f", milestone.threshold)) \(milestone.unit == .miles ? "miles" : "pounds") to unlock."
+            ? "\(milestone.title) — locked. Reach \(thresholdDisplay) to unlock."
             : "\(milestone.title) — unlocked. \(milestone.getComparison(for: theme))"
         )
     }
