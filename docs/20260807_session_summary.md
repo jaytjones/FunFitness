@@ -59,12 +59,12 @@ Note: this project has only 3 targets — there is **no widget-extension target*
 
 ## Git state
 - `main` @ `48dd51a` "Release 1.4 — It Logs Itself" — pushed to `origin/main`. Includes all 1.4 features + the two UX follow-ups.
-- **Uncommitted:** `FunFitness.xcodeproj/project.pbxproj` (the code-signing consolidation above).
+- `main` @ `cc934b8` "Consolidate code signing to a single team (2XT4CUP82M)" — code-signing fix + this summary doc. **Committed locally; not yet pushed** (local `main` is 1 commit ahead of `origin/main`).
 
 ---
 
 ## Open items / next session
-1. **Commit the signing fix** (`project.pbxproj`) — currently uncommitted.
+1. **Push `main`** — the signing commit (`cc934b8`) is committed locally but not yet pushed to `origin/main`.
 2. **On-device verification of HealthKit** — the release's headline exit criterion ("a week of Apple Watch workouts imports with zero duplicates") is unverified. Now unblocked: switch destination to JJ's iPhone Air and re-run; first run may require trusting the developer cert in Settings → General → VPN & Device Management.
 3. Verify share-card rendering + HealthKit permission-denied degradation on device across themes / light+dark.
 
