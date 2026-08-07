@@ -70,3 +70,18 @@ All work is committed and **pushed to `origin/main`** (`main` == `origin/main`):
 2. Verify share-card rendering + HealthKit permission-denied degradation on device across themes / light+dark.
 
 **Next release: 2.1 "Your Data, Everywhere"** — Sign in with Apple (optional), CloudKit sync via SwiftData (offline-first, append-only), first-sync migration, account deletion, restore-on-new-device. All planned schema churn is now behind us (units 1.2, HealthKit 1.4), satisfying the "stabilize schema before sync" rule.
+
+---
+
+## Takeaway: launch timing (revisiting the 1.1 App Store debut)
+
+The original plan called for the public App Store debut at Phase 1.1. We discussed deferring it. Decision/recommendation captured here:
+
+**Beta now (1.4), public launch at 2.1 — don't wait for end of Phase 2.**
+
+- **Why not launch-at-1.1 anymore:** 1.4 is the first genuinely shareable build (illustrated share cards + HealthKit auto-import + the full local retention loop) — the plan itself calls 1.4 the "recommend it to a friend" version. Debuting before the viral/share loop existed would have wasted the launch.
+- **Why hold to 2.1:** CloudKit sync closes the single highest-severity review risk — "upgraded my phone and lost my history" → sticky 1-star reviews. It's a small, well-scoped wait that removes a whole class of support tickets and bad ratings before scale.
+- **Why not wait for end of 2.2:** diminishing returns. Challenges, theme packs, and new activity types are additive and land better as post-launch "big update" momentum (which the App Store rewards) than as reasons to keep delaying. Waiting that long forfeits months of real-user feedback, ratings/ASO history, and momentum.
+- **Do now regardless:** start a **TestFlight external beta at 1.4** — free, lightweight Beta App Review, gets real-user feedback and shakes out App-Review-adjacent issues (HealthKit prompts, privacy labels, account deletion) privately before they can cost public ratings.
+
+Trade-off in one line: waiting buys a stronger, safer first impression (better early ratings, engagement signals, no data-loss reviews); the cost is delayed real-world feedback, ratings/ASO compounding, and momentum — mitigated by running a TestFlight beta in the interim.
