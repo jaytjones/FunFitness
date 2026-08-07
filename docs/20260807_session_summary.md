@@ -58,14 +58,15 @@ Note: this project has only 3 targets — there is **no widget-extension target*
 ---
 
 ## Git state
-- `main` @ `48dd51a` "Release 1.4 — It Logs Itself" — pushed to `origin/main`. Includes all 1.4 features + the two UX follow-ups.
-- `main` @ `cc934b8` "Consolidate code signing to a single team (2XT4CUP82M)" — code-signing fix + this summary doc. **Committed locally; not yet pushed** (local `main` is 1 commit ahead of `origin/main`).
+All work is committed and **pushed to `origin/main`** (`main` == `origin/main`):
+- `48dd51a` "Release 1.4 — It Logs Itself" - all 1.4 features + the two UX follow-ups.
+- `cc934b8` "Consolidate code signing to a single team (2XT4CUP82M)".
+- `d6875d0` / doc updates — this session summary.
 
 ---
 
 ## Open items / next session
-1. **Push `main`** — the signing commit (`cc934b8`) is committed locally but not yet pushed to `origin/main`.
-2. **On-device verification of HealthKit** — the release's headline exit criterion ("a week of Apple Watch workouts imports with zero duplicates") is unverified. Now unblocked: switch destination to JJ's iPhone Air and re-run; first run may require trusting the developer cert in Settings → General → VPN & Device Management.
-3. Verify share-card rendering + HealthKit permission-denied degradation on device across themes / light+dark.
+1. **On-device verification of HealthKit** — the release's headline exit criterion ("a week of Apple Watch workouts imports with zero duplicates") is unverified. Now unblocked: switch destination to JJ's iPhone Air and re-run; first run may require trusting the developer cert in Settings → General → VPN & Device Management.
+2. Verify share-card rendering + HealthKit permission-denied degradation on device across themes / light+dark.
 
 **Next release: 2.1 "Your Data, Everywhere"** — Sign in with Apple (optional), CloudKit sync via SwiftData (offline-first, append-only), first-sync migration, account deletion, restore-on-new-device. All planned schema churn is now behind us (units 1.2, HealthKit 1.4), satisfying the "stabilize schema before sync" rule.
