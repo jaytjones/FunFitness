@@ -47,12 +47,14 @@ extension Color {
         })
     }
 
-    /// Card / secondary surface — dark navy in dark mode, secondary grouped background in light mode.
+    /// Card / secondary surface — dark navy in dark mode. In light mode a soft
+    /// light gray that sits distinctly darker than `appBackground` (~#F2F2F7),
+    /// so neutral cards read with clear contrast instead of near-white on near-white.
     static var appCard: Color {
         Color(UIColor { traits in
             traits.userInterfaceStyle == .dark
                 ? UIColor(red: 26/255, green: 26/255, blue: 46/255, alpha: 1)
-                : UIColor.secondarySystemGroupedBackground
+                : UIColor(red: 228/255, green: 228/255, blue: 238/255, alpha: 1)
         })
     }
 }

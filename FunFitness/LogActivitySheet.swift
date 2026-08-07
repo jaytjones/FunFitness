@@ -9,10 +9,16 @@ import SwiftData
 struct LogActivitySheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
 
     @Bindable var viewModel: AppViewModel
 
-    @State private var selectedType: ActivityType = .distance
+    init(viewModel: AppViewModel, initialType: ActivityType = .distance) {
+        self.viewModel = viewModel
+        _selectedType = State(initialValue: initialType)
+    }
+
+    @State private var selectedType: ActivityType
     @State private var inputValue: String = ""
     @State private var includeReps = false
     @State private var repsCount: Int = 1
@@ -202,24 +208,15 @@ struct LogActivitySheet: View {
 
         let reps = (selectedType == .weight && includeReps) ? repsCount : nil
 
-        let previousTotal = selectedType == .distance ? viewModel.totalDistance : viewModel.totalWeight
-        let newTotal      = previousTotal + (selectedType == .weight ? siValue * Double(reps ?? 1) : siValue)
-
-        let activity = ActivityLog(type: selectedType, value: siValue, reps: reps, loggedAt: logDate)
-        modelContext.insert(activity)
-        try? modelContext.save()
-
-        viewModel.activities.append(activity)
-
-        let newMilestones = viewModel.checkForMilestones(
+        let newMilestones = ActivityWriter.log(
             type: selectedType,
-            previousTotal: previousTotal,
-            newTotal: newTotal
+            value: siValue,
+            reps: reps,
+            date: logDate,
+            context: modelContext,
+            viewModel: viewModel,
+            writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
         )
-        for milestone in newMilestones {
-            modelContext.insert(UnlockedAchievement(milestoneId: milestone.id))
-            viewModel.unlockedAchievementIds.insert(milestone.id)
-        }
         if !newMilestones.isEmpty {
             viewModel.pendingMilestones = newMilestones
             viewModel.showMilestoneModal = true

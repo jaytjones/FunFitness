@@ -36,6 +36,12 @@ final class UserProfile {
     var notifyWeeklyRecap: Bool
     var notifyComparisonOfDay: Bool
 
+    // MARK: - HealthKit preferences (v1.4; default off, user opts in)
+    // Auto-import distance workouts from Apple Health.
+    var healthKitImportEnabled: Bool = false
+    // Write manually logged distance activities back to Apple Health.
+    var healthKitWriteBackEnabled: Bool = false
+
     init(
         id: UUID = UUID(),
         name: String = "",

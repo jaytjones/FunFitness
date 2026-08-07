@@ -305,6 +305,9 @@ struct ProfileView: View {
                         // Notifications
                         NotificationSettingsSection(profile: profile)
 
+                        // Apple Health
+                        HealthKitSettingsSection(profile: profile)
+
                         // Settings
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Settings")
@@ -799,6 +802,111 @@ struct NotificationToggleRow: View {
                 .tint(Color(hex: "#A78BFA"))
         }
         .padding()
+    }
+}
+
+// MARK: - Apple Health Settings Section
+
+struct HealthKitSettingsSection: View {
+    let profile: UserProfile?
+
+    @Environment(\.modelContext) private var modelContext
+    @Query private var activities: [ActivityLog]
+
+    @State private var showRetroactivePrompt = false
+    @State private var isImporting = false
+    @State private var lastImportMessage: String?
+
+    private var isAvailable: Bool { HealthKitManager.shared.isAvailable }
+
+    var body: some View {
+        if isAvailable {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Apple Health")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal)
+
+                VStack(spacing: 0) {
+                    NotificationToggleRow(
+                        title: "Sync from Apple Health",
+                        subtitle: "Auto-import your walks, runs, hikes, and rides",
+                        icon: "heart.fill",
+                        iconColor: Color(hex: "#E11D48"),
+                        isOn: Binding(
+                            get: { profile?.healthKitImportEnabled ?? false },
+                            set: { newValue in
+                                profile?.healthKitImportEnabled = newValue
+                                if newValue { showRetroactivePrompt = true }
+                            }
+                        )
+                    )
+                    Divider()
+                    NotificationToggleRow(
+                        title: "Save logs to Apple Health",
+                        subtitle: "Write the distance activities you log back to Health",
+                        icon: "square.and.arrow.up.fill",
+                        iconColor: Color(hex: "#0284C7"),
+                        isOn: Binding(
+                            get: { profile?.healthKitWriteBackEnabled ?? false },
+                            set: { newValue in
+                                profile?.healthKitWriteBackEnabled = newValue
+                                if newValue {
+                                    Task { await HealthKitManager.shared.requestAuthorization() }
+                                }
+                            }
+                        )
+                    )
+                    if profile?.healthKitImportEnabled == true {
+                        Divider()
+                        SettingsActionRow(
+                            title: isImporting ? "Importing…" : "Re-import from Health",
+                            icon: "arrow.clockwise",
+                            iconColor: Color(hex: "#7C3AED"),
+                            action: { Task { await runImport() } }
+                        )
+                    }
+                }
+                .background(Color.appCard)
+                .clipShape(.rect(cornerRadius: 20))
+
+                if let lastImportMessage {
+                    Text(lastImportMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                }
+            }
+            .confirmationDialog(
+                "Count your Apple Health history?",
+                isPresented: $showRetroactivePrompt,
+                titleVisibility: .visible
+            ) {
+                Button("Count all my history") {
+                    HealthKitSync.setAnchor(nil)
+                    Task { await runImport() }
+                }
+                Button("Only from now on") {
+                    HealthKitSync.setAnchor(Date())
+                    Task { await runImport() }
+                }
+                Button("Cancel", role: .cancel) {
+                    profile?.healthKitImportEnabled = false
+                }
+            } message: {
+                Text("FunFitness can count your past workouts toward your milestones, or start fresh from today.")
+            }
+        }
+    }
+
+    private func runImport() async {
+        guard !isImporting else { return }
+        isImporting = true
+        let count = await HealthKitSync.run(existing: activities, context: modelContext)
+        isImporting = false
+        lastImportMessage = count > 0
+            ? "Imported \(count) workout\(count == 1 ? "" : "s") from Apple Health."
+            : "You're all caught up — no new workouts to import."
     }
 }
 

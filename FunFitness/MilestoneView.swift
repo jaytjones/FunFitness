@@ -15,6 +15,7 @@ struct MilestoneView: View {
     @State private var showContent = false
     @State private var confettiTrigger = 0
     @State private var confettiActive = false
+    @State private var shareCardURL: URL?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -73,26 +74,19 @@ struct MilestoneView: View {
                     .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.4), value: showContent)
                     .accessibilityIdentifier("keepGoingButton")
 
-                    ShareLink(
-                        item: "\(milestone.title)\n\(milestone.getComparison(for: theme))\n\nLogged with FunFitness!"
-                    ) {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share")
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(.rect(cornerRadius: 14))
-                    }
-                    .opacity(showContent ? 1.0 : 0.0)
-                    .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.5), value: showContent)
+                    shareButton
+                        .opacity(showContent ? 1.0 : 0.0)
+                        .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.5), value: showContent)
                 }
                 .padding(.horizontal, 32)
                 .padding(.bottom, 40)
             }
+        }
+        .task {
+            shareCardURL = ShareCardRenderer.pngURL(
+                for: .milestone(milestone, theme: theme),
+                filename: "funfitness_milestone.png"
+            )
         }
         .onAppear {
             showContent = true
@@ -108,6 +102,37 @@ struct MilestoneView: View {
         }
         .sensoryFeedback(.success, trigger: confettiTrigger)
         .accessibilityElement(children: .contain)
+    }
+
+    // Shares the rendered milestone card image; falls back to text until the
+    // image finishes rendering.
+    @ViewBuilder
+    private var shareButton: some View {
+        Group {
+            if let shareCardURL {
+                ShareLink(item: shareCardURL, preview: SharePreview(milestone.title)) {
+                    shareLabel
+                }
+            } else {
+                ShareLink(item: "\(milestone.title)\n\(milestone.getComparison(for: theme))\n\nLogged with FunFitness!") {
+                    shareLabel
+                }
+            }
+        }
+        .accessibilityIdentifier("milestoneShareButton")
+    }
+
+    private var shareLabel: some View {
+        HStack {
+            Image(systemName: "square.and.arrow.up")
+            Text("Share")
+        }
+        .font(.subheadline)
+        .foregroundStyle(Color(hex: "#9CA3AF"))
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color.white.opacity(0.1))
+        .clipShape(.rect(cornerRadius: 14))
     }
 }
 

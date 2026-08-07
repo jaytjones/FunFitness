@@ -25,6 +25,11 @@ final class AppViewModel {
 
     var totalActivities: Int { activities.count }
 
+    // Most recently logged activity, for one-tap repeat.
+    var lastActivity: ActivityLog? {
+        activities.max { $0.loggedAt < $1.loggedAt }
+    }
+
     var isActiveThisWeek: Bool {
         let calendar = Calendar.current
         let thisWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())

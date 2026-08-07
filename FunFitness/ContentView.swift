@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var currentMilestoneIndex = 0
 
+    @Environment(\.scenePhase) private var scenePhase
+
     private var hasProfile: Bool { !profiles.isEmpty }
 
     var body: some View {
@@ -69,6 +71,14 @@ struct ContentView: View {
                     reconcileAchievements()
                     updateStreak()
                     writeWidgetData()
+                }
+                .task(id: hasProfile) {
+                    await syncHealthKitIfEnabled()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        Task { await syncHealthKitIfEnabled() }
+                    }
                 }
                 .onChange(of: viewModel.activeTheme) {
                     profiles.first?.activeTheme = viewModel.activeTheme.rawValue
@@ -131,6 +141,17 @@ struct ContentView: View {
             viewModel.shieldsAvailable = record.shieldsAvailable
             updateStreak()
         }
+    }
+
+    // MARK: - HealthKit
+
+    // Imports new distance workouts when the user has opted in. Inserting the
+    // new logs triggers onChange(of: activities), which runs the existing
+    // reconcile/streak/notification/widget pipeline — so an import can fire a
+    // milestone or save a streak with no extra wiring here.
+    private func syncHealthKitIfEnabled() async {
+        guard let profile = profiles.first, profile.healthKitImportEnabled else { return }
+        _ = await HealthKitSync.run(existing: activities, context: modelContext)
     }
 
     // MARK: - Notifications

@@ -10,10 +10,12 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var activities: [ActivityLog]
     @Query private var achievements: [UnlockedAchievement]
+    @Query private var profiles: [UserProfile]
     @Bindable var viewModel: AppViewModel
 
     @State private var showLogSheet = false
     @State private var showShieldConfirm = false
+    @State private var logType: ActivityType = .distance
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -31,6 +33,12 @@ struct HomeView: View {
 
                         SillyTitleBanner(viewModel: viewModel)
 
+                        if let last = viewModel.lastActivity {
+                            RepeatLastButton(label: repeatLabel(for: last)) {
+                                repeatLast(last)
+                            }
+                        }
+
                         StatCard(
                             title: "Distance Tracking",
                             subtitle: "Running & Walking",
@@ -39,7 +47,12 @@ struct HomeView: View {
                             progress: viewModel.progressToNextMilestone(type: .distance),
                             nextMilestone: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "Complete!",
                             remainingDisplay: remainingLabel(for: .distance),
-                            gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
+                            gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")],
+                            logHint: "Logs a distance activity",
+                            onTap: {
+                                logType = .distance
+                                showLogSheet = true
+                            }
                         )
                         .accessibilityIdentifier("distanceStatCard")
 
@@ -51,7 +64,12 @@ struct HomeView: View {
                             progress: viewModel.progressToNextMilestone(type: .weight),
                             nextMilestone: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "Complete!",
                             remainingDisplay: remainingLabel(for: .weight),
-                            gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
+                            gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")],
+                            logHint: "Logs a weight activity",
+                            onTap: {
+                                logType = .weight
+                                showLogSheet = true
+                            }
                         )
                         .accessibilityIdentifier("weightStatCard")
 
@@ -73,6 +91,7 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        logType = .distance
                         showLogSheet = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -84,7 +103,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showLogSheet) {
-                LogActivitySheet(viewModel: viewModel)
+                LogActivitySheet(viewModel: viewModel, initialType: logType)
             }
             .alert("Use Streak Shield?", isPresented: $showShieldConfirm) {
                 Button("Use Shield", role: .none) {
@@ -97,6 +116,32 @@ struct HomeView: View {
             } message: {
                 Text("A streak shield protects your streak for one missed week. You have \(viewModel.shieldsAvailable) shield\(viewModel.shieldsAvailable == 1 ? "" : "s") available. Shields regenerate monthly.")
             }
+        }
+    }
+
+    // Short description of the activity the repeat button will re-log.
+    private func repeatLabel(for activity: ActivityLog) -> String {
+        switch activity.activityType {
+        case .distance:
+            return "🏃 \(viewModel.displayDistance(activity.value))"
+        case .weight:
+            return "💪 \(viewModel.displayWeight(activity.value, reps: activity.reps))"
+        }
+    }
+
+    private func repeatLast(_ activity: ActivityLog) {
+        let newMilestones = ActivityWriter.log(
+            type: activity.activityType,
+            value: activity.value,
+            reps: activity.reps,
+            date: Date(),
+            context: modelContext,
+            viewModel: viewModel,
+            writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
+        )
+        if !newMilestones.isEmpty {
+            viewModel.pendingMilestones = newMilestones
+            viewModel.showMilestoneModal = true
         }
     }
 
@@ -179,6 +224,16 @@ struct StreakCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Weekly streak: \(viewModel.currentStreak) weeks. Best: \(viewModel.longestStreak).")
         .accessibilityIdentifier("streakCard")
+        // Share button kept outside the combined element so VoiceOver can reach it.
+        .overlay(alignment: .topTrailing) {
+            if viewModel.currentStreak > 0 {
+                ShareCardButton(
+                    content: .streak(current: viewModel.currentStreak, longest: viewModel.longestStreak),
+                    filename: "funfitness_streak.png"
+                )
+                .padding(12)
+            }
+        }
     }
 }
 
@@ -203,6 +258,9 @@ struct SillyTitleBanner: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            // Reserve trailing space so the combined label doesn't overlap the
+            // share button placed in the overlay below.
+            Color.clear.frame(width: 24, height: 1)
         }
         .padding()
         .background(Color.appCard)
@@ -210,6 +268,63 @@ struct SillyTitleBanner: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Title: \(title.title). \(title.rank) rank.")
         .accessibilityIdentifier("sillyTitleBanner")
+        // Share button kept outside the combined element so VoiceOver can reach it.
+        .overlay(alignment: .trailing) {
+            ShareCardButton(
+                content: .title(title, badgeCount: viewModel.unlockedAchievementIds.count),
+                filename: "funfitness_title.png",
+                tint: Color(hex: "#A78BFA")
+            )
+            .padding(.trailing, 16)
+        }
+    }
+}
+
+// MARK: - Repeat Last Button
+
+struct RepeatLastButton: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Repeat Last Activity")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    Text(label)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                Spacer()
+                Text("Log it")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.2))
+                    .clipShape(.capsule)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#059669"), Color(hex: "#047857")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Repeat last activity: \(label)")
+        .accessibilityIdentifier("repeatLastButton")
     }
 }
 
@@ -268,8 +383,24 @@ struct StatCard: View {
     let nextMilestone: String
     let remainingDisplay: String
     let gradientColors: [Color]
+    // VoiceOver hint + tap action for logging this activity type. Optional so
+    // non-interactive uses of StatCard keep working.
+    var logHint: String? = nil
+    var onTap: (() -> Void)? = nil
 
     var body: some View {
+        let card = cardBody
+        if let onTap {
+            Button(action: onTap) { card }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(logHint ?? "")
+        } else {
+            card
+        }
+    }
+
+    private var cardBody: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(icon)
@@ -284,6 +415,12 @@ struct StatCard: View {
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer()
+                if onTap != nil {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .accessibilityHidden(true)
+                }
             }
 
             Text(displayValue)

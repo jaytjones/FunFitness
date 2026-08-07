@@ -11,6 +11,13 @@ enum ActivityType: String, Codable {
     case weight
 }
 
+// Where an entry came from. Manual entries have a nil healthKitUUID;
+// imported and write-back entries carry the originating HealthKit workout UUID.
+enum ActivitySource: String, Codable {
+    case manual
+    case healthKit
+}
+
 @Model
 final class ActivityLog {
     var id: UUID
@@ -21,6 +28,12 @@ final class ActivityLog {
     var reps: Int?
     var loggedAt: Date
     var notes: String?
+    // Origin of this entry (v1.4). Defaults to manual for pre-1.4 rows.
+    var sourceRaw: String = ActivitySource.manual.rawValue
+    // The HealthKit workout UUID this entry mirrors, if any (v1.4).
+    // Set for imported workouts and for manual entries written back to Health.
+    // Used as the exact-match dedup / echo-prevention key.
+    var healthKitUUID: UUID?
 
     init(
         id: UUID = UUID(),
@@ -28,7 +41,9 @@ final class ActivityLog {
         value: Double,
         reps: Int? = nil,
         loggedAt: Date = Date(),
-        notes: String? = nil
+        notes: String? = nil,
+        source: ActivitySource = .manual,
+        healthKitUUID: UUID? = nil
     ) {
         self.id = id
         self.type = type.rawValue
@@ -36,10 +51,16 @@ final class ActivityLog {
         self.reps = reps
         self.loggedAt = loggedAt
         self.notes = notes
+        self.sourceRaw = source.rawValue
+        self.healthKitUUID = healthKitUUID
     }
 
     var activityType: ActivityType {
         ActivityType(rawValue: type) ?? .distance
+    }
+
+    var source: ActivitySource {
+        ActivitySource(rawValue: sourceRaw) ?? .manual
     }
 
     // For weight entries: value × reps (or × 1 when reps is nil).
