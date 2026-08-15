@@ -29,10 +29,11 @@ struct ActivityWriter {
         unlockedIds: Set<String>,
         context: ModelContext
     ) -> (activity: ActivityLog, newMilestones: [Milestone]) {
-        let effectiveReps = (type == .weight) ? reps : nil
+        // Only rep-using types (weight) keep a rep count; others store the value alone.
+        let effectiveReps = type.usesReps ? reps : nil
 
         let previousTotal = totalValue(type: type, in: existingActivities)
-        let added = (type == .weight) ? value * Double(effectiveReps ?? 1) : value
+        let added = type.usesReps ? value * Double(effectiveReps ?? 1) : value
         let newTotal = previousTotal + added
 
         let activity = ActivityLog(
@@ -88,9 +89,9 @@ struct ActivityWriter {
             viewModel.unlockedAchievementIds.insert(milestone.id)
         }
 
-        // Write-back (distance only). Fire-and-forget: the log already exists;
-        // once Health returns the new workout's UUID we tag the entry so our
-        // own write-back isn't re-imported later (echo prevention).
+        // Write-back (distance only — HealthKit has no "weight lifted" metric). Fire-and-forget:
+        // the log already exists; once Health returns the new workout's UUID we tag the entry so
+        // our own write-back isn't re-imported later (echo prevention).
         if writeBackToHealth, type == .distance {
             let activity = result.activity
             Task { @MainActor in

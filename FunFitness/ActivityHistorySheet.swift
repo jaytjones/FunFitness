@@ -122,27 +122,22 @@ struct ActivityRow: View {
     let pref: UnitPreference
 
     private var valueLabel: String {
-        if activity.activityType == .distance {
-            return UnitConverter.distanceString(activity.value, pref: pref)
-        } else {
-            return UnitConverter.weightString(activity.value, reps: activity.reps, pref: pref)
-        }
+        UnitConverter.displayString(activity.value, type: activity.activityType, reps: activity.reps, pref: pref)
     }
 
     private var accessibilityLabel: String {
-        let type = activity.activityType == .distance ? "Distance" : "Weight lifted"
         let date = activity.loggedAt.formatted(date: .abbreviated, time: .shortened)
-        return "\(type), \(valueLabel), logged \(date)"
+        return "\(activity.activityType.displayName), \(valueLabel), logged \(date)"
     }
 
     var body: some View {
         HStack {
-            Text(activity.activityType == .distance ? "🏃" : "💪")
+            Text(activity.activityType.emoji)
                 .font(.title2)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(activity.activityType == .distance ? "Distance" : "Weight Lifted")
+                Text(activity.activityType.displayName)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
@@ -179,6 +174,8 @@ struct EditActivitySheet: View {
     @State private var showValidationError = false
     @FocusState private var isInputFocused: Bool
 
+    private var kind: ActivityType { activity.activityType }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -189,14 +186,14 @@ struct EditActivitySheet: View {
                     VStack(spacing: 24) {
                         // Type indicator (read-only)
                         HStack {
-                            Text(activity.activityType == .distance ? "🏃" : "💪")
+                            Text(kind.emoji)
                                 .font(.title2)
                                 .accessibilityHidden(true)
-                            Text(activity.activityType == .distance ? "Distance" : "Weight Lifted")
+                            Text(kind.displayName)
                                 .font(.headline)
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text(activity.activityType == .distance ? pref.distanceUnit : pref.weightUnit)
+                            Text(UnitConverter.displayUnit(for: kind, pref: pref))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -207,17 +204,15 @@ struct EditActivitySheet: View {
 
                         // Value field
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(activity.activityType == .distance
-                                 ? "Distance (\(pref.distanceUnit))"
-                                 : "Weight (\(pref.weightUnit))")
+                            Text("\(kind.displayName) (\(UnitConverter.displayUnit(for: kind, pref: pref)))")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
 
                             TextField(
-                                activity.activityType == .distance ? "0.0" : "0",
+                                kind.usesDecimalInput ? "0.0" : "0",
                                 text: $inputValue
                             )
-                            .keyboardType(activity.activityType == .distance ? .decimalPad : .numberPad)
+                            .keyboardType(kind.usesDecimalInput ? .decimalPad : .numberPad)
                             .font(.system(size: 28, weight: .semibold))
                             .foregroundStyle(.primary)
                             .padding()
@@ -238,8 +233,8 @@ struct EditActivitySheet: View {
                         }
                         .padding(.horizontal)
 
-                        // Reps (weight only)
-                        if activity.activityType == .weight {
+                        // Reps (rep-using types only, e.g. weight)
+                        if kind.usesReps {
                             VStack(alignment: .leading, spacing: 12) {
                                 Toggle(isOn: $includeReps.animation()) {
                                     Text("Include rep count")
@@ -334,11 +329,7 @@ struct EditActivitySheet: View {
             }
             .onAppear {
                 // Pre-fill: convert stored SI → display units
-                if activity.activityType == .distance {
-                    inputValue = UnitConverter.distanceInputString(activity.value, pref: pref)
-                } else {
-                    inputValue = UnitConverter.weightInputString(activity.value, pref: pref)
-                }
+                inputValue = UnitConverter.inputString(activity.value, type: kind, pref: pref)
                 if let existingReps = activity.reps, existingReps > 1 {
                     includeReps = true
                     repsCount   = existingReps
@@ -355,10 +346,8 @@ struct EditActivitySheet: View {
             showValidationError = true
             return
         }
-        let siValue = activity.activityType == .distance
-            ? UnitConverter.toKm(rawValue, from: pref)
-            : UnitConverter.toKg(rawValue, from: pref)
-        let reps = (activity.activityType == .weight && includeReps) ? repsCount : nil
+        let siValue = UnitConverter.toSI(rawValue, type: kind, from: pref)
+        let reps = (kind.usesReps && includeReps) ? repsCount : nil
         onSave(siValue, reps, loggedAt, activity.notes)
         dismiss()
     }

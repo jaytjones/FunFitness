@@ -304,9 +304,17 @@ struct ComparisonEngine {
 
     // MARK: - Helpers
 
+    /// The milestone array backing a given activity type. One switch that every type-specific
+    /// lookup routes through, so a new activity type must be handled here (and only here). (v2.2)
+    static func milestones(for type: ActivityType) -> [Milestone] {
+        switch type {
+        case .distance: return distanceMilestones
+        case .weight:   return weightMilestones
+        }
+    }
+
     static func nextMilestone(for type: ActivityType, currentTotal: Double) -> Milestone? {
-        let milestones = type == .distance ? distanceMilestones : weightMilestones
-        return milestones.first { $0.threshold > currentTotal }
+        milestones(for: type).first { $0.threshold > currentTotal }
     }
 
     static func milestone(withId id: String) -> Milestone? {
@@ -319,8 +327,7 @@ struct ComparisonEngine {
         newTotal: Double,
         unlockedIds: Set<String>
     ) -> [Milestone] {
-        let milestones = type == .distance ? distanceMilestones : weightMilestones
-        return milestones.filter { milestone in
+        return milestones(for: type).filter { milestone in
             milestone.threshold > previousTotal &&
             milestone.threshold <= newTotal &&
             !unlockedIds.contains(milestone.id)

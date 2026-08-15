@@ -173,13 +173,11 @@ struct ContentView: View {
             nm.cancel(.weeklyRecap)
         }
         if profile.notifyMilestoneNudge {
-            for type in [ActivityType.distance, ActivityType.weight] {
+            for type in ActivityType.allCases {
                 let progress = viewModel.progressToNextMilestone(type: type)
                 if progress >= 0.9, let milestone = viewModel.remainingToNextMilestone(type: type).milestone {
                     let remaining = viewModel.remainingToNextMilestone(type: type).remaining
-                    let remainingDisplay = type == .distance
-                        ? UnitConverter.distanceString(remaining, pref: viewModel.unitPreference)
-                        : UnitConverter.weightString(remaining, pref: viewModel.unitPreference)
+                    let remainingDisplay = UnitConverter.displayString(remaining, type: type, pref: viewModel.unitPreference)
                     nm.scheduleMilestoneNudge(
                         type: type,
                         milestoneTitle: milestone.title,
@@ -189,10 +187,11 @@ struct ContentView: View {
             }
         } else {
             // Cancel per-type identifiers used by scheduleMilestoneNudge
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
-                "\(NotificationCategory.milestoneNudge.rawValue)_\(ActivityType.distance.rawValue)",
-                "\(NotificationCategory.milestoneNudge.rawValue)_\(ActivityType.weight.rawValue)",
-            ])
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ActivityType.allCases.map {
+                    "\(NotificationCategory.milestoneNudge.rawValue)_\($0.rawValue)"
+                }
+            )
         }
         if profile.notifyComparisonOfDay {
             nm.scheduleComparisonOfDay(facts: NotificationManager.dailyComparisonFacts)

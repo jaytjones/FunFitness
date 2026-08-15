@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-enum ActivityType: String, Codable {
+enum ActivityType: String, Codable, CaseIterable {
     case distance
     case weight
 }
@@ -66,10 +66,11 @@ final class ActivityLog {
         ActivitySource(rawValue: sourceRaw) ?? .manual
     }
 
-    // For weight entries: value × reps (or × 1 when reps is nil).
-    // For distance entries: value unchanged.
+    // Value counted toward totals. Types that use reps (weight) multiply value × reps;
+    // all others accumulate their value directly. Driven by the type descriptor so new
+    // activity types accumulate correctly without touching this. (v2.2)
     var effectiveValue: Double {
-        activityType == .weight ? value * Double(reps ?? 1) : value
+        activityType.usesReps ? value * Double(reps ?? 1) : value
     }
 }
 

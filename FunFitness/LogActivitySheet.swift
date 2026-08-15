@@ -52,17 +52,15 @@ struct LogActivitySheet: View {
 
                         // Value Input
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(selectedType == .distance
-                                 ? "Distance (\(pref.distanceUnit))"
-                                 : "Weight (\(pref.weightUnit))")
+                            Text("\(selectedType.displayName) (\(UnitConverter.displayUnit(for: selectedType, pref: pref)))")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
 
                             TextField(
-                                selectedType == .distance ? "0.0" : "0",
+                                selectedType.usesDecimalInput ? "0.0" : "0",
                                 text: $inputValue
                             )
-                            .keyboardType(selectedType == .distance ? .decimalPad : .numberPad)
+                            .keyboardType(selectedType.usesDecimalInput ? .decimalPad : .numberPad)
                             .font(.system(size: 28, weight: .semibold))
                             .foregroundStyle(.primary)
                             .padding()
@@ -83,8 +81,8 @@ struct LogActivitySheet: View {
                         }
                         .padding(.horizontal)
 
-                        // Reps (weight only)
-                        if selectedType == .weight {
+                        // Reps (rep-using types only, e.g. weight)
+                        if selectedType.usesReps {
                             VStack(alignment: .leading, spacing: 12) {
                                 Toggle(isOn: $includeReps.animation()) {
                                     Text("Include rep count")
@@ -152,9 +150,9 @@ struct LogActivitySheet: View {
                         // Submit
                         Button { logActivity() } label: {
                             HStack {
-                                Text(selectedType == .distance ? "Log Distance" : "Log Weight")
+                                Text("Log \(selectedType.displayName)")
                                     .font(.headline)
-                                Text(selectedType == .distance ? "🏃" : "💪")
+                                Text(selectedType.emoji)
                                     .accessibilityHidden(true)
                             }
                             .foregroundStyle(.white)
@@ -202,11 +200,9 @@ struct LogActivitySheet: View {
         showValidationError = false
 
         // Convert user input from display units to SI for storage
-        let siValue = selectedType == .distance
-            ? UnitConverter.toKm(rawValue, from: pref)
-            : UnitConverter.toKg(rawValue, from: pref)
+        let siValue = UnitConverter.toSI(rawValue, type: selectedType, from: pref)
 
-        let reps = (selectedType == .weight && includeReps) ? repsCount : nil
+        let reps = (selectedType.usesReps && includeReps) ? repsCount : nil
 
         let newMilestones = ActivityWriter.log(
             type: selectedType,

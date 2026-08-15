@@ -12,7 +12,9 @@ import Foundation
 import SwiftData
 @testable import FunFitness
 
-@Suite("Persistence & CloudKit compatibility")
+// .serialized: several tests mutate the shared UserDefaults.standard sync flag, so they must
+// not run in parallel with one another.
+@Suite("Persistence & CloudKit compatibility", .serialized)
 struct PersistenceTests {
 
     // MARK: - Sync opt-out flag

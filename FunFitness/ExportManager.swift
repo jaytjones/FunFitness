@@ -17,16 +17,10 @@ struct ExportManager {
         let formatter = ISO8601DateFormatter()
 
         for activity in activities.sorted(by: { $0.loggedAt < $1.loggedAt }) {
-            let type = activity.activityType == .distance ? "distance" : "weight"
-            let (value, unit): (String, String)
-
-            if activity.activityType == .distance {
-                value = String(format: "%.2f", UnitConverter.fromKm(activity.value, to: pref))
-                unit  = pref.distanceUnit
-            } else {
-                value = String(format: "%.2f", UnitConverter.fromKg(activity.value, to: pref))
-                unit  = pref.weightUnit
-            }
+            let kind  = activity.activityType
+            let type  = kind.exportName
+            let value = String(format: "%.2f", UnitConverter.fromSI(activity.value, type: kind, to: pref))
+            let unit  = UnitConverter.displayUnit(for: kind, pref: pref)
 
             let reps  = activity.reps.map { String($0) } ?? ""
             let date  = formatter.string(from: activity.loggedAt)
@@ -48,10 +42,11 @@ struct ExportManager {
         let activityDicts: [[String: Any]] = activities
             .sorted(by: { $0.loggedAt < $1.loggedAt })
             .map { activity in
+                let kind = activity.activityType
                 var dict: [String: Any] = [
-                    "type":      activity.activityType == .distance ? "distance" : "weight",
+                    "type":      kind.exportName,
                     "valueSI":   activity.value,
-                    "unit":      activity.activityType == .distance ? "km" : "kg",
+                    "unit":      UnitConverter.siUnit(for: kind),
                     "loggedAt":  formatter.string(from: activity.loggedAt)
                 ]
                 if let reps  = activity.reps  { dict["reps"]  = reps  }

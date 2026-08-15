@@ -77,4 +77,57 @@ struct UnitConverter {
         let value = fromKg(kg, to: pref)
         return pref == .imperial ? String(format: "%.0f", value) : String(format: "%.1f", value)
     }
+
+    // MARK: - Type-dispatched helpers (v2.2)
+    // A single place that maps an ActivityType to the right conversion/format above, so
+    // callers no longer branch on `type == .distance`. Each switch is exhaustive, so a new
+    // activity type forces every conversion path to be handled explicitly.
+
+    /// Converts a user-entered display value to the stored SI value for the given type.
+    static func toSI(_ value: Double, type: ActivityType, from pref: UnitPreference) -> Double {
+        switch type {
+        case .distance: return toKm(value, from: pref)
+        case .weight:   return toKg(value, from: pref)
+        }
+    }
+
+    /// Converts a stored SI value back to a display value for the given type.
+    static func fromSI(_ si: Double, type: ActivityType, to pref: UnitPreference) -> Double {
+        switch type {
+        case .distance: return fromKm(si, to: pref)
+        case .weight:   return fromKg(si, to: pref)
+        }
+    }
+
+    /// Formatted, unit-suffixed display string for a stored SI value of the given type.
+    static func displayString(_ si: Double, type: ActivityType, reps: Int? = nil, pref: UnitPreference) -> String {
+        switch type {
+        case .distance: return distanceString(si, pref: pref)
+        case .weight:   return weightString(si, reps: reps, pref: pref)
+        }
+    }
+
+    /// Text-field pre-fill string (no unit suffix) for a stored SI value of the given type.
+    static func inputString(_ si: Double, type: ActivityType, pref: UnitPreference) -> String {
+        switch type {
+        case .distance: return distanceInputString(si, pref: pref)
+        case .weight:   return weightInputString(si, pref: pref)
+        }
+    }
+
+    /// The display-unit label (e.g. "mi"/"km") for the given type + preference.
+    static func displayUnit(for type: ActivityType, pref: UnitPreference) -> String {
+        switch type {
+        case .distance: return pref.distanceUnit
+        case .weight:   return pref.weightUnit
+        }
+    }
+
+    /// The canonical SI unit tag (e.g. "km"/"kg") for the given type, used in exports.
+    static func siUnit(for type: ActivityType) -> String {
+        switch type {
+        case .distance: return "km"
+        case .weight:   return "kg"
+        }
+    }
 }

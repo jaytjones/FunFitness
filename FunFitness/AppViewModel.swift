@@ -14,14 +14,18 @@ final class AppViewModel {
 
     // MARK: - Computed totals (derived from activities; never cached)
 
-    var totalDistance: Double {
-        activities.lazy.filter { $0.activityType == .distance }.reduce(0) { $0 + $1.value }
+    /// Total accumulated (effective) value for a given activity type. Weight multiplies by
+    /// reps via `effectiveValue`; other types accumulate their value. One place, all types. (v2.2)
+    func total(for type: ActivityType) -> Double {
+        activities.lazy
+            .filter { $0.activityType == type }
+            .reduce(0) { $0 + $1.effectiveValue }
     }
 
+    var totalDistance: Double { total(for: .distance) }
+
     // Accumulates value × (reps ?? 1) for each weight entry.
-    var totalWeight: Double {
-        activities.lazy.filter { $0.activityType == .weight }.reduce(0) { $0 + $1.effectiveValue }
-    }
+    var totalWeight: Double { total(for: .weight) }
 
     var totalActivities: Int { activities.count }
 
@@ -66,7 +70,7 @@ final class AppViewModel {
     }
 
     func remainingToNextMilestone(type: ActivityType) -> (milestone: Milestone?, remaining: Double) {
-        let currentTotal = type == .distance ? totalDistance : totalWeight
+        let currentTotal = total(for: type)
         guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
             return (nil, 0)
         }
@@ -74,11 +78,11 @@ final class AppViewModel {
     }
 
     func progressToNextMilestone(type: ActivityType) -> Double {
-        let currentTotal = type == .distance ? totalDistance : totalWeight
+        let currentTotal = total(for: type)
         guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
             return 1.0
         }
-        let milestones = type == .distance ? ComparisonEngine.distanceMilestones : ComparisonEngine.weightMilestones
+        let milestones = ComparisonEngine.milestones(for: type)
         let previousThreshold = milestones
             .filter { $0.threshold < next.threshold }
             .last?.threshold ?? 0.0
@@ -88,16 +92,23 @@ final class AppViewModel {
     }
 
     func earnedMilestoneIds() -> Set<String> {
-        let earnedDist = ComparisonEngine.distanceMilestones.filter { $0.threshold <= totalDistance }.map(\.id)
-        let earnedWt   = ComparisonEngine.weightMilestones.filter  { $0.threshold <= totalWeight  }.map(\.id)
-        return Set(earnedDist + earnedWt)
+        // Every activity type contributes its earned milestones; iterating allCases means new
+        // types participate automatically once they have a milestone array. (v2.2)
+        var earned: Set<String> = []
+        for type in ActivityType.allCases {
+            let total = total(for: type)
+            for milestone in ComparisonEngine.milestones(for: type) where milestone.threshold <= total {
+                earned.insert(milestone.id)
+            }
+        }
+        return earned
     }
 
     // MARK: - Absurdity Ticker
 
     /// "You're 43% of [ticker] [emoji]". Returns nil with no activities or past the last milestone.
     func absurdityTickerText(for type: ActivityType) -> String? {
-        let currentTotal = type == .distance ? totalDistance : totalWeight
+        let currentTotal = total(for: type)
         guard currentTotal > 0 else { return nil }
         guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
             return nil
