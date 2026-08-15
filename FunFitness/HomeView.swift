@@ -75,12 +75,11 @@ struct HomeView: View {
 
                         AbsurdityTicker(viewModel: viewModel)
 
-                        ThemeSelector(selectedTheme: $viewModel.activeTheme)
+                        ThemeSelector(selectedPack: $viewModel.activePack)
 
                         AchievementPreview(
                             unlockedCount: achievements.count,
-                            totalCount: ComparisonEngine.allMilestones.count,
-                            theme: viewModel.activeTheme
+                            totalCount: ComparisonEngine.allMilestones.count
                         )
                     }
                     .padding()
@@ -472,7 +471,7 @@ struct StatCard: View {
 // MARK: - Theme Selector
 
 struct ThemeSelector: View {
-    @Binding var selectedTheme: Theme
+    @Binding var selectedPack: ThemePack
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -481,12 +480,12 @@ struct ThemeSelector: View {
                 .foregroundStyle(.primary)
 
             HStack(spacing: 12) {
-                ForEach(Theme.allCases, id: \.self) { theme in
+                ForEach(ThemePackCatalog.all) { pack in
                     SelectionChip(
-                        title: theme.displayName,
-                        isSelected: selectedTheme == theme,
+                        title: pack.displayName,
+                        isSelected: selectedPack == pack,
                         selectedBackground: Color(hex: "#D946EF"),
-                        action: { selectedTheme = theme }
+                        action: { selectedPack = pack }
                     )
                 }
             }
@@ -502,7 +501,6 @@ struct ThemeSelector: View {
 struct AchievementPreview: View {
     let unlockedCount: Int
     let totalCount: Int
-    let theme: Theme
 
     var body: some View {
         VStack(spacing: 16) {

@@ -54,16 +54,30 @@ struct ComparisonEngineTests {
 
     @Test func allMilestoneTickersNonEmpty() {
         for m in ComparisonEngine.allMilestones {
-            for theme in Theme.allCases {
-                #expect(!m.getTicker(for: theme).isEmpty, "Milestone \(m.id) has empty ticker for theme \(theme)")
+            for pack in ThemePackCatalog.all {
+                #expect(!m.getTicker(for: pack).isEmpty, "Milestone \(m.id) has empty ticker for pack \(pack.id)")
             }
         }
     }
 
     @Test func allMilestoneComparisonTextsNonEmpty() {
         for m in ComparisonEngine.allMilestones {
-            for theme in Theme.allCases {
-                #expect(!m.getComparison(for: theme).isEmpty, "Milestone \(m.id) has empty comparison for theme \(theme)")
+            for pack in ThemePackCatalog.all {
+                #expect(!m.getComparison(for: pack).isEmpty, "Milestone \(m.id) has empty comparison for pack \(pack.id)")
+            }
+        }
+    }
+
+    // Every pack must define real content for every milestone. The getters fall back to
+    // non-empty placeholders, so assert the underlying entry actually EXISTS — this catches a
+    // pack that forgot a milestone (guards new packs added in later segments).
+    @Test func everyPackHasContentForEveryMilestone() {
+        for pack in ThemePackCatalog.all {
+            for m in ComparisonEngine.allMilestones {
+                #expect(
+                    ComparisonEngine.content(packId: pack.id, milestoneId: m.id) != nil,
+                    "Pack \(pack.id) is missing content for milestone \(m.id)"
+                )
             }
         }
     }

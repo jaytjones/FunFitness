@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MilestoneView: View {
     let milestone: Milestone
-    let theme: Theme
+    let pack: ThemePack
     let onDismiss: () -> Void
 
     @State private var showContent = false
@@ -29,7 +29,7 @@ struct MilestoneView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                Text(milestone.getEmoji(for: theme))
+                Text(milestone.getEmoji(for: pack))
                     .font(.system(size: 100))
                     .scaleEffect(showContent ? 1.0 : 0.5)
                     .opacity(showContent ? 1.0 : 0.0)
@@ -46,7 +46,7 @@ struct MilestoneView: View {
                         .offset(y: showContent ? 0 : 20)
                         .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.2), value: showContent)
 
-                    Text(milestone.getComparison(for: theme))
+                    Text(milestone.getComparison(for: pack))
                         .font(.title3)
                         .foregroundStyle(Color(hex: "#9CA3AF"))
                         .multilineTextAlignment(.center)
@@ -84,7 +84,7 @@ struct MilestoneView: View {
         }
         .task {
             shareCardURL = ShareCardRenderer.pngURL(
-                for: .milestone(milestone, theme: theme),
+                for: .milestone(milestone, pack: pack),
                 filename: "funfitness_milestone.png"
             )
         }
@@ -114,7 +114,7 @@ struct MilestoneView: View {
                     shareLabel
                 }
             } else {
-                ShareLink(item: "\(milestone.title)\n\(milestone.getComparison(for: theme))\n\nLogged with FunFitness!") {
+                ShareLink(item: "\(milestone.title)\n\(milestone.getComparison(for: pack))\n\nLogged with FunFitness!") {
                     shareLabel
                 }
             }
@@ -214,7 +214,7 @@ struct ConfettiParticle {
 #Preview {
     MilestoneView(
         milestone: ComparisonEngine.distanceMilestones[0],
-        theme: .animals,
+        pack: ThemePackCatalog.animals,
         onDismiss: {}
     )
 }

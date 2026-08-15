@@ -61,7 +61,7 @@ struct AchievementsView: View {
                                 ForEach(unlockedMilestones, id: \.milestone.id) { item in
                                     AchievementCard(
                                         milestone: item.milestone,
-                                        theme: viewModel.activeTheme,
+                                        pack: viewModel.activePack,
                                         pref: viewModel.unitPreference,
                                         unlockedAt: item.unlockedAt,
                                         isLocked: false
@@ -79,7 +79,7 @@ struct AchievementsView: View {
                                     ForEach(lockedMilestones) { milestone in
                                         AchievementCard(
                                             milestone: milestone,
-                                            theme: viewModel.activeTheme,
+                                            pack: viewModel.activePack,
                                             pref: viewModel.unitPreference,
                                             unlockedAt: nil,
                                             isLocked: true
@@ -204,7 +204,7 @@ struct EmptyAchievementsState: View {
 
 struct AchievementCard: View {
     let milestone: Milestone
-    let theme: Theme
+    let pack: ThemePack
     let pref: UnitPreference
     let unlockedAt: Date?
     let isLocked: Bool
@@ -219,7 +219,7 @@ struct AchievementCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Text(milestone.getEmoji(for: theme))
+            Text(milestone.getEmoji(for: pack))
                 .font(.system(size: emojiSize))
                 .opacity(isLocked ? 0.3 : 1.0)
                 .accessibilityHidden(true)
@@ -230,7 +230,7 @@ struct AchievementCard: View {
                     .foregroundStyle(isLocked ? .secondary : .primary)
 
                 if !isLocked {
-                    Text(milestone.getComparison(for: theme))
+                    Text(milestone.getComparison(for: pack))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -268,7 +268,7 @@ struct AchievementCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isLocked
             ? "\(milestone.title) — locked. Reach \(thresholdDisplay) to unlock."
-            : "\(milestone.title) — unlocked. \(milestone.getComparison(for: theme))"
+            : "\(milestone.title) — unlocked. \(milestone.getComparison(for: pack))"
         )
     }
 }

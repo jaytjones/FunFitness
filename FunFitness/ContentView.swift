@@ -49,7 +49,7 @@ struct ContentView: View {
                 .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
                     if currentMilestoneIndex < viewModel.pendingMilestones.count {
                         let milestone = viewModel.pendingMilestones[currentMilestoneIndex]
-                        MilestoneView(milestone: milestone, theme: viewModel.activeTheme) {
+                        MilestoneView(milestone: milestone, pack: viewModel.activePack) {
                             currentMilestoneIndex += 1
                             if currentMilestoneIndex >= viewModel.pendingMilestones.count {
                                 viewModel.showMilestoneModal = false
@@ -62,7 +62,7 @@ struct ContentView: View {
                 }
                 .onAppear {
                     if let profile = profiles.first {
-                        viewModel.activeTheme    = Theme(rawValue: profile.activeTheme) ?? .animals
+                        viewModel.activePack     = ThemePackCatalog.pack(id: profile.activeTheme)
                         viewModel.unitPreference = profile.unitPref
                     }
                     viewModel.activities = activities
@@ -80,8 +80,8 @@ struct ContentView: View {
                         Task { await syncHealthKitIfEnabled() }
                     }
                 }
-                .onChange(of: viewModel.activeTheme) {
-                    profiles.first?.activeTheme = viewModel.activeTheme.rawValue
+                .onChange(of: viewModel.activePack) {
+                    profiles.first?.activeTheme = viewModel.activePack.id
                 }
                 .onChange(of: activities) {
                     viewModel.activities = activities
@@ -101,7 +101,7 @@ struct ContentView: View {
                 }
                 .onChange(of: profiles) {
                     if let profile = profiles.first {
-                        viewModel.activeTheme    = Theme(rawValue: profile.activeTheme) ?? .animals
+                        viewModel.activePack     = ThemePackCatalog.pack(id: profile.activeTheme)
                         viewModel.unitPreference = profile.unitPref
                     }
                 }

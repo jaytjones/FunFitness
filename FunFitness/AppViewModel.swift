@@ -46,7 +46,7 @@ final class AppViewModel {
     // MARK: - Stored state
 
     var unlockedAchievementIds: Set<String> = []
-    var activeTheme: Theme = .animals
+    var activePack: ThemePack = ThemePackCatalog.default
     var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
@@ -114,8 +114,8 @@ final class AppViewModel {
             return nil
         }
         let pct = Int(progressToNextMilestone(type: type) * 100)
-        let reference = next.getTicker(for: activeTheme)
-        let emoji = next.getEmoji(for: activeTheme)
+        let reference = next.getTicker(for: activePack)
+        let emoji = next.getEmoji(for: activePack)
         return "You're \(pct)% of \(reference) \(emoji)"
     }
 
