@@ -10,26 +10,9 @@ import SwiftData
 
 @main
 struct FunFitnessApp: App {
-    private let sharedModelContainer: ModelContainer
-
-    init() {
-        let schema = Schema([
-            UserProfile.self,
-            ActivityLog.self,
-            UnlockedAchievement.self,
-            StreakRecord.self,
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        if let container = try? ModelContainer(for: schema, configurations: [config]) {
-            sharedModelContainer = container
-        } else {
-            // Persistent store failed (e.g. migration error) — fall back to in-memory
-            // so the app remains usable rather than crashing. Data will not persist this session.
-            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            // swiftlint:disable:next force_try
-            sharedModelContainer = try! ModelContainer(for: schema, configurations: [fallback])
-        }
-    }
+    // Shared CloudKit-backed container (v2.1). Built by PersistenceController so the app and
+    // the Siri intent use an identical sync configuration.
+    private let sharedModelContainer = PersistenceController.makeSharedContainer()
 
     var body: some Scene {
         WindowGroup {

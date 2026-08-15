@@ -20,14 +20,9 @@ struct LogLastActivityIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let schema = Schema([
-            UserProfile.self,
-            ActivityLog.self,
-            UnlockedAchievement.self,
-            StreakRecord.self,
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        let container = try ModelContainer(for: schema, configurations: [config])
+        // Use the shared factory so entries logged via Siri sync through the same CloudKit
+        // configuration as the app (v2.1).
+        let container = PersistenceController.makeSharedContainer()
         let context = ModelContext(container)
 
         let activities = (try? context.fetch(FetchDescriptor<ActivityLog>())) ?? []

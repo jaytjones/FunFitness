@@ -20,13 +20,16 @@ enum ActivitySource: String, Codable {
 
 @Model
 final class ActivityLog {
-    var id: UUID
-    var type: String
+    // Every stored property carries a default value so the schema is CloudKit-compatible
+    // (v2.1). CloudKit requires attributes to be optional or have a default; these are
+    // always overwritten by the initializer for real entries.
+    var id: UUID = UUID()
+    var type: String = ActivityType.distance.rawValue
     // Stored in SI units since v1.2: km for distance, kg for weight.
-    var value: Double
+    var value: Double = 0
     // Optional rep count for weight entries. nil = single rep.
     var reps: Int?
-    var loggedAt: Date
+    var loggedAt: Date = Date()
     var notes: String?
     // Origin of this entry (v1.4). Defaults to manual for pre-1.4 rows.
     var sourceRaw: String = ActivitySource.manual.rawValue

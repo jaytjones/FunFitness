@@ -8,12 +8,13 @@ import SwiftData
 
 @Model
 final class StreakRecord {
-    var currentStreak: Int
-    var longestStreak: Int
-    var shieldsAvailable: Int
+    // Defaults present so the schema is CloudKit-compatible (v2.1).
+    var currentStreak: Int = 0
+    var longestStreak: Int = 0
+    var shieldsAvailable: Int = 1
     // JSON-encoded array of "YYYY-Www" strings for shielded weeks.
-    var shieldedWeekKeysJSON: String
-    var lastUpdated: Date
+    var shieldedWeekKeysJSON: String = "[]"
+    var lastUpdated: Date = Date()
 
     init(
         currentStreak: Int = 0,

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		863D79AB3026250000670EDD /* 20260807_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 863D79AA3026250000670EDD /* 20260807_session_summary.md */; };
 		86687D563015A7B700E05A84 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D553015A7B700E05A84 /* README.md */; };
+		86916D7330302095007F843A /* 20260814_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86916D7230302095007F843A /* 20260814_session_summary.md */; };
 		86B3565F301D4695008993F2 /* 20260731_session_summary_2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */; };
 		86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */; };
 		86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */; };
@@ -37,6 +38,7 @@
 /* Begin PBXFileReference section */
 		863D79AA3026250000670EDD /* 20260807_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260807_session_summary.md; sourceTree = "<group>"; };
 		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		86916D7230302095007F843A /* 20260814_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260814_session_summary.md; sourceTree = "<group>"; };
 		86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260731_session_summary_2.md; sourceTree = "<group>"; };
 		86B35669301D4AA7008993F2 /* FunFitnessWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunFitnessWidgetData.swift; sourceTree = "<group>"; };
 		86B3566A301D4ABC008993F2 /* FunFitnessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunFitnessWidget.swift; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 				86B3D077301C78A600E76696 /* 20260731_session_summary.md */,
 				86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */,
 				863D79AA3026250000670EDD /* 20260807_session_summary.md */,
+				86916D7230302095007F843A /* 20260814_session_summary.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -272,6 +275,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86916D7330302095007F843A /* 20260814_session_summary.md in Resources */,
 				86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */,
 				86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */,
 				86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,

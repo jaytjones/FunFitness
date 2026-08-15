@@ -8,9 +8,11 @@ import SwiftData
 
 @Model
 final class UserProfile {
-    var id: UUID
-    var name: String
-    var email: String
+    // Every stored property carries a default value so the schema is CloudKit-compatible
+    // (v2.1). CloudKit requires attributes to be optional or have a default.
+    var id: UUID = UUID()
+    var name: String = ""
+    var email: String = ""
     var dateOfBirth: Date?
     // age kept for migration compatibility; use computedAge going forward
     var age: Int?
@@ -20,21 +22,21 @@ final class UserProfile {
     var heightCm: Double?
     // Column was "weightLbs" before v1.2; now stores kg. Migration converts on first launch.
     @Attribute(originalName: "weightLbs") var weightKg: Double?
-    var fitnessGoal: String
+    var fitnessGoal: String = "Stay Active"
     // UnitPreference.rawValue — defaults to "imperial"
-    var unitPreference: String
+    var unitPreference: String = UnitPreference.imperial.rawValue
     // Weekly goals stored in SI: km and kg
     var weeklyDistanceGoal: Double?
     var weeklyWeightGoal: Double?
     @Attribute(.externalStorage) var avatarImageData: Data?
-    var activeTheme: String
-    var createdAt: Date
+    var activeTheme: String = "animals"
+    var createdAt: Date = Date()
 
     // MARK: - Notification preferences (all default off; user opts in)
-    var notifyStreakAtRisk: Bool
-    var notifyMilestoneNudge: Bool
-    var notifyWeeklyRecap: Bool
-    var notifyComparisonOfDay: Bool
+    var notifyStreakAtRisk: Bool = false
+    var notifyMilestoneNudge: Bool = false
+    var notifyWeeklyRecap: Bool = false
+    var notifyComparisonOfDay: Bool = false
 
     // MARK: - HealthKit preferences (v1.4; default off, user opts in)
     // Auto-import distance workouts from Apple Health.

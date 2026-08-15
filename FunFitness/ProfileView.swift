@@ -12,6 +12,7 @@ struct ProfileView: View {
     @Query private var profiles: [UserProfile]
     @Query private var activities: [ActivityLog]
     @Query private var achievements: [UnlockedAchievement]
+    @Query private var streakRecords: [StreakRecord]
 
     @Bindable var viewModel: AppViewModel
 
@@ -308,6 +309,9 @@ struct ProfileView: View {
                         // Apple Health
                         HealthKitSettingsSection(profile: profile)
 
+                        // iCloud Sync
+                        CloudSyncSection()
+
                         // Settings
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Settings")
@@ -368,7 +372,7 @@ struct ProfileView: View {
                 Button("Cancel", role: .cancel) { }
                 Button("Clear Everything", role: .destructive) { clearAllData() }
             } message: {
-                Text("This will delete your profile, all activities, and all achievements. You'll need to set up your account again. This action cannot be undone.")
+                Text("This will delete your profile, all activities, and all achievements — on this device and from iCloud on any device signed into your account. You'll need to set up again. This action cannot be undone.")
             }
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel)
@@ -396,6 +400,7 @@ struct ProfileView: View {
 
     private func clearAllData() {
         clearActivityData()
+        for record in streakRecords { modelContext.delete(record) }
         if let profile { modelContext.delete(profile) }
         try? modelContext.save()
     }
