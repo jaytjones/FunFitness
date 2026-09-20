@@ -99,6 +99,13 @@ struct ComparisonEngineTests {
         }
     }
 
+    // v2.2 ships five theme packs; Segment 4 added Food + Dinosaurs.
+    @Test func catalogHasTheFivePacks() {
+        let ids = ThemePackCatalog.all.map(\.id)
+        #expect(ids == ["animals", "cities", "landmarks", "food", "dinosaurs"])
+        #expect(Set(ids).count == ids.count)
+    }
+
     // Distance milestones use km thresholds since v1.2
     @Test func distanceMilestoneThresholdsAreInKm() {
         // D1 = 1 mile ≈ 1.60934 km

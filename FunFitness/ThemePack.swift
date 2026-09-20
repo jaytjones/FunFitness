@@ -24,9 +24,11 @@ enum ThemePackCatalog {
     static let animals   = ThemePack(id: "animals",   displayName: "Animals",   iconEmoji: "🦒", isPremium: false, sortOrder: 0)
     static let cities    = ThemePack(id: "cities",    displayName: "Cities",    iconEmoji: "🏙",  isPremium: false, sortOrder: 1)
     static let landmarks = ThemePack(id: "landmarks", displayName: "Landmarks", iconEmoji: "🗼", isPremium: false, sortOrder: 2)
+    static let food      = ThemePack(id: "food",      displayName: "Food",      iconEmoji: "🍕", isPremium: false, sortOrder: 3)
+    static let dinosaurs = ThemePack(id: "dinosaurs", displayName: "Dinosaurs", iconEmoji: "🦖", isPremium: false, sortOrder: 4)
 
     /// All packs, in display order.
-    static let all: [ThemePack] = [animals, cities, landmarks]
+    static let all: [ThemePack] = [animals, cities, landmarks, food, dinosaurs]
 
     static let byId: [String: ThemePack] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
 

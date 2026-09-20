@@ -552,7 +552,9 @@ struct ThemeSelector: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            HStack(spacing: 12) {
+            // FlowLayout wraps the chips onto multiple rows as the pack list grows (5 packs
+            // as of v2.2 Segment 4).
+            FlowLayout(spacing: 12) {
                 ForEach(ThemePackCatalog.all) { pack in
                     SelectionChip(
                         title: pack.displayName,
