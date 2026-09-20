@@ -43,6 +43,16 @@ struct ShareCardContent {
         )
     }
 
+    static func challenge(_ challenge: Challenge) -> ShareCardContent {
+        ShareCardContent(
+            badge: "CHALLENGE COMPLETE",
+            emoji: challenge.emoji,
+            headline: challenge.title,
+            subtext: challenge.blurb,
+            gradient: [Color(hex: "#DB2777"), Color(hex: "#7C3AED")]
+        )
+    }
+
     static func title(_ title: SillyTitle, badgeCount: Int) -> ShareCardContent {
         ShareCardContent(
             badge: "MY OFFICIAL TITLE",

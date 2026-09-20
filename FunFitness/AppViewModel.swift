@@ -46,6 +46,8 @@ final class AppViewModel {
     // MARK: - Stored state
 
     var unlockedAchievementIds: Set<String> = []
+    // Completed monthly-challenge badge keys ("<id>#<year>"), synced from the store. (v2.2)
+    var unlockedChallengeKeys: Set<String> = []
     var activePack: ThemePack = ThemePackCatalog.default
     var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
@@ -133,6 +135,29 @@ final class AppViewModel {
     /// data-driven Home/Progress cards so every type (incl. duration/reps) displays uniformly. (v2.2)
     func displayTotal(for type: ActivityType) -> String {
         UnitConverter.displayString(total(for: type), type: type, pref: unitPreference)
+    }
+
+    // MARK: - Monthly Challenge (v2.2)
+
+    /// The challenge active for the given date's month, if any.
+    func currentChallenge(on date: Date = Date()) -> Challenge? {
+        ChallengeEngine.activeChallenge(on: date)
+    }
+
+    /// Fractional progress [0,1] toward the given challenge this month.
+    func challengeFraction(_ challenge: Challenge, on date: Date = Date()) -> Double {
+        ChallengeEngine.fractionComplete(challenge, in: activities, on: date)
+    }
+
+    /// Raw accumulated value toward the challenge this month, in SI units.
+    func challengeProgressValue(_ challenge: Challenge, on date: Date = Date()) -> Double {
+        ChallengeEngine.progress(for: challenge, in: activities, on: date)
+    }
+
+    /// Whether this year's occurrence of the challenge has been awarded.
+    func isChallengeComplete(_ challenge: Challenge, on date: Date = Date()) -> Bool {
+        let year = Calendar.current.component(.year, from: date)
+        return unlockedChallengeKeys.contains(ChallengeEngine.unlockKey(id: challenge.id, year: year))
     }
 
     // MARK: - Silly Title

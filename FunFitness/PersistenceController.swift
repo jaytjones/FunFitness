@@ -27,6 +27,7 @@ enum PersistenceController {
             ActivityLog.self,
             UnlockedAchievement.self,
             StreakRecord.self,
+            UnlockedChallenge.self,
         ])
     }
 
@@ -89,6 +90,7 @@ enum PersistenceController {
                 ActivityLog.self,
                 UnlockedAchievement.self,
                 StreakRecord.self,
+                UnlockedChallenge.self,
             ]) else { return }
 
             let container = NSPersistentCloudKitContainer(name: "FunFitness", managedObjectModel: model)

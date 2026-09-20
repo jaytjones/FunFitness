@@ -14,6 +14,7 @@ struct ContentView: View {
     @Query private var achievements: [UnlockedAchievement]
     @Query private var activities: [ActivityLog]
     @Query private var streakRecords: [StreakRecord]
+    @Query private var unlockedChallenges: [UnlockedChallenge]
 
     @State private var viewModel = AppViewModel()
     @State private var selectedTab = 0
@@ -69,6 +70,7 @@ struct ContentView: View {
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
                     runMigrationsIfNeeded()
                     reconcileAchievements()
+                    reconcileChallenges()
                     updateStreak()
                     writeWidgetData()
                 }
@@ -86,12 +88,17 @@ struct ContentView: View {
                 .onChange(of: activities) {
                     viewModel.activities = activities
                     reconcileAchievements()
+                    reconcileChallenges()
                     updateStreak()
                     scheduleNotificationsIfNeeded()
                     writeWidgetData()
                 }
                 .onChange(of: achievements) {
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
+                }
+                .onChange(of: unlockedChallenges) {
+                    // Resync when a completed challenge arrives from another device via CloudKit.
+                    viewModel.unlockedChallengeKeys = Set(unlockedChallenges.map(\.challengeKey))
                 }
                 .onChange(of: viewModel.pendingShieldActivation) {
                     if viewModel.pendingShieldActivation {
@@ -273,9 +280,38 @@ struct ContentView: View {
             }
         }
     }
+
+    // MARK: - Challenge Reconciliation (v2.2)
+
+    // Evaluates only the CURRENT month's challenge occurrence: awards its badge when the month's
+    // logged total reaches the target, and revokes it if a same-month edit/delete drops the total
+    // back below target. Past occurrences are permanent badges and are never re-evaluated.
+    private func reconcileChallenges() {
+        let now = Date()
+        var keys = Set(unlockedChallenges.map(\.challengeKey))
+
+        if let challenge = ChallengeEngine.activeChallenge(on: now) {
+            let year = Calendar.current.component(.year, from: now)
+            let key  = ChallengeEngine.unlockKey(id: challenge.id, year: year)
+            let complete = ChallengeEngine.isComplete(challenge, in: activities, on: now)
+            let recorded = unlockedChallenges.first { $0.challengeKey == key }
+
+            if complete && recorded == nil {
+                modelContext.insert(UnlockedChallenge(challengeId: challenge.id, year: year))
+                keys.insert(key)
+                try? modelContext.save()
+            } else if !complete, let recorded {
+                modelContext.delete(recorded)
+                keys.remove(key)
+                try? modelContext.save()
+            }
+        }
+
+        viewModel.unlockedChallengeKeys = keys
+    }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: [UserProfile.self, ActivityLog.self, UnlockedAchievement.self], inMemory: true)
+        .modelContainer(for: [UserProfile.self, ActivityLog.self, UnlockedAchievement.self, UnlockedChallenge.self], inMemory: true)
 }

@@ -38,6 +38,8 @@ struct HomeView: View {
 
                         SillyTitleBanner(viewModel: viewModel)
 
+                        ChallengeCard(viewModel: viewModel)
+
                         if let last = viewModel.lastActivity {
                             RepeatLastButton(label: repeatLabel(for: last)) {
                                 repeatLast(last)
@@ -260,6 +262,95 @@ struct SillyTitleBanner: View {
             )
             .padding(.trailing, 16)
         }
+    }
+}
+
+// MARK: - Monthly Challenge Card (v2.2)
+
+struct ChallengeCard: View {
+    let viewModel: AppViewModel
+
+    private var pref: UnitPreference { viewModel.unitPreference }
+
+    var body: some View {
+        if let challenge = viewModel.currentChallenge() {
+            let fraction  = viewModel.challengeFraction(challenge)
+            let done      = viewModel.challengeProgressValue(challenge)
+            let completed = viewModel.isChallengeComplete(challenge)
+            let doneStr   = UnitConverter.displayString(done, type: challenge.type, pref: pref)
+            let targetStr = UnitConverter.displayString(challenge.targetSI, type: challenge.type, pref: pref)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Text(challenge.emoji)
+                        .font(.title)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(completed ? "Challenge Complete! 🎉" : "\(monthName(challenge.month)) Challenge")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.8))
+                        Text(challenge.title)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                    // Reserve trailing space for the share button in the overlay below.
+                    Color.clear.frame(width: 24, height: 1)
+                }
+
+                Text(challenge.blurb)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.85))
+
+                SwiftUI.ProgressView(value: fraction)
+                    .progressViewStyle(FitnessProgressStyle(tint: .white))
+                    .accessibilityLabel("Challenge progress")
+                    .accessibilityValue(String(format: "%.0f percent", fraction * 100))
+
+                HStack {
+                    Text(completed ? "Done — \(doneStr)" : "\(doneStr) / \(targetStr)")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Text("\(Int(fraction * 100))%")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#DB2777"), Color(hex: "#7C3AED")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(monthName(challenge.month)) challenge: \(challenge.title). "
+                + (completed ? "Complete." : "\(Int(fraction * 100)) percent done, \(doneStr) of \(targetStr).")
+            )
+            .accessibilityIdentifier("challengeCard")
+            // Share button kept outside the combined element so VoiceOver can reach it.
+            .overlay(alignment: .topTrailing) {
+                if completed {
+                    ShareCardButton(
+                        content: .challenge(challenge),
+                        filename: "funfitness_challenge.png"
+                    )
+                    .padding(12)
+                }
+            }
+        }
+    }
+
+    private func monthName(_ month: Int) -> String {
+        let symbols = DateFormatter().monthSymbols ?? []
+        guard month >= 1, month <= symbols.count else { return "Monthly" }
+        return symbols[month - 1]
     }
 }
 
