@@ -40,6 +40,8 @@ struct HomeView: View {
 
                         ChallengeCard(viewModel: viewModel)
 
+                        SeasonalCard(viewModel: viewModel)
+
                         if let last = viewModel.lastActivity {
                             RepeatLastButton(label: repeatLabel(for: last)) {
                                 repeatLast(last)
@@ -351,6 +353,49 @@ struct ChallengeCard: View {
         let symbols = DateFormatter().monthSymbols ?? []
         guard month >= 1, month <= symbols.count else { return "Monthly" }
         return symbols[month - 1]
+    }
+}
+
+// MARK: - Seasonal Card (v2.2)
+
+struct SeasonalCard: View {
+    let viewModel: AppViewModel
+
+    var body: some View {
+        if let (season, comparison) = SeasonalEngine.currentComparison(
+            on: Date(),
+            totalWeightKg: viewModel.totalWeight,
+            totalDistanceKm: viewModel.totalDistance
+        ) {
+            HStack(spacing: 12) {
+                Text(comparison.emoji)
+                    .font(.title)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(season.name) Special \(season.emoji)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white.opacity(0.85))
+                    Text(comparison.text)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#B45309"), Color(hex: "#7C2D12")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(season.name) special. \(comparison.text)")
+            .accessibilityIdentifier("seasonalCard")
+        }
     }
 }
 
