@@ -67,6 +67,21 @@ struct UnitConverter {
         return formatted
     }
 
+    // MARK: - Duration & reps (v2.2, no unit conversion — stored value is display value)
+
+    /// Formats stored minutes. Reads as hours once it crosses an hour so big totals stay legible.
+    static func durationString(_ minutes: Double) -> String {
+        if minutes >= 60 {
+            return String(format: "%.1f hr", minutes / 60)
+        }
+        return String(format: "%.0f min", minutes)
+    }
+
+    /// Formats a stored rep count.
+    static func repsString(_ count: Double) -> String {
+        String(format: "%.0f reps", count)
+    }
+
     // MARK: - Pre-fill helpers for text fields
 
     static func distanceInputString(_ km: Double, pref: UnitPreference) -> String {
@@ -76,6 +91,11 @@ struct UnitConverter {
     static func weightInputString(_ kg: Double, pref: UnitPreference) -> String {
         let value = fromKg(kg, to: pref)
         return pref == .imperial ? String(format: "%.0f", value) : String(format: "%.1f", value)
+    }
+
+    /// Whole-number pre-fill for duration/reps (the field is always edited in its own unit).
+    static func wholeInputString(_ value: Double) -> String {
+        String(format: "%.0f", value)
     }
 
     // MARK: - Type-dispatched helpers (v2.2)
@@ -88,6 +108,7 @@ struct UnitConverter {
         switch type {
         case .distance: return toKm(value, from: pref)
         case .weight:   return toKg(value, from: pref)
+        case .duration, .reps: return value   // no unit conversion
         }
     }
 
@@ -96,6 +117,7 @@ struct UnitConverter {
         switch type {
         case .distance: return fromKm(si, to: pref)
         case .weight:   return fromKg(si, to: pref)
+        case .duration, .reps: return si      // no unit conversion
         }
     }
 
@@ -104,6 +126,8 @@ struct UnitConverter {
         switch type {
         case .distance: return distanceString(si, pref: pref)
         case .weight:   return weightString(si, reps: reps, pref: pref)
+        case .duration: return durationString(si)
+        case .reps:     return repsString(si)
         }
     }
 
@@ -112,6 +136,7 @@ struct UnitConverter {
         switch type {
         case .distance: return distanceInputString(si, pref: pref)
         case .weight:   return weightInputString(si, pref: pref)
+        case .duration, .reps: return wholeInputString(si)
         }
     }
 
@@ -120,6 +145,8 @@ struct UnitConverter {
         switch type {
         case .distance: return pref.distanceUnit
         case .weight:   return pref.weightUnit
+        case .duration: return "min"
+        case .reps:     return "reps"
         }
     }
 
@@ -128,6 +155,16 @@ struct UnitConverter {
         switch type {
         case .distance: return "km"
         case .weight:   return "kg"
+        case .duration: return "min"
+        case .reps:     return "reps"
         }
+    }
+
+    /// Field header like "Distance (mi)" or "Duration (min)". Drops the redundant parenthetical
+    /// when the type name and unit are the same word (so `.reps` shows "Reps", not "Reps (reps)").
+    static func fieldLabel(for type: ActivityType, pref: UnitPreference) -> String {
+        let unit = displayUnit(for: type, pref: pref)
+        let name = type.displayName
+        return unit.caseInsensitiveCompare(name) == .orderedSame ? name : "\(name) (\(unit))"
     }
 }

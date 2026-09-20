@@ -46,11 +46,7 @@ struct LogLastActivityIntent: AppIntent {
         WidgetCenter.shared.reloadAllTimelines()
 
         let pref = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first?.unitPref ?? .imperial
-        let summary: String
-        switch last.activityType {
-        case .distance: summary = UnitConverter.distanceString(last.value, pref: pref)
-        case .weight:   summary = UnitConverter.weightString(last.value, reps: last.reps, pref: pref)
-        }
+        let summary = UnitConverter.displayString(last.value, type: last.activityType, reps: last.reps, pref: pref)
 
         return .result(dialog: "Logged \(summary). Nice work!")
     }

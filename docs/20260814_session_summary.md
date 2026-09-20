@@ -100,10 +100,30 @@ Behavior-preserving: same three packs, identical copy.
 **Status after Segments 1–2:** builds clean; **80/80 tests pass** on the iPhone 17 simulator;
 both commits pushed to `main` (`main` == `origin/main`).
 
+### Segment 3 — new activity types (duration + reps) ✅ (2026-09-19)
+Two new `ActivityType` cases — `.duration` (whole minutes) and `.reps` (a count) — both storing
+their value directly in `ActivityLog.value`, no unit conversion, no rep multiplier. Because
+Segment 1 routed everything through the descriptor + exhaustive switches, the compiler flagged
+every site that needed the new cases.
+- **`ActivityKind.swift`**: descriptor cases for both types + a new `alwaysShowsCard` flag (core
+  types always; new types surface once they have data).
+- **`UnitConverter`**: `durationString` (rolls to hours past 60 min), `repsString`, identity
+  `toSI`/`fromSI`, `"min"`/`"reps"` units, and a `fieldLabel` helper that collapses the redundant
+  "Reps (reps)" to just "Reps".
+- **`ComparisonEngine`**: `ActivityUnit.minutes`/`.reps`; 8 `durationMilestones` (T1–T8, 30 min →
+  100 hr) + 8 `repsMilestones` (R1–R8, 50 → 10,000); themed content for all 3 existing packs
+  (48 new entries) so the coverage test stays green. `allMilestones` now 38 (was 22).
+- **UI**: 4-way segmented picker in `LogActivitySheet`; Home + Progress render one card per
+  *visible* type via `ActivityType.allCases` (new-type cards appear only with data), new per-type
+  card copy/gradients in `SharedComponents`; `AbsurdityTicker`, repeat/remaining labels, the Siri
+  intent summary, and the achievements threshold display all made type-generic.
+- Tests: +6 (descriptor/converter coverage for new types, ascending-order + routing for the new
+  milestone arrays, `fieldLabel`); milestone-count test 22 → 38.
+
+**Status after Segment 3:** builds clean; **86/86 tests pass** on the iPhone 17 simulator.
+
 ### Resume plan — "features before content" order (user's choice)
-Segment 3 (new activity types: duration = minutes, reps = count, both reuse `ActivityLog.value`;
-add `durationMilestones`/`repsMilestones` + content for the 3 existing packs; 4-way
-`LogActivitySheet` picker; Home/Progress show new-type cards when they have data)
+~~Segment 3 (new activity types)~~ ✅ done
 → Segment 5 (monthly challenges: new `UnlockedChallenge` `@Model`, `ChallengeCatalog`,
 `reconcileChallenges` mirroring `reconcileAchievements`, Home card)
 → Segment 6 (Swift Charts analytics in the Progress tab: weekly volume, PRs, heatmap)

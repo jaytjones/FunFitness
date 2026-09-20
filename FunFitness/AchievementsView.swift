@@ -212,9 +212,12 @@ struct AchievementCard: View {
     @ScaledMetric(relativeTo: .title2) private var emojiSize: CGFloat = 40
 
     private var thresholdDisplay: String {
-        milestone.unit == .kilometers
-            ? UnitConverter.distanceString(milestone.threshold, pref: pref)
-            : UnitConverter.weightString(milestone.threshold, pref: pref)
+        switch milestone.unit {
+        case .kilometers: return UnitConverter.distanceString(milestone.threshold, pref: pref)
+        case .kilograms:  return UnitConverter.weightString(milestone.threshold, pref: pref)
+        case .minutes:    return UnitConverter.durationString(milestone.threshold)
+        case .reps:       return UnitConverter.repsString(milestone.threshold)
+        }
     }
 
     var body: some View {

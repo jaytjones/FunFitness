@@ -19,6 +19,11 @@ struct HomeView: View {
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
+    // Core types (distance, weight) always show; new types surface once they have data.
+    private var visibleTypes: [ActivityType] {
+        ActivityType.allCases.filter { $0.alwaysShowsCard || viewModel.total(for: $0) > 0 }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -39,39 +44,26 @@ struct HomeView: View {
                             }
                         }
 
-                        StatCard(
-                            title: "Distance Tracking",
-                            subtitle: "Running & Walking",
-                            icon: "🏃",
-                            displayValue: viewModel.displayDistance(viewModel.totalDistance),
-                            progress: viewModel.progressToNextMilestone(type: .distance),
-                            nextMilestone: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "Complete!",
-                            remainingDisplay: remainingLabel(for: .distance),
-                            gradientColors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF")],
-                            logHint: "Logs a distance activity",
-                            onTap: {
-                                logType = .distance
-                                showLogSheet = true
-                            }
-                        )
-                        .accessibilityIdentifier("distanceStatCard")
-
-                        StatCard(
-                            title: "Weight Tracking",
-                            subtitle: "Strength Training",
-                            icon: "💪",
-                            displayValue: viewModel.displayWeight(viewModel.totalWeight),
-                            progress: viewModel.progressToNextMilestone(type: .weight),
-                            nextMilestone: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "Complete!",
-                            remainingDisplay: remainingLabel(for: .weight),
-                            gradientColors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")],
-                            logHint: "Logs a weight activity",
-                            onTap: {
-                                logType = .weight
-                                showLogSheet = true
-                            }
-                        )
-                        .accessibilityIdentifier("weightStatCard")
+                        // One card per visible type: the two core types always, duration/reps
+                        // once they have data. (v2.2)
+                        ForEach(visibleTypes, id: \.self) { type in
+                            StatCard(
+                                title: type.cardTitle,
+                                subtitle: type.cardSubtitle,
+                                icon: type.emoji,
+                                displayValue: viewModel.displayTotal(for: type),
+                                progress: viewModel.progressToNextMilestone(type: type),
+                                nextMilestone: viewModel.remainingToNextMilestone(type: type).milestone?.title ?? "Complete!",
+                                remainingDisplay: remainingLabel(for: type),
+                                gradientColors: type.cardGradient,
+                                logHint: "Logs a \(type.displayName.lowercased()) activity",
+                                onTap: {
+                                    logType = type
+                                    showLogSheet = true
+                                }
+                            )
+                            .accessibilityIdentifier("\(type.rawValue)StatCard")
+                        }
 
                         AbsurdityTicker(viewModel: viewModel)
 
@@ -120,12 +112,8 @@ struct HomeView: View {
 
     // Short description of the activity the repeat button will re-log.
     private func repeatLabel(for activity: ActivityLog) -> String {
-        switch activity.activityType {
-        case .distance:
-            return "🏃 \(viewModel.displayDistance(activity.value))"
-        case .weight:
-            return "💪 \(viewModel.displayWeight(activity.value, reps: activity.reps))"
-        }
+        let kind = activity.activityType
+        return "\(kind.emoji) \(UnitConverter.displayString(activity.value, type: kind, reps: activity.reps, pref: pref))"
     }
 
     private func repeatLast(_ activity: ActivityLog) {
@@ -147,11 +135,7 @@ struct HomeView: View {
     private func remainingLabel(for type: ActivityType) -> String {
         let remaining = viewModel.remainingToNextMilestone(type: type).remaining
         guard remaining > 0 else { return "" }
-        if type == .distance {
-            return "\(UnitConverter.distanceString(remaining, pref: pref)) to go"
-        } else {
-            return "\(UnitConverter.weightString(remaining, pref: pref)) to go"
-        }
+        return "\(UnitConverter.displayString(remaining, type: type, pref: pref)) to go"
     }
 }
 
@@ -332,12 +316,13 @@ struct RepeatLastButton: View {
 struct AbsurdityTicker: View {
     let viewModel: AppViewModel
 
-    private var distanceText: String? { viewModel.absurdityTickerText(for: .distance) }
-    private var weightText: String?   { viewModel.absurdityTickerText(for: .weight) }
-    private var hasContent: Bool      { distanceText != nil || weightText != nil }
+    // One line per type that has a live comparison; new types join automatically. (v2.2)
+    private var lines: [String] {
+        ActivityType.allCases.compactMap { viewModel.absurdityTickerText(for: $0) }
+    }
 
     var body: some View {
-        if hasContent {
+        if !lines.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 6) {
                     Text("🎯").accessibilityHidden(true)
@@ -347,11 +332,8 @@ struct AbsurdityTicker: View {
                         .foregroundStyle(.white.opacity(0.75))
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    if let text = distanceText {
-                        Text(text).font(.headline).foregroundStyle(.white)
-                    }
-                    if let text = weightText {
-                        Text(text).font(.headline).foregroundStyle(.white)
+                    ForEach(lines, id: \.self) { line in
+                        Text(line).font(.headline).foregroundStyle(.white)
                     }
                 }
             }
@@ -365,7 +347,7 @@ struct AbsurdityTicker: View {
             )
             .clipShape(.rect(cornerRadius: 20))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel([distanceText, weightText].compactMap { $0 }.joined(separator: ". "))
+            .accessibilityLabel(lines.joined(separator: ". "))
             .accessibilityIdentifier("absurdityTicker")
         }
     }

@@ -129,6 +129,12 @@ final class AppViewModel {
         UnitConverter.weightString(kg, reps: reps, pref: unitPreference)
     }
 
+    /// Formatted running total for any activity type, in the user's units. Drives the
+    /// data-driven Home/Progress cards so every type (incl. duration/reps) displays uniformly. (v2.2)
+    func displayTotal(for type: ActivityType) -> String {
+        UnitConverter.displayString(total(for: type), type: type, pref: unitPreference)
+    }
+
     // MARK: - Silly Title
 
     var sillyTitle: SillyTitle {

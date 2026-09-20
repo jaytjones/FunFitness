@@ -36,10 +36,12 @@ struct LogActivitySheet: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Activity Type Toggle
+                        // Activity Type Toggle — one segment per type (v2.2: distance, weight,
+                        // duration, reps), so new types appear here automatically.
                         Picker("Activity Type", selection: $selectedType) {
-                            Text("Distance").tag(ActivityType.distance)
-                            Text("Weight").tag(ActivityType.weight)
+                            ForEach(ActivityType.allCases, id: \.self) { type in
+                                Text(type.displayName).tag(type)
+                            }
                         }
                         .pickerStyle(.segmented)
                         .padding(.horizontal)
@@ -52,7 +54,7 @@ struct LogActivitySheet: View {
 
                         // Value Input
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("\(selectedType.displayName) (\(UnitConverter.displayUnit(for: selectedType, pref: pref)))")
+                            Text(UnitConverter.fieldLabel(for: selectedType, pref: pref))
                                 .font(.headline)
                                 .foregroundStyle(.primary)
 

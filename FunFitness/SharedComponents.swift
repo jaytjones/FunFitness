@@ -59,6 +59,42 @@ extension Color {
     }
 }
 
+// MARK: - Per-activity-type card presentation (v2.2)
+// View-layer copy/colors for the Home StatCard and Progress TrackingCard, kept beside the other
+// SwiftUI helpers. The switches are exhaustive so a new ActivityType must supply a card style here.
+
+extension ActivityType {
+    /// Card title on Home / Progress.
+    var cardTitle: String {
+        switch self {
+        case .distance: return "Distance Tracking"
+        case .weight:   return "Weight Tracking"
+        case .duration: return "Duration Tracking"
+        case .reps:     return "Reps Tracking"
+        }
+    }
+
+    /// Supporting line under the card title.
+    var cardSubtitle: String {
+        switch self {
+        case .distance: return "Running & Walking"
+        case .weight:   return "Strength Training"
+        case .duration: return "Yoga, Cycling & More"
+        case .reps:     return "Push-ups, Sit-ups & More"
+        }
+    }
+
+    /// Two-stop gradient for the Home StatCard background.
+    var cardGradient: [Color] {
+        switch self {
+        case .distance: return [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
+        case .weight:   return [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
+        case .duration: return [Color(hex: "#0D9488"), Color(hex: "#0F766E")]
+        case .reps:     return [Color(hex: "#DB2777"), Color(hex: "#9D174D")]
+        }
+    }
+}
+
 // MARK: - Progress bar style used on tracking cards
 
 struct FitnessProgressStyle: ProgressViewStyle {

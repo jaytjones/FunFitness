@@ -13,8 +13,9 @@ import Foundation
 struct ComparisonEngineTests {
 
     @Test func allMilestonesCountIsExpected() {
-        // 11 distance + 11 weight = 22 total (includes intermediate milestones added in 1.1)
-        #expect(ComparisonEngine.allMilestones.count == 22)
+        // 11 distance + 11 weight + 8 duration + 8 reps = 38 total
+        // (intermediate distance/weight milestones added in 1.1; duration/reps added in 2.2)
+        #expect(ComparisonEngine.allMilestones.count == 38)
     }
 
     @Test func byIdContainsAllMilestones() {
@@ -39,6 +40,22 @@ struct ComparisonEngineTests {
     @Test func weightMilestonesAscendingByThreshold() {
         let thresholds = ComparisonEngine.weightMilestones.map(\.threshold)
         #expect(thresholds == thresholds.sorted())
+    }
+
+    @Test func durationMilestonesAscendingByThreshold() {
+        let thresholds = ComparisonEngine.durationMilestones.map(\.threshold)
+        #expect(thresholds == thresholds.sorted())
+    }
+
+    @Test func repsMilestonesAscendingByThreshold() {
+        let thresholds = ComparisonEngine.repsMilestones.map(\.threshold)
+        #expect(thresholds == thresholds.sorted())
+    }
+
+    // The two v2.2 types route to their own milestone arrays via milestones(for:).
+    @Test func durationAndRepsMilestonesRouteByType() {
+        #expect(ComparisonEngine.milestones(for: .duration).map(\.id) == ComparisonEngine.durationMilestones.map(\.id))
+        #expect(ComparisonEngine.milestones(for: .reps).map(\.id) == ComparisonEngine.repsMilestones.map(\.id))
     }
 
     @Test func noDuplicateMilestoneIds() {

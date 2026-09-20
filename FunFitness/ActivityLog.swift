@@ -9,6 +9,10 @@ import SwiftData
 enum ActivityType: String, Codable, CaseIterable {
     case distance
     case weight
+    // v2.2: time-based (minutes) and count-based (reps) logging so yoga/cycling/HIIT count.
+    // Both store their value directly in `value` (minutes / a rep count); neither converts units.
+    case duration
+    case reps
 }
 
 // Where an entry came from. Manual entries have a nil healthKitUUID;

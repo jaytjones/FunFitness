@@ -18,6 +18,11 @@ struct ProgressTabView: View {
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
+    // Core types (distance, weight) always show; new types surface once they have data.
+    private var visibleTypes: [ActivityType] {
+        ActivityType.allCases.filter { $0.alwaysShowsCard || viewModel.total(for: $0) > 0 }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -31,25 +36,19 @@ struct ProgressTabView: View {
                             isActiveThisWeek: viewModel.isActiveThisWeek
                         )
 
-                        TrackingCard(
-                            title: "Distance Tracking",
-                            subtitle: "Running & Walking",
-                            icon: "🏃",
-                            displayValue: viewModel.displayDistance(viewModel.totalDistance),
-                            progress: viewModel.progressToNextMilestone(type: .distance),
-                            nextMilestoneTitle: viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "All Complete!",
-                            remainingDisplay: remainingLabel(for: .distance)
-                        )
-
-                        TrackingCard(
-                            title: "Weight Tracking",
-                            subtitle: "Strength Training",
-                            icon: "💪",
-                            displayValue: viewModel.displayWeight(viewModel.totalWeight),
-                            progress: viewModel.progressToNextMilestone(type: .weight),
-                            nextMilestoneTitle: viewModel.remainingToNextMilestone(type: .weight).milestone?.title ?? "All Complete!",
-                            remainingDisplay: remainingLabel(for: .weight)
-                        )
+                        // One card per visible type: core types always, duration/reps once
+                        // they have data. (v2.2)
+                        ForEach(visibleTypes, id: \.self) { type in
+                            TrackingCard(
+                                title: type.cardTitle,
+                                subtitle: type.cardSubtitle,
+                                icon: type.emoji,
+                                displayValue: viewModel.displayTotal(for: type),
+                                progress: viewModel.progressToNextMilestone(type: type),
+                                nextMilestoneTitle: viewModel.remainingToNextMilestone(type: type).milestone?.title ?? "All Complete!",
+                                remainingDisplay: remainingLabel(for: type)
+                            )
+                        }
 
                         MotivationalCard()
                     }
@@ -92,11 +91,7 @@ struct ProgressTabView: View {
     private func remainingLabel(for type: ActivityType) -> String {
         let remaining = viewModel.remainingToNextMilestone(type: type).remaining
         guard remaining > 0 else { return "" }
-        if type == .distance {
-            return "\(UnitConverter.distanceString(remaining, pref: pref)) to go"
-        } else {
-            return "\(UnitConverter.weightString(remaining, pref: pref)) to go"
-        }
+        return "\(UnitConverter.displayString(remaining, type: type, pref: pref)) to go"
     }
 }
 

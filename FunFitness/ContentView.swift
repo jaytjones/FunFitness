@@ -229,6 +229,7 @@ struct ContentView: View {
             switch activity.activityType {
             case .distance: activity.value *= UnitConverter.kmPerMile
             case .weight:   activity.value *= UnitConverter.kgPerLb
+            case .duration, .reps: break   // v2.2 types are unit-agnostic; nothing to migrate
             }
         }
 

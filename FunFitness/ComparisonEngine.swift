@@ -9,6 +9,8 @@ import Foundation
 enum ActivityUnit: Equatable, Sendable {
     case kilometers
     case kilograms
+    case minutes      // v2.2 duration thresholds (total minutes)
+    case reps         // v2.2 rep-count thresholds (total reps)
 }
 
 // A milestone definition — theme-agnostic (v2.2). The silly per-theme copy lives in the
@@ -72,9 +74,36 @@ struct ComparisonEngine {
         Milestone(id: "W6",  threshold: 45359.2,  unit: .kilograms, title: "You've lifted 100,000 lbs!"),
     ]
 
+    // MARK: - Duration Milestones (sorted ascending; thresholds in total minutes) (v2.2)
+
+    static let durationMilestones: [Milestone] = [
+        Milestone(id: "T1", threshold: 30,   unit: .minutes, title: "30 Minutes Moving!"),
+        Milestone(id: "T2", threshold: 60,   unit: .minutes, title: "1 Hour Logged!"),
+        Milestone(id: "T3", threshold: 150,  unit: .minutes, title: "150 Minutes — WHO Weekly Goal!"),
+        Milestone(id: "T4", threshold: 300,  unit: .minutes, title: "5 Hours In Motion!"),
+        Milestone(id: "T5", threshold: 600,  unit: .minutes, title: "10 Hours of Effort!"),
+        Milestone(id: "T6", threshold: 1200, unit: .minutes, title: "20 Hours Strong!"),
+        Milestone(id: "T7", threshold: 3000, unit: .minutes, title: "50 Hours Committed!"),
+        Milestone(id: "T8", threshold: 6000, unit: .minutes, title: "100 Hours — A Century of Time!"),
+    ]
+
+    // MARK: - Reps Milestones (sorted ascending; thresholds in total reps) (v2.2)
+
+    static let repsMilestones: [Milestone] = [
+        Milestone(id: "R1", threshold: 50,    unit: .reps, title: "50 Reps Done!"),
+        Milestone(id: "R2", threshold: 100,   unit: .reps, title: "100 Reps Club!"),
+        Milestone(id: "R3", threshold: 250,   unit: .reps, title: "250 Reps Strong!"),
+        Milestone(id: "R4", threshold: 500,   unit: .reps, title: "500 Reps!"),
+        Milestone(id: "R5", threshold: 1000,  unit: .reps, title: "1,000 Reps!"),
+        Milestone(id: "R6", threshold: 2500,  unit: .reps, title: "2,500 Reps!"),
+        Milestone(id: "R7", threshold: 5000,  unit: .reps, title: "5,000 Reps!"),
+        Milestone(id: "R8", threshold: 10000, unit: .reps, title: "10,000 Reps — Legend!"),
+    ]
+
     // MARK: - All Milestones
 
-    static let allMilestones: [Milestone] = distanceMilestones + weightMilestones
+    static let allMilestones: [Milestone] =
+        distanceMilestones + weightMilestones + durationMilestones + repsMilestones
 
     static let byId: [String: Milestone] = Dictionary(
         uniqueKeysWithValues: allMilestones.map { ($0.id, $0) }
@@ -117,6 +146,22 @@ struct ComparisonEngine {
         "W5":  MilestoneContent(emoji: "🐳", comparison: "That's the weight of a humpback whale!", ticker: "a humpback whale"),
         "W5b": MilestoneContent(emoji: "🐳", comparison: "That's the weight of an average sperm whale!", ticker: "a sperm whale"),
         "W6":  MilestoneContent(emoji: "💙", comparison: "That's the weight of a blue whale's heart!", ticker: "a blue whale's heart"),
+        "T1":  MilestoneContent(emoji: "🐆", comparison: "That's how long a cheetah rests between sprints!", ticker: "a cheetah's rest"),
+        "T2":  MilestoneContent(emoji: "🦥", comparison: "That's a sloth's entire daily activity budget!", ticker: "a sloth's busy day"),
+        "T3":  MilestoneContent(emoji: "🐘", comparison: "That's how long an elephant naps standing up!", ticker: "an elephant's nap"),
+        "T4":  MilestoneContent(emoji: "🦁", comparison: "That's a lion's afternoon snooze — 5 hours flat!", ticker: "a lion's snooze"),
+        "T5":  MilestoneContent(emoji: "🐨", comparison: "That's a koala's daily sleep — 10 hours of it!", ticker: "a koala's sleep"),
+        "T6":  MilestoneContent(emoji: "🐻", comparison: "That's a hibernating bear's first day of winter!", ticker: "a bear's winter day"),
+        "T7":  MilestoneContent(emoji: "🐋", comparison: "That's a gray whale migrating nonstop for 50 hours!", ticker: "a whale's migration leg"),
+        "T8":  MilestoneContent(emoji: "🦅", comparison: "That's an albatross gliding for 100 hours straight!", ticker: "an albatross flight"),
+        "R1":  MilestoneContent(emoji: "🦘", comparison: "That's 50 kangaroo hops across the outback!", ticker: "kangaroo hops"),
+        "R2":  MilestoneContent(emoji: "🐇", comparison: "That's 100 bunny hops through the meadow!", ticker: "bunny hops"),
+        "R3":  MilestoneContent(emoji: "🐝", comparison: "That's 250 waggle-dances from a busy bee!", ticker: "bee waggle-dances"),
+        "R4":  MilestoneContent(emoji: "🐿️", comparison: "That's 500 acorns buried by an industrious squirrel!", ticker: "buried acorns"),
+        "R5":  MilestoneContent(emoji: "🐦", comparison: "That's 1,000 pecks from a hungry woodpecker!", ticker: "woodpecker pecks"),
+        "R6":  MilestoneContent(emoji: "🦗", comparison: "That's 2,500 chirps from a summer cricket!", ticker: "cricket chirps"),
+        "R7":  MilestoneContent(emoji: "🐜", comparison: "That's 5,000 ants marching in a single line!", ticker: "marching ants"),
+        "R8":  MilestoneContent(emoji: "🐝", comparison: "That's a whole hive's worth of bees — 10,000 strong!", ticker: "a beehive"),
     ]
 
     private static let citiesContent: [String: MilestoneContent] = [
@@ -142,6 +187,22 @@ struct ComparisonEngine {
         "W5":  MilestoneContent(emoji: "🚚", comparison: "That's the weight of a loaded semi-truck!", ticker: "a loaded semi-truck"),
         "W5b": MilestoneContent(emoji: "🚛", comparison: "That's a fully loaded 18-wheel tractor-trailer!", ticker: "an 18-wheeler"),
         "W6":  MilestoneContent(emoji: "🚀", comparison: "That's the weight of a space shuttle main engine!", ticker: "a shuttle main engine"),
+        "T1":  MilestoneContent(emoji: "🚕", comparison: "That's a cross-town cab ride in Manhattan traffic!", ticker: "a Manhattan cab ride"),
+        "T2":  MilestoneContent(emoji: "🚇", comparison: "That's a full loop on the London Underground!", ticker: "a Tube loop"),
+        "T3":  MilestoneContent(emoji: "🎭", comparison: "That's a Broadway show, start to curtain call!", ticker: "a Broadway show"),
+        "T4":  MilestoneContent(emoji: "🏙", comparison: "That's a walking tour clear across Paris!", ticker: "a Paris walking tour"),
+        "T5":  MilestoneContent(emoji: "🚗", comparison: "That's the drive from LA to San Francisco!", ticker: "the LA-to-SF drive"),
+        "T6":  MilestoneContent(emoji: "🚆", comparison: "That's a bullet-train day the length of Japan!", ticker: "a bullet-train day"),
+        "T7":  MilestoneContent(emoji: "✈️", comparison: "That's 50 hours aloft — nearly London to Sydney twice!", ticker: "London-to-Sydney flights"),
+        "T8":  MilestoneContent(emoji: "🌍", comparison: "That's 100 hours — enough to circle the globe by rail!", ticker: "a globe-circling trip"),
+        "R1":  MilestoneContent(emoji: "🚦", comparison: "That's 50 traffic lights on a cross-town commute!", ticker: "city traffic lights"),
+        "R2":  MilestoneContent(emoji: "🏢", comparison: "That's 100 floors up a downtown skyscraper!", ticker: "skyscraper floors"),
+        "R3":  MilestoneContent(emoji: "🚕", comparison: "That's 250 taxi honks in one rush hour!", ticker: "taxi honks"),
+        "R4":  MilestoneContent(emoji: "🪟", comparison: "That's 500 windows on a city high-rise!", ticker: "high-rise windows"),
+        "R5":  MilestoneContent(emoji: "🚪", comparison: "That's 1,000 apartment doors on a single block!", ticker: "apartment doors"),
+        "R6":  MilestoneContent(emoji: "🧱", comparison: "That's 2,500 bricks in a brownstone wall!", ticker: "brownstone bricks"),
+        "R7":  MilestoneContent(emoji: "💡", comparison: "That's 5,000 bulbs on a Times Square billboard!", ticker: "billboard lights"),
+        "R8":  MilestoneContent(emoji: "🏙", comparison: "That's 10,000 windows across a whole skyline!", ticker: "a skyline of windows"),
     ]
 
     private static let landmarksContent: [String: MilestoneContent] = [
@@ -167,6 +228,22 @@ struct ComparisonEngine {
         "W5":  MilestoneContent(emoji: "🗿", comparison: "That's the weight of a section of Stonehenge!", ticker: "a Stonehenge section"),
         "W5b": MilestoneContent(emoji: "🚀", comparison: "That's 3 Space Shuttle solid rocket booster casings!", ticker: "3 rocket booster casings"),
         "W6":  MilestoneContent(emoji: "🛕", comparison: "That's the weight of a Pyramid capstone block!", ticker: "a pyramid capstone"),
+        "T1":  MilestoneContent(emoji: "🗼", comparison: "That's the elevator wait at the Eiffel Tower in July!", ticker: "an Eiffel Tower queue"),
+        "T2":  MilestoneContent(emoji: "🎡", comparison: "That's two full turns of the London Eye!", ticker: "London Eye spins"),
+        "T3":  MilestoneContent(emoji: "🏛", comparison: "That's a full guided tour of the Louvre!", ticker: "a Louvre tour"),
+        "T4":  MilestoneContent(emoji: "🗽", comparison: "That's the ferry-and-climb to Lady Liberty, twice over!", ticker: "Statue of Liberty trips"),
+        "T5":  MilestoneContent(emoji: "🏜️", comparison: "That's a rim-to-rim hike across the Grand Canyon!", ticker: "a Grand Canyon hike"),
+        "T6":  MilestoneContent(emoji: "⛰️", comparison: "That's a summit day on Mount Kilimanjaro!", ticker: "a Kilimanjaro summit day"),
+        "T7":  MilestoneContent(emoji: "🧗", comparison: "That's the time to climb El Capitan the hard way!", ticker: "an El Cap ascent"),
+        "T8":  MilestoneContent(emoji: "🏔", comparison: "That's a full expedition push on Everest!", ticker: "an Everest push"),
+        "R1":  MilestoneContent(emoji: "🪜", comparison: "That's 50 steps up inside the Statue of Liberty!", ticker: "Liberty steps"),
+        "R2":  MilestoneContent(emoji: "🗼", comparison: "That's 100 steps up the Eiffel Tower!", ticker: "Eiffel steps"),
+        "R3":  MilestoneContent(emoji: "🏛", comparison: "That's 250 arches around the Roman Colosseum!", ticker: "Colosseum arches"),
+        "R4":  MilestoneContent(emoji: "🧗", comparison: "That's 500 steps up the Leaning Tower of Pisa and back!", ticker: "Pisa steps"),
+        "R5":  MilestoneContent(emoji: "⛩️", comparison: "That's 1,000 torii gates at Fushimi Inari shrine!", ticker: "torii gates"),
+        "R6":  MilestoneContent(emoji: "🪜", comparison: "That's 2,500 steps along the Great Wall of China!", ticker: "Great Wall steps"),
+        "R7":  MilestoneContent(emoji: "🧱", comparison: "That's 5,000 blocks in the Great Pyramid's base!", ticker: "pyramid blocks"),
+        "R8":  MilestoneContent(emoji: "🗿", comparison: "That's 10,000 stones in Machu Picchu's terraces!", ticker: "Machu Picchu stones"),
     ]
 
     // MARK: - Helpers
@@ -177,6 +254,8 @@ struct ComparisonEngine {
         switch type {
         case .distance: return distanceMilestones
         case .weight:   return weightMilestones
+        case .duration: return durationMilestones
+        case .reps:     return repsMilestones
         }
     }
 

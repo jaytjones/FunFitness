@@ -204,7 +204,7 @@ struct EditActivitySheet: View {
 
                         // Value field
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("\(kind.displayName) (\(UnitConverter.displayUnit(for: kind, pref: pref)))")
+                            Text(UnitConverter.fieldLabel(for: kind, pref: pref))
                                 .font(.headline)
                                 .foregroundStyle(.primary)
 
