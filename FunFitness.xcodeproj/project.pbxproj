@@ -16,6 +16,7 @@
 		86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */; };
 		86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */; };
 		86B3D078301C78A600E76696 /* 20260731_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D077301C78A600E76696 /* 20260731_session_summary.md */; };
+		86FEAE01305F7610005BE4AE /* 20260919_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86FEAE00305F7610005BE4AE /* 20260919_session_summary.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 		86EEF7E42F79F3E00076F515 /* FunFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7F52F79F3E10076F515 /* FunFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FunFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		86FEAE00305F7610005BE4AE /* 20260919_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260919_session_summary.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -120,6 +122,7 @@
 				86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */,
 				863D79AA3026250000670EDD /* 20260807_session_summary.md */,
 				86916D7230302095007F843A /* 20260814_session_summary.md */,
+				86FEAE00305F7610005BE4AE /* 20260919_session_summary.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -276,6 +279,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				86916D7330302095007F843A /* 20260814_session_summary.md in Resources */,
+				86FEAE01305F7610005BE4AE /* 20260919_session_summary.md in Resources */,
 				86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */,
 				86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */,
 				86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,
