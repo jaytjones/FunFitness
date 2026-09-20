@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import Charts
 
 struct ProgressTabView: View {
     @Query private var activities: [ActivityLog]
@@ -15,6 +16,7 @@ struct ProgressTabView: View {
 
     @State private var showLogSheet = false
     @State private var showHistory = false
+    @State private var analyticsType: ActivityType = .distance
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -48,6 +50,18 @@ struct ProgressTabView: View {
                                 nextMilestoneTitle: viewModel.remainingToNextMilestone(type: type).milestone?.title ?? "All Complete!",
                                 remainingDisplay: remainingLabel(for: type)
                             )
+                        }
+
+                        if !activities.isEmpty {
+                            WeeklyVolumeCard(
+                                type: analyticsType,
+                                activities: activities,
+                                pref: pref,
+                                selectableTypes: visibleTypes,
+                                selection: $analyticsType
+                            )
+                            PersonalRecordsCard(types: visibleTypes, activities: activities, pref: pref)
+                            ActivityHeatmapCard(activities: activities)
                         }
 
                         MotivationalCard()
@@ -234,6 +248,168 @@ struct TrackingCard: View {
         .padding()
         .background(Color.appCard)
         .clipShape(.rect(cornerRadius: 20))
+    }
+}
+
+// MARK: - Weekly Volume Chart (v2.2)
+
+struct WeeklyVolumeCard: View {
+    let type: ActivityType
+    let activities: [ActivityLog]
+    let pref: UnitPreference
+    let selectableTypes: [ActivityType]
+    @Binding var selection: ActivityType
+
+    private var buckets: [AnalyticsEngine.WeeklyBucket] {
+        AnalyticsEngine.weeklyVolume(type: type, activities: activities, now: Date(), weeks: 8)
+    }
+
+    private var unitLabel: String { UnitConverter.displayUnit(for: type, pref: pref) }
+    private var barColor: Color { type.cardGradient.first ?? Color(hex: "#7C3AED") }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Weekly Volume")
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if selectableTypes.count > 1 {
+                Picker("Volume type", selection: $selection) {
+                    ForEach(selectableTypes, id: \.self) { t in
+                        Text(t.displayName).tag(t)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Chart(buckets) { bucket in
+                BarMark(
+                    x: .value("Week", bucket.weekStart, unit: .weekOfYear),
+                    y: .value(unitLabel, UnitConverter.fromSI(bucket.total, type: type, to: pref))
+                )
+                .foregroundStyle(barColor)
+                .cornerRadius(4)
+            }
+            .frame(height: 160)
+            .accessibilityLabel("Weekly \(type.displayName.lowercased()) volume, last 8 weeks")
+
+            Text("Last 8 weeks · \(unitLabel)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .background(Color.appCard)
+        .clipShape(.rect(cornerRadius: 20))
+    }
+}
+
+// MARK: - Personal Records (v2.2)
+
+struct PersonalRecordsCard: View {
+    let types: [ActivityType]
+    let activities: [ActivityLog]
+    let pref: UnitPreference
+
+    private struct PR: Identifiable {
+        let type: ActivityType
+        let value: Double
+        var id: String { type.rawValue }
+    }
+
+    private var records: [PR] {
+        types.compactMap { t in
+            AnalyticsEngine.personalRecord(type: t, activities: activities).map { PR(type: t, value: $0) }
+        }
+    }
+
+    var body: some View {
+        if !records.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Personal Records")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                ForEach(records) { pr in
+                    let display = UnitConverter.displayString(pr.value, type: pr.type, pref: pref)
+                    HStack {
+                        Text(pr.type.emoji).accessibilityHidden(true)
+                        Text(pr.type.displayName)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(display)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(pr.type.displayName) personal record: \(display)")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.appCard)
+            .clipShape(.rect(cornerRadius: 20))
+        }
+    }
+}
+
+// MARK: - Activity Heatmap (v2.2)
+
+struct ActivityHeatmapCard: View {
+    let activities: [ActivityLog]
+
+    private var days: [AnalyticsEngine.DayCount] {
+        AnalyticsEngine.dailyActivity(activities: activities, now: Date(), days: 84)
+    }
+
+    // 12 columns of 7 consecutive days (oldest → newest).
+    private var weeks: [[AnalyticsEngine.DayCount]] {
+        stride(from: 0, to: days.count, by: 7).map { Array(days[$0..<min($0 + 7, days.count)]) }
+    }
+
+    private func color(_ count: Int) -> Color {
+        switch count {
+        case 0:  return Color.primary.opacity(0.08)
+        case 1:  return Color(hex: "#A78BFA").opacity(0.55)
+        case 2:  return Color(hex: "#7C3AED").opacity(0.85)
+        default: return Color(hex: "#5B21B6")
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Activity — Last 12 Weeks")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            HStack(alignment: .top, spacing: 4) {
+                ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                    VStack(spacing: 4) {
+                        ForEach(week) { day in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(color(day.count))
+                                .frame(width: 14, height: 14)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 6) {
+                Text("Less").font(.caption2).foregroundStyle(.secondary)
+                ForEach(0..<4) { i in
+                    RoundedRectangle(cornerRadius: 3).fill(color(i)).frame(width: 12, height: 12)
+                }
+                Text("More").font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.appCard)
+        .clipShape(.rect(cornerRadius: 20))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Activity heatmap for the last 12 weeks")
     }
 }
 
