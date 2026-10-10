@@ -1,7 +1,7 @@
 # FunFitness — Content Fact-Check (2026-10-10)
 
-Pre-3.1 plan item D. Three research passes against web sources, read-only. Nothing has been
-changed in code yet; fixes need approval.
+Pre-3.1 plan item D. Three research passes against web sources. The fixes were applied in
+`b21d937`; see "Applied" at the end for deviations from the suggestions below.
 
 **Tolerance:** OK = within ±25% of the milestone amount · LOOSE = 25–60% off · WRONG = more than 60% off
 or factually wrong · VAGUE = no checkable quantity.
