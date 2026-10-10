@@ -78,9 +78,18 @@ enum PersistenceController {
     /// promote the schema. See docs: "Initialize the CloudKit development schema".
     #if DEBUG
     static func initializeCloudKitSchemaForDevelopment() throws {
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // Use a throwaway store rather than the app's real one. The real store's sync metadata can
+        // claim the CloudKit zone already exists when the server has no such zone, which makes
+        // schema init fail with "Zone Not Found". A fresh store creates the zone first.
+        let storeURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CloudKitSchemaInit-\(UUID().uuidString).store")
+        defer {
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + suffix))
+            }
+        }
         try autoreleasepool {
-            let description = NSPersistentStoreDescription(url: config.url)
+            let description = NSPersistentStoreDescription(url: storeURL)
             description.cloudKitContainerOptions =
                 NSPersistentCloudKitContainerOptions(containerIdentifier: cloudKitContainerID)
             description.shouldAddStoreAsynchronously = false
