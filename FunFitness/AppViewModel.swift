@@ -166,6 +166,6 @@ final class AppViewModel {
     // MARK: - Silly Title
 
     var sillyTitle: SillyTitle {
-        SillyTitleEngine.sillyTitle(unlockedCount: unlockedAchievementIds.count)
+        SillyTitleEngine.sillyTitle(unlockedIds: unlockedAchievementIds)
     }
 }

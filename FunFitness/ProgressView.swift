@@ -47,7 +47,7 @@ struct ProgressTabView: View {
                                 icon: type.emoji,
                                 displayValue: viewModel.displayTotal(for: type),
                                 progress: viewModel.progressToNextMilestone(type: type),
-                                nextMilestoneTitle: viewModel.remainingToNextMilestone(type: type).milestone?.title ?? "All Complete!",
+                                nextMilestoneTitle: viewModel.remainingToNextMilestone(type: type).milestone?.title(pref: viewModel.unitPreference) ?? "All Complete!",
                                 remainingDisplay: remainingLabel(for: type)
                             )
                         }

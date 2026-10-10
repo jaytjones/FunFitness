@@ -228,7 +228,7 @@ struct AchievementCard: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(milestone.title)
+                Text(milestone.title(pref: pref))
                     .font(.headline)
                     .foregroundStyle(isLocked ? .secondary : .primary)
 
@@ -270,8 +270,8 @@ struct AchievementCard: View {
         .opacity(isLocked ? 0.6 : 1.0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isLocked
-            ? "\(milestone.title) — locked. Reach \(thresholdDisplay) to unlock."
-            : "\(milestone.title) — unlocked. \(milestone.getComparison(for: pack))"
+            ? "\(milestone.title(pref: pref)) — locked. Reach \(thresholdDisplay) to unlock."
+            : "\(milestone.title(pref: pref)) — unlocked. \(milestone.getComparison(for: pack))"
         )
     }
 }

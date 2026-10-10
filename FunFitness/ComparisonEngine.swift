@@ -20,7 +20,35 @@ struct Milestone: Identifiable {
     let id: String
     let threshold: Double       // km for distance; kg for weight
     let unit: ActivityUnit
-    let title: String
+    // Handwritten title for named milestones (Half Marathon, WHO goal, duration/reps). When nil,
+    // the title is generated from the threshold in the user's units. (v2.3)
+    private let fixedTitle: String?
+
+    init(id: String, threshold: Double, unit: ActivityUnit, title: String? = nil) {
+        self.id = id
+        self.threshold = threshold
+        self.unit = unit
+        self.fixedTitle = title
+    }
+
+    /// Display title in the user's preferred units, e.g. "You've run 5 miles!" / "You've run 8 km!".
+    func title(pref: UnitPreference) -> String {
+        if let fixedTitle { return fixedTitle }
+        switch unit {
+        case .kilometers:
+            let value = UnitConverter.fromKm(threshold, to: pref)
+            let amount = value.formatted(.number.precision(.fractionLength(0...1)))
+            if pref == .metric { return "You've run \(amount) km!" }
+            return "You've run \(amount) \(amount == "1" ? "mile" : "miles")!"
+        case .kilograms:
+            let value = UnitConverter.fromKg(threshold, to: pref)
+            let amount = value.formatted(.number.precision(.fractionLength(0)))
+            return "You've lifted \(amount) \(pref.weightUnit)!"
+        case .minutes, .reps:
+            // Every duration/reps milestone has a handwritten title; this is only a fallback.
+            return "Milestone reached!"
+        }
+    }
 
     /// Whether `total` has reached this milestone. The tiny relative slack absorbs
     /// floating-point error from summing entries (3 × 25 mi can land a hair under 75 mi).
@@ -57,34 +85,34 @@ struct ComparisonEngine {
     private static func pounds(_ value: Double) -> Double { value * UnitConverter.kgPerLb }
 
     static let distanceMilestones: [Milestone] = [
-        Milestone(id: "D1",  threshold: miles(1),    unit: .kilometers, title: "You've run 1 mile!"),
-        Milestone(id: "D1b", threshold: miles(2.5),  unit: .kilometers, title: "You've run 2.5 miles!"),
-        Milestone(id: "D2",  threshold: miles(5),    unit: .kilometers, title: "You've run 5 miles!"),
-        Milestone(id: "D2b", threshold: miles(10),   unit: .kilometers, title: "You've run 10 miles!"),
+        Milestone(id: "D1",  threshold: miles(1),    unit: .kilometers),
+        Milestone(id: "D1b", threshold: miles(2.5),  unit: .kilometers),
+        Milestone(id: "D2",  threshold: miles(5),    unit: .kilometers),
+        Milestone(id: "D2b", threshold: miles(10),   unit: .kilometers),
         Milestone(id: "D3",  threshold: 21.0975,     unit: .kilometers, title: "Half Marathon Complete!"),
-        Milestone(id: "D3b", threshold: miles(17.5), unit: .kilometers, title: "You've run 17.5 miles!"),
+        Milestone(id: "D3b", threshold: miles(17.5), unit: .kilometers),
         Milestone(id: "D4",  threshold: 42.195,      unit: .kilometers, title: "Full Marathon Complete!"),
-        Milestone(id: "D4b", threshold: miles(35),   unit: .kilometers, title: "You've run 35 miles!"),
-        Milestone(id: "D5",  threshold: miles(50),   unit: .kilometers, title: "You've run 50 miles!"),
-        Milestone(id: "D5b", threshold: miles(75),   unit: .kilometers, title: "You've run 75 miles!"),
-        Milestone(id: "D6",  threshold: miles(100),  unit: .kilometers, title: "You've run 100 miles!"),
+        Milestone(id: "D4b", threshold: miles(35),   unit: .kilometers),
+        Milestone(id: "D5",  threshold: miles(50),   unit: .kilometers),
+        Milestone(id: "D5b", threshold: miles(75),   unit: .kilometers),
+        Milestone(id: "D6",  threshold: miles(100),  unit: .kilometers),
     ]
 
     // MARK: - Weight Milestones (sorted ascending; thresholds in kg)
 
     static let weightMilestones: [Milestone] = [
-        Milestone(id: "W1",  threshold: pounds(500),     unit: .kilograms, title: "You've lifted 500 lbs!"),
-        Milestone(id: "W1b", threshold: pounds(1_000),   unit: .kilograms, title: "You've lifted 1,000 lbs!"),
-        Milestone(id: "W2",  threshold: pounds(2_500),   unit: .kilograms, title: "You've lifted 2,500 lbs!"),
-        Milestone(id: "W2b", threshold: pounds(5_000),   unit: .kilograms, title: "You've lifted 5,000 lbs!"),
-        Milestone(id: "W3",  threshold: pounds(10_000),  unit: .kilograms, title: "You've lifted 10,000 lbs!"),
-        Milestone(id: "W3b", threshold: pounds(15_000),  unit: .kilograms, title: "You've lifted 15,000 lbs!"),
-        Milestone(id: "W4",  threshold: pounds(25_000),  unit: .kilograms, title: "You've lifted 25,000 lbs!"),
+        Milestone(id: "W1",  threshold: pounds(500),     unit: .kilograms),
+        Milestone(id: "W1b", threshold: pounds(1_000),   unit: .kilograms),
+        Milestone(id: "W2",  threshold: pounds(2_500),   unit: .kilograms),
+        Milestone(id: "W2b", threshold: pounds(5_000),   unit: .kilograms),
+        Milestone(id: "W3",  threshold: pounds(10_000),  unit: .kilograms),
+        Milestone(id: "W3b", threshold: pounds(15_000),  unit: .kilograms),
+        Milestone(id: "W4",  threshold: pounds(25_000),  unit: .kilograms),
         // Kept at the original literal: pounds(35_000) is 0.02 kg higher, and thresholds never rise.
-        Milestone(id: "W4b", threshold: 15875.7,         unit: .kilograms, title: "You've lifted 35,000 lbs!"),
-        Milestone(id: "W5",  threshold: pounds(50_000),  unit: .kilograms, title: "You've lifted 50,000 lbs!"),
-        Milestone(id: "W5b", threshold: pounds(75_000),  unit: .kilograms, title: "You've lifted 75,000 lbs!"),
-        Milestone(id: "W6",  threshold: pounds(100_000), unit: .kilograms, title: "You've lifted 100,000 lbs!"),
+        Milestone(id: "W4b", threshold: 15875.7,         unit: .kilograms),
+        Milestone(id: "W5",  threshold: pounds(50_000),  unit: .kilograms),
+        Milestone(id: "W5b", threshold: pounds(75_000),  unit: .kilograms),
+        Milestone(id: "W6",  threshold: pounds(100_000), unit: .kilograms),
     ]
 
     // MARK: - Duration Milestones (sorted ascending; thresholds in total minutes) (v2.2)
@@ -140,14 +168,14 @@ struct ComparisonEngine {
 
     private static let animalsContent: [String: MilestoneContent] = [
         "D1":  MilestoneContent(emoji: "🦒", comparison: "That's like walking past 270 giraffes stacked head to tail!", ticker: "a giraffe parade"),
-        "D1b": MilestoneContent(emoji: "🐱", comparison: "That's 450 house cats laid nose-to-tail!", ticker: "a cat parade"),
-        "D2":  MilestoneContent(emoji: "🐳", comparison: "That's the length of 2 blue whales!", ticker: "2 blue whales"),
+        "D1b": MilestoneContent(emoji: "🐱", comparison: "That's about 8,700 house cats laid nose-to-tail!", ticker: "a cat parade"),
+        "D2":  MilestoneContent(emoji: "🐳", comparison: "That's about 270 blue whales lined up nose to tail!", ticker: "270 blue whales"),
         "D2b": MilestoneContent(emoji: "🦅", comparison: "That's a bald eagle's full afternoon patrol route!", ticker: "an eagle's patrol route"),
         "D3":  MilestoneContent(emoji: "🏃", comparison: "You've completed a half marathon distance!", ticker: "a half marathon"),
         "D3b": MilestoneContent(emoji: "🦁", comparison: "That's the daily hunting range of a mountain lion!", ticker: "a mountain lion's daily hunt"),
         "D4":  MilestoneContent(emoji: "🏅", comparison: "You've completed a full marathon distance!", ticker: "a full marathon"),
         "D4b": MilestoneContent(emoji: "🐺", comparison: "That's the nightly roaming distance of a timber wolf!", ticker: "a wolf's nightly hunt"),
-        "D5":  MilestoneContent(emoji: "🐃", comparison: "That's the migration distance of 1 wildebeest!", ticker: "a wildebeest migration"),
+        "D5":  MilestoneContent(emoji: "🐃", comparison: "That's a few days on the great wildebeest migration!", ticker: "a few days of wildebeest migration"),
         "D5b": MilestoneContent(emoji: "🐬", comparison: "That's a bottlenose dolphin's daily swim!", ticker: "a dolphin's daily swim"),
         "D6":  MilestoneContent(emoji: "🦋", comparison: "That's a Monarch butterfly's daily flight!", ticker: "a Monarch butterfly's day"),
         "W1":  MilestoneContent(emoji: "🦁", comparison: "That's the weight of a male lion!", ticker: "a male lion"),
@@ -181,16 +209,16 @@ struct ComparisonEngine {
 
     private static let citiesContent: [String: MilestoneContent] = [
         "D1":  MilestoneContent(emoji: "🏙", comparison: "That's the distance across 18 NYC blocks!", ticker: "18 NYC blocks"),
-        "D1b": MilestoneContent(emoji: "🌳", comparison: "That's halfway across Central Park!", ticker: "half of Central Park"),
-        "D2":  MilestoneContent(emoji: "🌳", comparison: "That's a full lap around Central Park!", ticker: "Central Park"),
-        "D2b": MilestoneContent(emoji: "✈️", comparison: "That's from downtown Manhattan to JFK airport!", ticker: "the Manhattan-to-JFK trip"),
+        "D1b": MilestoneContent(emoji: "🌳", comparison: "That's the full length of Central Park!", ticker: "Central Park's full length"),
+        "D2":  MilestoneContent(emoji: "🌳", comparison: "That's most of the way around Central Park's loop!", ticker: "a Central Park loop"),
+        "D2b": MilestoneContent(emoji: "✈️", comparison: "That's the entire Las Vegas Strip, end to end, more than twice!", ticker: "2+ Vegas Strips"),
         "D3":  MilestoneContent(emoji: "🏙", comparison: "That's the length of Manhattan island!", ticker: "Manhattan island"),
-        "D3b": MilestoneContent(emoji: "🌆", comparison: "That's from downtown LA to Santa Monica and back, twice!", ticker: "LA-to-Santa Monica laps"),
-        "D4":  MilestoneContent(emoji: "🤖", comparison: "That's from Austin to Round Rock!", ticker: "Austin to Round Rock"),
-        "D4b": MilestoneContent(emoji: "🏙️", comparison: "That's from Philadelphia to New York City!", ticker: "the Philly-to-NYC trip"),
-        "D5":  MilestoneContent(emoji: "🚗", comparison: "That's from Austin to San Antonio!", ticker: "Austin to San Antonio"),
-        "D5b": MilestoneContent(emoji: "🚂", comparison: "That's from New York City to Philadelphia!", ticker: "the NYC-to-Philly trip"),
-        "D6":  MilestoneContent(emoji: "🏙", comparison: "That's from Austin to Houston!", ticker: "Austin to Houston"),
+        "D3b": MilestoneContent(emoji: "🌆", comparison: "That's downtown LA to the Santa Monica Pier — and then some!", ticker: "the LA-to-Santa Monica trip"),
+        "D4":  MilestoneContent(emoji: "🤖", comparison: "That's from Austin to Georgetown!", ticker: "Austin to Georgetown"),
+        "D4b": MilestoneContent(emoji: "🏙️", comparison: "That's from Baltimore to Washington, D.C.!", ticker: "the Baltimore-to-D.C. trip"),
+        "D5":  MilestoneContent(emoji: "🚗", comparison: "That's from San Francisco to San Jose!", ticker: "SF to San Jose"),
+        "D5b": MilestoneContent(emoji: "🚂", comparison: "That's from Austin to San Antonio!", ticker: "Austin to San Antonio"),
+        "D6":  MilestoneContent(emoji: "🏙", comparison: "That's from New York City to Philadelphia!", ticker: "the NYC-to-Philly trip"),
         "W1":  MilestoneContent(emoji: "🚗", comparison: "That's the weight of a Smart Car!", ticker: "a Smart Car"),
         "W1b": MilestoneContent(emoji: "🚗", comparison: "That's the weight of a Honda Civic!", ticker: "a Honda Civic"),
         "W2":  MilestoneContent(emoji: "🚗", comparison: "That's the weight of a Mini Cooper!", ticker: "a Mini Cooper"),
@@ -221,17 +249,17 @@ struct ComparisonEngine {
     ]
 
     private static let landmarksContent: [String: MilestoneContent] = [
-        "D1":  MilestoneContent(emoji: "🗼", comparison: "That's 4 Eiffel Towers laid flat!", ticker: "4 Eiffel Towers"),
-        "D1b": MilestoneContent(emoji: "🗽", comparison: "That's the Statue of Liberty, stacked 25 times!", ticker: "25 Statues of Liberty"),
-        "D2":  MilestoneContent(emoji: "🌉", comparison: "That's across the Golden Gate Bridge and back!", ticker: "the Golden Gate Bridge"),
-        "D2b": MilestoneContent(emoji: "🏜️", comparison: "That's crossing the Grand Canyon rim-to-rim, 2.5 times!", ticker: "2.5 Grand Canyon crossings"),
-        "D3":  MilestoneContent(emoji: "🎰", comparison: "That's half the Las Vegas Strip, 5 times over!", ticker: "5 Vegas Strips"),
-        "D3b": MilestoneContent(emoji: "🌸", comparison: "That's along the full Champs-Élysées, 45 times!", ticker: "45 Champs-Élysées strolls"),
-        "D4":  MilestoneContent(emoji: "🇨🇳", comparison: "That's a full section of the Great Wall at Badaling!", ticker: "the Great Wall section"),
-        "D4b": MilestoneContent(emoji: "🛤️", comparison: "That's the Hudson River Greenway, 10 times over!", ticker: "10 Hudson River Greenways"),
-        "D5":  MilestoneContent(emoji: "🧗", comparison: "That's day 3 on the Appalachian Trail!", ticker: "an Appalachian Trail day"),
-        "D5b": MilestoneContent(emoji: "🌊", comparison: "That's crossing the English Channel, 3 times!", ticker: "3 English Channel crossings"),
-        "D6":  MilestoneContent(emoji: "🌊", comparison: "That's across the English Channel 4 times!", ticker: "4 English Channels"),
+        "D1":  MilestoneContent(emoji: "🗼", comparison: "That's 5 Eiffel Towers laid end to end!", ticker: "5 Eiffel Towers"),
+        "D1b": MilestoneContent(emoji: "🗽", comparison: "That's the Statue of Liberty, stacked 43 times!", ticker: "43 Statues of Liberty"),
+        "D2":  MilestoneContent(emoji: "🌉", comparison: "That's across the Golden Gate Bridge three times!", ticker: "3 Golden Gate crossings"),
+        "D2b": MilestoneContent(emoji: "🏜️", comparison: "That's almost halfway across the Grand Canyon, rim to rim!", ticker: "half a Grand Canyon crossing"),
+        "D3":  MilestoneContent(emoji: "🎰", comparison: "That's the entire Las Vegas Strip, three times over!", ticker: "3 Vegas Strips"),
+        "D3b": MilestoneContent(emoji: "🌸", comparison: "That's the full Champs-Élysées, 15 times over!", ticker: "15 Champs-Élysées strolls"),
+        "D4":  MilestoneContent(emoji: "🇨🇳", comparison: "That's the legendary run from Marathon to Athens!", ticker: "the road from Marathon to Athens"),
+        "D4b": MilestoneContent(emoji: "🛤️", comparison: "That's the Hudson River Greenway, three times over!", ticker: "3 Hudson River Greenways"),
+        "D5":  MilestoneContent(emoji: "🧗", comparison: "That's the full length of the Panama Canal!", ticker: "the Panama Canal"),
+        "D5b": MilestoneContent(emoji: "🌊", comparison: "That's the full length of Hadrian's Wall, coast to coast!", ticker: "Hadrian's Wall"),
+        "D6":  MilestoneContent(emoji: "🌊", comparison: "That's swimming the English Channel nearly 5 times!", ticker: "5 English Channel swims"),
         "W1":  MilestoneContent(emoji: "🔔", comparison: "That's the weight of a church bell!", ticker: "a church bell"),
         "W1b": MilestoneContent(emoji: "🔔", comparison: "That's two Liberty Bells!", ticker: "2 Liberty Bells"),
         "W2":  MilestoneContent(emoji: "🗽", comparison: "That's the weight of the Statue of Liberty's torch!", ticker: "Liberty's torch"),
@@ -267,23 +295,23 @@ struct ComparisonEngine {
         "D2":  MilestoneContent(emoji: "🍕", comparison: "That's 5,800 pizzas lined up crust to crust!", ticker: "a pizza runway"),
         "D2b": MilestoneContent(emoji: "🌭", comparison: "That's 105,000 hot dogs end to end!", ticker: "a hot-dog marathon"),
         "D3":  MilestoneContent(emoji: "🥨", comparison: "That's a half marathon paved entirely in pretzels!", ticker: "a pretzel half-marathon"),
-        "D3b": MilestoneContent(emoji: "🍜", comparison: "That's 28 km of ramen noodles slurped straight!", ticker: "a ramen river"),
+        "D3b": MilestoneContent(emoji: "🍜", comparison: "That's one ramen noodle slurped straight across town!", ticker: "a ramen river"),
         "D4":  MilestoneContent(emoji: "🍩", comparison: "That's a full marathon ringed with donuts!", ticker: "a donut marathon"),
-        "D4b": MilestoneContent(emoji: "🥞", comparison: "That's a stack of pancakes toppling for 56 km!", ticker: "a pancake avalanche"),
-        "D5":  MilestoneContent(emoji: "🍇", comparison: "That's a single vineyard row 80 km long!", ticker: "a grapevine trail"),
-        "D5b": MilestoneContent(emoji: "🌯", comparison: "That's 120 km of burritos rolled tip to tip!", ticker: "a burrito border-run"),
-        "D6":  MilestoneContent(emoji: "🍝", comparison: "That's a single strand of spaghetti 160 km long!", ticker: "an endless spaghetti noodle"),
-        "W1":  MilestoneContent(emoji: "🥔", comparison: "That's a 227 kg sack of potatoes!", ticker: "a potato sack"),
-        "W1b": MilestoneContent(emoji: "🧀", comparison: "That's a cheese wheel fit for a giant — 454 kg!", ticker: "a giant cheese wheel"),
-        "W2":  MilestoneContent(emoji: "🎃", comparison: "That's the world's biggest pumpkin — 1,134 kg!", ticker: "a record pumpkin"),
-        "W2b": MilestoneContent(emoji: "🍫", comparison: "That's 2,268 kg of chocolate — a dentist's nightmare!", ticker: "a chocolate mountain"),
-        "W3":  MilestoneContent(emoji: "🍞", comparison: "That's 4,536 kg of bread dough, rising!", ticker: "a mountain of dough"),
-        "W3b": MilestoneContent(emoji: "🥓", comparison: "That's 6,804 kg of bacon — a very happy morning!", ticker: "a bacon hoard"),
-        "W4":  MilestoneContent(emoji: "🍔", comparison: "That's 11,340 kg of burgers stacked to the sky!", ticker: "a burger tower"),
-        "W4b": MilestoneContent(emoji: "🍦", comparison: "That's 15,876 kg of ice cream before it melts!", ticker: "an ice-cream glacier"),
-        "W5":  MilestoneContent(emoji: "🍉", comparison: "That's 22,680 kg of watermelons!", ticker: "a watermelon avalanche"),
-        "W5b": MilestoneContent(emoji: "🥫", comparison: "That's 34,019 kg of canned beans!", ticker: "a bean-can vault"),
-        "W6":  MilestoneContent(emoji: "🎂", comparison: "That's a wedding cake weighing 45,359 kg!", ticker: "a colossal cake"),
+        "D4b": MilestoneContent(emoji: "🥞", comparison: "That's a toppled pancake tower stretching to the horizon!", ticker: "a pancake avalanche"),
+        "D5":  MilestoneContent(emoji: "🍇", comparison: "That's a single vineyard row running past the horizon!", ticker: "a grapevine trail"),
+        "D5b": MilestoneContent(emoji: "🌯", comparison: "That's burritos rolled tip to tip all the way to the border!", ticker: "a burrito border-run"),
+        "D6":  MilestoneContent(emoji: "🍝", comparison: "That's a single strand of spaghetti longer than a highway!", ticker: "an endless spaghetti noodle"),
+        "W1":  MilestoneContent(emoji: "🥔", comparison: "That's a sack of potatoes big enough to feed a town!", ticker: "a potato sack"),
+        "W1b": MilestoneContent(emoji: "🧀", comparison: "That's a cheese wheel fit for a giant!", ticker: "a giant cheese wheel"),
+        "W2":  MilestoneContent(emoji: "🎃", comparison: "That's the world's biggest pumpkin!", ticker: "a record pumpkin"),
+        "W2b": MilestoneContent(emoji: "🍫", comparison: "That's a mountain of chocolate — a dentist's nightmare!", ticker: "a chocolate mountain"),
+        "W3":  MilestoneContent(emoji: "🍞", comparison: "That's a mountain of bread dough, still rising!", ticker: "a mountain of dough"),
+        "W3b": MilestoneContent(emoji: "🥓", comparison: "That's a lifetime supply of bacon — a very happy morning!", ticker: "a bacon hoard"),
+        "W4":  MilestoneContent(emoji: "🍔", comparison: "That's a tower of burgers stacked to the sky!", ticker: "a burger tower"),
+        "W4b": MilestoneContent(emoji: "🍦", comparison: "That's a glacier of ice cream racing the sun!", ticker: "an ice-cream glacier"),
+        "W5":  MilestoneContent(emoji: "🍉", comparison: "That's a whole truckload of watermelons!", ticker: "a watermelon avalanche"),
+        "W5b": MilestoneContent(emoji: "🥫", comparison: "That's a warehouse vault full of canned beans!", ticker: "a bean-can vault"),
+        "W6":  MilestoneContent(emoji: "🎂", comparison: "That's a wedding cake the size of a house!", ticker: "a colossal cake"),
         "T1":  MilestoneContent(emoji: "☕", comparison: "That's long enough to brew and savor 10 coffees!", ticker: "a coffee break"),
         "T2":  MilestoneContent(emoji: "🍞", comparison: "That's one full rise of a sourdough loaf!", ticker: "a sourdough rise"),
         "T3":  MilestoneContent(emoji: "🍲", comparison: "That's a pot of stew simmered to perfection!", ticker: "a slow-simmered stew"),
@@ -315,16 +343,16 @@ struct ComparisonEngine {
         "D5b": MilestoneContent(emoji: "🦖", comparison: "That's a Gallimimus flock's cross-plains dash!", ticker: "a Gallimimus dash"),
         "D6":  MilestoneContent(emoji: "🦕", comparison: "That's an entire dinosaur migration route!", ticker: "a dino migration route"),
         "W1":  MilestoneContent(emoji: "🦕", comparison: "That's the weight of a baby Triceratops!", ticker: "a baby Triceratops"),
-        "W1b": MilestoneContent(emoji: "🦖", comparison: "That's a full-grown Pachycephalosaurus — 454 kg!", ticker: "a Pachycephalosaurus"),
-        "W2":  MilestoneContent(emoji: "🦏", comparison: "That's a Styracosaurus, horns and all — 1,134 kg!", ticker: "a Styracosaurus"),
-        "W2b": MilestoneContent(emoji: "🦕", comparison: "That's an Ankylosaurus, club included — 2,268 kg!", ticker: "an Ankylosaurus"),
-        "W3":  MilestoneContent(emoji: "🦖", comparison: "That's a T-Rex, teeth and tail — 4,536 kg!", ticker: "a T-Rex"),
-        "W3b": MilestoneContent(emoji: "🦕", comparison: "That's a Triceratops at full charge — 6,804 kg!", ticker: "a Triceratops"),
-        "W4":  MilestoneContent(emoji: "🦴", comparison: "That's a whole Stegosaurus herd — 11,340 kg!", ticker: "a Stegosaurus herd"),
-        "W4b": MilestoneContent(emoji: "🦕", comparison: "That's an Apatosaurus — 15,876 kg of gentle giant!", ticker: "an Apatosaurus"),
-        "W5":  MilestoneContent(emoji: "🦖", comparison: "That's a Brachiosaurus reaching for treetops — 22,680 kg!", ticker: "a Brachiosaurus"),
-        "W5b": MilestoneContent(emoji: "🦕", comparison: "That's a Diplodocus stretched nose to tail — 34,019 kg!", ticker: "a Diplodocus"),
-        "W6":  MilestoneContent(emoji: "🦴", comparison: "That's an Argentinosaurus, the heavyweight champ — 45,359 kg!", ticker: "an Argentinosaurus"),
+        "W1b": MilestoneContent(emoji: "🦖", comparison: "That's a full-grown Pachycephalosaurus, dome and all!", ticker: "a Pachycephalosaurus"),
+        "W2":  MilestoneContent(emoji: "🦏", comparison: "That's a Styracosaurus, horns and all!", ticker: "a Styracosaurus"),
+        "W2b": MilestoneContent(emoji: "🦕", comparison: "That's an Ankylosaurus, club included!", ticker: "an Ankylosaurus"),
+        "W3":  MilestoneContent(emoji: "🦖", comparison: "That's a T-Rex, teeth and tail!", ticker: "a T-Rex"),
+        "W3b": MilestoneContent(emoji: "🦕", comparison: "That's a Triceratops at full charge!", ticker: "a Triceratops"),
+        "W4":  MilestoneContent(emoji: "🦴", comparison: "That's a whole Stegosaurus herd!", ticker: "a Stegosaurus herd"),
+        "W4b": MilestoneContent(emoji: "🦕", comparison: "That's an Apatosaurus — a true gentle giant!", ticker: "an Apatosaurus"),
+        "W5":  MilestoneContent(emoji: "🦖", comparison: "That's a Brachiosaurus reaching for the treetops!", ticker: "a Brachiosaurus"),
+        "W5b": MilestoneContent(emoji: "🦕", comparison: "That's a Diplodocus stretched nose to tail!", ticker: "a Diplodocus"),
+        "W6":  MilestoneContent(emoji: "🦴", comparison: "That's an Argentinosaurus, the heavyweight champ!", ticker: "an Argentinosaurus"),
         "T1":  MilestoneContent(emoji: "🥚", comparison: "That's a hatchling cracking out of its egg!", ticker: "a dino hatching"),
         "T2":  MilestoneContent(emoji: "🦖", comparison: "That's a T-Rex's post-feast nap!", ticker: "a T-Rex nap"),
         "T3":  MilestoneContent(emoji: "🦕", comparison: "That's a Sauropod's leisurely afternoon graze!", ticker: "a sauropod graze"),

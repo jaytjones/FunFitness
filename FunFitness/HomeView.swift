@@ -57,7 +57,7 @@ struct HomeView: View {
                                 icon: type.emoji,
                                 displayValue: viewModel.displayTotal(for: type),
                                 progress: viewModel.progressToNextMilestone(type: type),
-                                nextMilestone: viewModel.remainingToNextMilestone(type: type).milestone?.title ?? "Complete!",
+                                nextMilestone: viewModel.remainingToNextMilestone(type: type).milestone?.title(pref: viewModel.unitPreference) ?? "Complete!",
                                 remainingDisplay: remainingLabel(for: type),
                                 gradientColors: type.cardGradient,
                                 logHint: "Logs a \(type.displayName.lowercased()) activity",

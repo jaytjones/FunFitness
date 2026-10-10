@@ -65,7 +65,38 @@ struct ComparisonEngineTests {
 
     @Test func allMilestoneTitlesNonEmpty() {
         for m in ComparisonEngine.allMilestones {
-            #expect(!m.title.isEmpty, "Milestone \(m.id) has empty title")
+            for pref in UnitPreference.allCases {
+                #expect(!m.title(pref: pref).isEmpty, "Milestone \(m.id) has empty \(pref) title")
+            }
+        }
+    }
+
+    // v2.3: distance/weight titles follow the user's units instead of hardcoding imperial.
+    @Test func generatedTitlesUseTheUsersUnits() throws {
+        let d2 = try #require(ComparisonEngine.milestone(withId: "D2"))
+        #expect(d2.title(pref: .imperial) == "You've run 5 miles!")
+        #expect(d2.title(pref: .metric).contains("km"))
+        #expect(!d2.title(pref: .metric).contains("mile"))
+
+        let d1 = try #require(ComparisonEngine.milestone(withId: "D1"))
+        #expect(d1.title(pref: .imperial) == "You've run 1 mile!")
+
+        let w1 = try #require(ComparisonEngine.milestone(withId: "W1"))
+        #expect(w1.title(pref: .imperial) == "You've lifted 500 lbs!")
+        #expect(w1.title(pref: .metric).hasSuffix("kg!"))
+
+        let d3 = try #require(ComparisonEngine.milestone(withId: "D3"))
+        #expect(d3.title(pref: .metric) == "Half Marathon Complete!")
+    }
+
+    // v2.3: pack copy must not bake in a unit, since both imperial and metric users read it.
+    @Test func comparisonCopyHasNoHardcodedUnits() {
+        let unitPattern = #"\d[\d,.]*\s?(km|kg|mi|miles?|lbs?)\b"#
+        for pack in ThemePackCatalog.all {
+            for m in ComparisonEngine.allMilestones {
+                let copy = m.getComparison(for: pack)
+                #expect(copy.range(of: unitPattern, options: .regularExpression) == nil, "\(pack.id)/\(m.id): \(copy)")
+            }
         }
     }
 
@@ -497,6 +528,20 @@ struct SillyTitleEngineTests {
     @Test func certifiedHippoHoisterAt4() {
         let title = SillyTitleEngine.sillyTitle(unlockedCount: 4)
         #expect(title.title == "Certified Hippo Hoister")
+    }
+
+    // v2.3: rank only counts the frozen ranked set, so new tiers and unknown ids don't promote.
+    @Test func rankIgnoresUnrankedIds() {
+        let ranked: Set<String> = ["D1", "D1b", "D2", "D2b"]
+        let withExtras = ranked.union(["D7", "D8", "W7", "future-tier"])
+        #expect(SillyTitleEngine.sillyTitle(unlockedIds: withExtras).title
+                == SillyTitleEngine.sillyTitle(unlockedIds: ranked).title)
+        #expect(SillyTitleEngine.sillyTitle(unlockedIds: ranked).title == "Certified Hippo Hoister")
+    }
+
+    @Test func rankedIdsAreRealMilestones() {
+        #expect(SillyTitleEngine.rankedMilestoneIds.count == 38)
+        #expect(SillyTitleEngine.rankedMilestoneIds.isSubset(of: Set(ComparisonEngine.byId.keys)))
     }
 
     @Test func titleAndRankNonEmpty() {

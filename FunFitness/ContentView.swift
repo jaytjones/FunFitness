@@ -50,7 +50,7 @@ struct ContentView: View {
                 .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
                     if currentMilestoneIndex < viewModel.pendingMilestones.count {
                         let milestone = viewModel.pendingMilestones[currentMilestoneIndex]
-                        MilestoneView(milestone: milestone, pack: viewModel.activePack) {
+                        MilestoneView(milestone: milestone, pack: viewModel.activePack, pref: viewModel.unitPreference) {
                             currentMilestoneIndex += 1
                             if currentMilestoneIndex >= viewModel.pendingMilestones.count {
                                 viewModel.showMilestoneModal = false
@@ -186,7 +186,7 @@ struct ContentView: View {
                     let remainingDisplay = UnitConverter.displayString(remaining, type: type, pref: viewModel.unitPreference)
                     nm.scheduleMilestoneNudge(
                         type: type,
-                        milestoneTitle: milestone.title,
+                        milestoneTitle: milestone.title(pref: viewModel.unitPreference),
                         remaining: remainingDisplay
                     )
                 }
@@ -215,8 +215,8 @@ struct ContentView: View {
         defaults?.set(viewModel.isActiveThisWeekStreak,                   forKey: "activeThisWeek")
         defaults?.set(viewModel.progressToNextMilestone(type: .distance), forKey: "distanceProgress")
         defaults?.set(viewModel.progressToNextMilestone(type: .weight),   forKey: "weightProgress")
-        let nextDist = viewModel.remainingToNextMilestone(type: .distance).milestone?.title ?? "All done!"
-        let nextWt   = viewModel.remainingToNextMilestone(type: .weight).milestone?.title   ?? "All done!"
+        let nextDist = viewModel.remainingToNextMilestone(type: .distance).milestone?.title(pref: viewModel.unitPreference) ?? "All done!"
+        let nextWt   = viewModel.remainingToNextMilestone(type: .weight).milestone?.title(pref: viewModel.unitPreference) ?? "All done!"
         defaults?.set(nextDist,                   forKey: "nextDistanceMilestone")
         defaults?.set(nextWt,                     forKey: "nextWeightMilestone")
         defaults?.set(viewModel.sillyTitle.title, forKey: "sillyTitle")

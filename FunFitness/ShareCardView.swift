@@ -23,11 +23,11 @@ struct ShareCardContent {
 
     // MARK: - Factories
 
-    static func milestone(_ milestone: Milestone, pack: ThemePack) -> ShareCardContent {
+    static func milestone(_ milestone: Milestone, pack: ThemePack, pref: UnitPreference) -> ShareCardContent {
         ShareCardContent(
             badge: "MILESTONE UNLOCKED",
             emoji: milestone.getEmoji(for: pack),
-            headline: milestone.title,
+            headline: milestone.title(pref: pref),
             subtext: milestone.getComparison(for: pack),
             gradient: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
         )

@@ -13,6 +13,22 @@ struct SillyTitle {
 
 struct SillyTitleEngine {
 
+    /// The milestones that count toward rank, frozen at the 38 that existed in 2.2. New tiers are
+    /// left out on purpose so adding them doesn't silently promote existing users; to rank on a
+    /// new tier, add its id here and re-tune the cutoffs below in the same change. (v2.3)
+    static let rankedMilestoneIds: Set<String> = [
+        "D1", "D1b", "D2", "D2b", "D3", "D3b", "D4", "D4b", "D5", "D5b", "D6",
+        "W1", "W1b", "W2", "W2b", "W3", "W3b", "W4", "W4b", "W5", "W5b", "W6",
+        "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8",
+        "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8",
+    ]
+
+    /// Title for a set of unlocked milestone ids. Only ranked ids count, so tiers added later and
+    /// ids synced from a newer build don't change the rank.
+    static func sillyTitle(unlockedIds: Set<String>) -> SillyTitle {
+        sillyTitle(unlockedCount: unlockedIds.intersection(rankedMilestoneIds).count)
+    }
+
     static func sillyTitle(unlockedCount: Int) -> SillyTitle {
         let tier = tier(for: unlockedCount)
         return SillyTitle(title: tier.title, rank: tier.rank, rankEmoji: tier.emoji)

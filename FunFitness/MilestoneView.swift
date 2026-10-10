@@ -10,6 +10,7 @@ import SwiftUI
 struct MilestoneView: View {
     let milestone: Milestone
     let pack: ThemePack
+    let pref: UnitPreference
     let onDismiss: () -> Void
 
     @State private var showContent = false
@@ -37,7 +38,7 @@ struct MilestoneView: View {
                     .accessibilityHidden(true)
 
                 VStack(spacing: 12) {
-                    Text(milestone.title)
+                    Text(milestone.title(pref: pref))
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
@@ -84,7 +85,7 @@ struct MilestoneView: View {
         }
         .task {
             shareCardURL = ShareCardRenderer.pngURL(
-                for: .milestone(milestone, pack: pack),
+                for: .milestone(milestone, pack: pack, pref: pref),
                 filename: "funfitness_milestone.png"
             )
         }
@@ -110,11 +111,11 @@ struct MilestoneView: View {
     private var shareButton: some View {
         Group {
             if let shareCardURL {
-                ShareLink(item: shareCardURL, preview: SharePreview(milestone.title)) {
+                ShareLink(item: shareCardURL, preview: SharePreview(milestone.title(pref: pref))) {
                     shareLabel
                 }
             } else {
-                ShareLink(item: "\(milestone.title)\n\(milestone.getComparison(for: pack))\n\nLogged with FunFitness!") {
+                ShareLink(item: "\(milestone.title(pref: pref))\n\(milestone.getComparison(for: pack))\n\nLogged with FunFitness!") {
                     shareLabel
                 }
             }
@@ -215,6 +216,7 @@ struct ConfettiParticle {
     MilestoneView(
         milestone: ComparisonEngine.distanceMilestones[0],
         pack: ThemePackCatalog.animals,
+        pref: .imperial,
         onDismiss: {}
     )
 }
