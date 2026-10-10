@@ -12,7 +12,7 @@ or factually wrong · VAGUE = no checkable quantity.
 | Weight comparisons (W1–W6, 5 packs) | 55 | 13 | 13 | 18 | 11 |
 | `ReferenceUnit` magnitudes | 70 | 66 | 3 | 1 | — |
 
-Not covered: duration (T1–T8) and reps (R1–R8) milestone comparisons.
+Duration (T1–T8) and reps (R1–R8) comparisons were checked in a second pass; see section 4.
 
 ---
 
