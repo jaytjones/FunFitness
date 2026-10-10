@@ -353,11 +353,12 @@
 				CODE_SIGN_ENTITLEMENTS = FunFitness/FunFitnessDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2XT4CUP82M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FunFitness/Info.plist;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log back to Apple Health so all your workouts live in one place.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -391,11 +392,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FunFitness/FunFitness.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2XT4CUP82M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FunFitness/Info.plist;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log back to Apple Health so all your workouts live in one place.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
