@@ -10,6 +10,9 @@
 		863D79AB3026250000670EDD /* 20260807_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 863D79AA3026250000670EDD /* 20260807_session_summary.md */; };
 		86687D563015A7B700E05A84 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 86687D553015A7B700E05A84 /* README.md */; };
 		86916D7330302095007F843A /* 20260814_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86916D7230302095007F843A /* 20260814_session_summary.md */; };
+		869F00EE307AF83700DCE148 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00ED307AF83700DCE148 /* WidgetKit.framework */; };
+		869F00F0307AF83700DCE148 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00EF307AF83700DCE148 /* SwiftUI.framework */; };
+		869F00FB307AF83800DCE148 /* FunFitnessWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		86B3565F301D4695008993F2 /* 20260731_session_summary_2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */; };
 		86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */; };
 		86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */; };
@@ -20,6 +23,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		869F00F9307AF83800DCE148 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 86EEF7DC2F79F3E00076F515 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 869F00EA307AF83700DCE148;
+			remoteInfo = FunFitnessWidgetsExtension;
+		};
 		86EEF7F62F79F3E10076F515 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 86EEF7DC2F79F3E00076F515 /* Project object */;
@@ -36,13 +46,29 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		869F0100307AF83800DCE148 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				869F00FB307AF83800DCE148 /* FunFitnessWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		863D79AA3026250000670EDD /* 20260807_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260807_session_summary.md; sourceTree = "<group>"; };
 		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		86916D7230302095007F843A /* 20260814_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260814_session_summary.md; sourceTree = "<group>"; };
+		869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunFitnessWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		869F00ED307AF83700DCE148 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
+		869F00EF307AF83700DCE148 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
+		869F0103307AF8F300DCE148 /* FunFitnessWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FunFitnessWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260731_session_summary_2.md; sourceTree = "<group>"; };
-		86B35669301D4AA7008993F2 /* FunFitnessWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunFitnessWidgetData.swift; sourceTree = "<group>"; };
-		86B3566A301D4ABC008993F2 /* FunFitnessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunFitnessWidget.swift; sourceTree = "<group>"; };
 		86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Plan.md"; sourceTree = "<group>"; };
 		86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results.md"; sourceTree = "<group>"; };
 		86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Action_Plan.md; sourceTree = "<group>"; };
@@ -55,6 +81,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		869F00FF307AF83800DCE148 /* Exceptions for "FunFitnessWidgets" folder in "FunFitnessWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */;
+		};
 		86EEF8072F79F3E10076F515 /* Exceptions for "FunFitness" folder in "FunFitness" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -65,6 +98,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		869F00F1307AF83700DCE148 /* FunFitnessWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				869F00FF307AF83800DCE148 /* Exceptions for "FunFitnessWidgets" folder in "FunFitnessWidgetsExtension" target */,
+			);
+			path = FunFitnessWidgets;
+			sourceTree = "<group>";
+		};
 		86EEF7E62F79F3E00076F515 /* FunFitness */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -86,6 +127,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		869F00E8307AF83700DCE148 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				869F00F0307AF83700DCE148 /* SwiftUI.framework in Frameworks */,
+				869F00EE307AF83700DCE148 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		86EEF7E12F79F3E00076F515 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -127,24 +177,26 @@
 			path = docs;
 			sourceTree = "<group>";
 		};
-		86B35668301D4AA7008993F2 /* FunFitnessWidget */ = {
+		869F00EC307AF83700DCE148 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				86B35669301D4AA7008993F2 /* FunFitnessWidgetData.swift */,
-				86B3566A301D4ABC008993F2 /* FunFitnessWidget.swift */,
+				869F00ED307AF83700DCE148 /* WidgetKit.framework */,
+				869F00EF307AF83700DCE148 /* SwiftUI.framework */,
 			);
-			path = FunFitnessWidget;
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		86EEF7DB2F79F3E00076F515 = {
 			isa = PBXGroup;
 			children = (
+				869F0103307AF8F300DCE148 /* FunFitnessWidgetsExtension.entitlements */,
 				86EEF7E62F79F3E00076F515 /* FunFitness */,
 				86EEF7F82F79F3E10076F515 /* FunFitnessTests */,
 				86EEF8022F79F3E10076F515 /* FunFitnessUITests */,
 				86687D4D3015872C00E05A84 /* docs */,
+				869F00F1307AF83700DCE148 /* FunFitnessWidgets */,
+				869F00EC307AF83700DCE148 /* Frameworks */,
 				86EEF7E52F79F3E00076F515 /* Products */,
-				86B35668301D4AA7008993F2 /* FunFitnessWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -154,6 +206,7 @@
 				86EEF7E42F79F3E00076F515 /* FunFitness.app */,
 				86EEF7F52F79F3E10076F515 /* FunFitnessTests.xctest */,
 				86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */,
+				869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,6 +214,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 869F00FC307AF83800DCE148 /* Build configuration list for PBXNativeTarget "FunFitnessWidgetsExtension" */;
+			buildPhases = (
+				869F00E7307AF83700DCE148 /* Sources */,
+				869F00E8307AF83700DCE148 /* Frameworks */,
+				869F00E9307AF83700DCE148 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				869F00F1307AF83700DCE148 /* FunFitnessWidgets */,
+			);
+			name = FunFitnessWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = FunFitnessWidgetsExtension;
+			productReference = 869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		86EEF7E32F79F3E00076F515 /* FunFitness */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 86EEF8082F79F3E10076F515 /* Build configuration list for PBXNativeTarget "FunFitness" */;
@@ -168,10 +243,12 @@
 				86EEF7E02F79F3E00076F515 /* Sources */,
 				86EEF7E12F79F3E00076F515 /* Frameworks */,
 				86EEF7E22F79F3E00076F515 /* Resources */,
+				869F0100307AF83800DCE148 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				869F00FA307AF83800DCE148 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				86EEF7E62F79F3E00076F515 /* FunFitness */,
@@ -236,9 +313,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2640;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
+					869F00EA307AF83700DCE148 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					86EEF7E32F79F3E00076F515 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -269,11 +349,19 @@
 				86EEF7E32F79F3E00076F515 /* FunFitness */,
 				86EEF7F42F79F3E10076F515 /* FunFitnessTests */,
 				86EEF7FE2F79F3E10076F515 /* FunFitnessUITests */,
+				869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		869F00E9307AF83700DCE148 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		86EEF7E22F79F3E00076F515 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -308,6 +396,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		869F00E7307AF83700DCE148 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		86EEF7E02F79F3E00076F515 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -332,6 +427,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		869F00FA307AF83800DCE148 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */;
+			targetProxy = 869F00F9307AF83800DCE148 /* PBXContainerItemProxy */;
+		};
 		86EEF7F72F79F3E10076F515 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 86EEF7E32F79F3E00076F515 /* FunFitness */;
@@ -345,6 +445,93 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		869F00FD307AF83800DCE148 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FunFitnessWidgetsExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2XT4CUP82M;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FunFitnessWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FunFitnessWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaytjones.FunFitness.FunFitnessWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		869F00FE307AF83800DCE148 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FunFitnessWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2XT4CUP82M;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FunFitnessWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FunFitnessWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaytjones.FunFitness.FunFitnessWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 		86EEF8092F79F3E10076F515 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -635,6 +822,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		869F00FC307AF83800DCE148 /* Build configuration list for PBXNativeTarget "FunFitnessWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				869F00FD307AF83800DCE148 /* Debug */,
+				869F00FE307AF83800DCE148 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		86EEF7DF2F79F3E00076F515 /* Build configuration list for PBXProject "FunFitness" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

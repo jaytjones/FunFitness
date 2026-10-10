@@ -1,9 +1,9 @@
 //
-//  FunFitnessWidget.swift
-//  FunFitnessWidget
+//  FunFitnessWidgets.swift
+//  FunFitnessWidgets
 //
 //  Streak + milestone-progress home screen widget.
-//  Bundle entry point is in FunFitnessWidgetBundle.swift.
+//  Bundle entry point is in FunFitnessWidgetsBundle.swift.
 //
 
 import WidgetKit
@@ -164,6 +164,8 @@ struct FunFitnessWidget: Widget {
         .configurationDisplayName("FunFitness")
         .description("Your streak and progress at a glance.")
         .supportedFamilies([.systemSmall, .systemMedium])
+        // The views pad themselves, so let the gradients reach the widget's edges.
+        .contentMarginsDisabled()
     }
 }
 

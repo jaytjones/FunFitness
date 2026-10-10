@@ -1,9 +1,9 @@
 //
 //  FunFitnessWidgetData.swift
-//  FunFitnessWidget
+//  FunFitnessWidgets
 //
 //  Shared data read/written via App Group UserDefaults.
-//  Must be compiled into BOTH the main app target and the widget extension target.
+//  The app writes these keys in ContentView.writeWidgetData(); the widget reads them here.
 //
 
 import Foundation
