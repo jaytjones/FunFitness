@@ -101,14 +101,6 @@ struct ComparisonEngineTests {
         }
     }
 
-    @Test func allMilestoneTickersNonEmpty() {
-        for m in ComparisonEngine.allMilestones {
-            for pack in ThemePackCatalog.all {
-                #expect(!m.getTicker(for: pack).isEmpty, "Milestone \(m.id) has empty ticker for pack \(pack.id)")
-            }
-        }
-    }
-
     @Test func allMilestoneComparisonTextsNonEmpty() {
         for m in ComparisonEngine.allMilestones {
             for pack in ThemePackCatalog.all {

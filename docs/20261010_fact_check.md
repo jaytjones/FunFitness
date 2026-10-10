@@ -109,3 +109,47 @@ All LOOSE/WRONG rows above were fixed in one commit, with these deviations from 
 
 Still open: the VAGUE rows (by design), duration/reps comparisons (unchecked), and the distance
 spacing gaps in Animals, Dinosaurs, and Food.
+
+---
+
+## 4. Duration and reps comparisons (second pass, applied in 2.4.2)
+
+80 entries (T1–T8, R1–R8 × 5 packs): 12 WRONG, 8 LOOSE, 60 OK/VAGUE. Dinosaur durations are
+whimsy by design (not knowable) and were left alone.
+
+| ID | Pack | Was | Now (source) |
+|---|---|---|---|
+| T2 | Animals | Sloth's daily activity budget (actually ~3.5 h) | Cuvier's beaked whale deep dive, ~67 min (PLOS ONE) |
+| T5 | Animals | Koala sleeps 10 h (actually 18–22 h) | Wild sloth's day of sleep, 9.6 h (EEG study) |
+| T8 | Animals | Albatross glides 100 h straight (lands every ~1.8 h) | Great snipe nonstop Sweden→Africa, 48–96 h (Royal Society) |
+| R8 | Animals | A whole hive of 10,000 bees | A honeybee swarm, ~10,000 (Seeley) |
+| T2 | Cities | Full loop on the Underground | London's Circle line end to end, ~72 min |
+| T5 | Cities | LA→SF drive (6–7 h) | LA→SF up Highway 1, ~10 h |
+| T6 | Cities | Bullet train the length of Japan (~11–12 h) | NYC→Chicago overnight train, 19.5–20.25 h |
+| T7 | Cities | "Nearly" London→Sydney twice | "More than" London→Sydney twice |
+| T8 | Cities | Circle the globe by rail in 100 h | VIA Rail's Canadian, Toronto→Vancouver, 97 h |
+| R8 | Cities | 10,000 windows across a skyline | Empire State Building windows and half again (6,514 × 1.5) |
+| T6 | Landmarks | Kilimanjaro summit day (10–16 h) | Marangu summit day to Horombo Hut, 20–24 h |
+| T7 | Landmarks | El Capitan "the hard way" (3–5 days) | A speedy two-day ascent of the Nose |
+| T8 | Landmarks | Full Everest expedition (60–70 days) | A fast Everest summit push |
+| R5 | Landmarks | 1,000 torii at Fushimi Inari (~10,000 total) | Senbon Torii, the "thousand gates" tunnel |
+| R7 | Landmarks | 5,000 blocks in the Great Pyramid's base | Calà del Sasso staircase, 4,444 steps |
+| R8 | Landmarks | 10,000 stones in Machu Picchu's terraces (unsourced) | Niesen stairway, 11,674 steps (Guinness) |
+| T1 | Food | Brew and savor 10 coffees | A pan of fudge brownies, ~30 min |
+| T2 | Food | One full sourdough rise (3–5 h) | One rise of a yeasted bread dough, 1–2 h |
+
+The koala contradiction is resolved (T5 no longer says 10 h; `animals.koalaSnooze` stays 20 h).
+Food T6 brisket (20 h) and `food.brisket` (12 h) are both within the sourced 12–22 h range.
+
+### Reference-unit gaps filled
+
+| id | magnitude | Source |
+|---|---|---|
+| animals.beeForagingFlight | 2.3 km | Visscher & Seeley 1982, mean foraging distance |
+| animals.elephantDailyWalk | 10 km | GPS-collar studies, ~8–12 km/day |
+| dinosaurs.plagneTrackway | 0.155 km | Longest sauropod trackway, Jura, France |
+| dinosaurs.calOrckoWall | 1.5 km | Cal Orck'o track wall, Bolivia |
+| dinosaurs.dinosaurRidge | 3.2 km | Dinosaur Ridge round trip, Colorado |
+| food.recordHotDog | 0.2038 km | Guinness, Paraguay 2011 |
+| food.recordPizza | 1.93 km | Guinness, Fontana CA 2017 |
+| food.recordSausage | 62.75 km | Guinness, Romania 2014 |

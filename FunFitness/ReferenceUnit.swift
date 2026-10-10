@@ -76,6 +76,8 @@ enum ReferenceUnitCatalog {
 
     private static let animals: [ReferenceUnit] = [
         ReferenceUnit(id: "animals.blueWhaleLength", emoji: "🐳", singular: "blue whale length", plural: "blue whale lengths", type: .distance, magnitude: 0.03),
+        ReferenceUnit(id: "animals.beeForagingFlight", emoji: "🐝", singular: "honeybee flight to the flowers", plural: "honeybee flights to the flowers", type: .distance, magnitude: 2.3),
+        ReferenceUnit(id: "animals.elephantDailyWalk", emoji: "🐘", singular: "wild elephant's daily walk", plural: "wild elephant daily walks", type: .distance, magnitude: 10),
         ReferenceUnit(id: "animals.camelTrek", emoji: "🐪", singular: "camel day-trek", plural: "camel day-treks", type: .distance, magnitude: 40),
         ReferenceUnit(id: "animals.wildebeestMigration", emoji: "🐃", singular: "wildebeest migration", plural: "wildebeest migrations", type: .distance, magnitude: 800),
         ReferenceUnit(id: "animals.ternMigration", emoji: "🐦", singular: "Arctic tern migration", plural: "Arctic tern migrations", type: .distance, magnitude: 70_000),
@@ -139,6 +141,9 @@ enum ReferenceUnitCatalog {
 
     private static let food: [ReferenceUnit] = [
         ReferenceUnit(id: "food.baguette", emoji: "🥖", singular: "baguette laid end to end", plural: "baguettes laid end to end", type: .distance, magnitude: 0.00065),
+        ReferenceUnit(id: "food.recordHotDog", emoji: "🌭", singular: "world-record hot dog", plural: "world-record hot dogs", type: .distance, magnitude: 0.2038),
+        ReferenceUnit(id: "food.recordPizza", emoji: "🍕", singular: "world-record pizza", plural: "world-record pizzas", type: .distance, magnitude: 1.93),
+        ReferenceUnit(id: "food.recordSausage", emoji: "🥓", singular: "world-record sausage", plural: "world-record sausages", type: .distance, magnitude: 62.75),
 
         ReferenceUnit(id: "food.watermelon", emoji: "🍉", singular: "watermelon", plural: "watermelons", type: .weight, magnitude: 9),
         ReferenceUnit(id: "food.parmesanWheel", emoji: "🧀", singular: "Parmesan wheel", plural: "Parmesan wheels", type: .weight, magnitude: 40),
@@ -157,6 +162,9 @@ enum ReferenceUnitCatalog {
     private static let dinosaurs: [ReferenceUnit] = [
         ReferenceUnit(id: "dinosaurs.tRexLength", emoji: "🦖", singular: "T-Rex, nose to tail", plural: "T-Rexes, nose to tail", type: .distance, magnitude: 0.012),
         ReferenceUnit(id: "dinosaurs.argentinosaurusLength", emoji: "🦕", singular: "Argentinosaurus, nose to tail", plural: "Argentinosauruses, nose to tail", type: .distance, magnitude: 0.035),
+        ReferenceUnit(id: "dinosaurs.plagneTrackway", emoji: "🦕", singular: "walk along the Plagne sauropod trackway", plural: "walks along the Plagne sauropod trackway", type: .distance, magnitude: 0.155),
+        ReferenceUnit(id: "dinosaurs.calOrckoWall", emoji: "🦶", singular: "Cal Orck'o footprint wall", plural: "Cal Orck'o footprint walls", type: .distance, magnitude: 1.5),
+        ReferenceUnit(id: "dinosaurs.dinosaurRidge", emoji: "🦴", singular: "round trip on Colorado's Dinosaur Ridge", plural: "round trips on Colorado's Dinosaur Ridge", type: .distance, magnitude: 3.2),
         ReferenceUnit(id: "dinosaurs.dinosaurTrail", emoji: "🦴", singular: "loop of Alberta's Dinosaur Trail", plural: "loops of Alberta's Dinosaur Trail", type: .distance, magnitude: 48),
         ReferenceUnit(id: "dinosaurs.jurassicCoast", emoji: "🌊", singular: "Jurassic Coast", plural: "Jurassic Coasts", type: .distance, magnitude: 154),
 
