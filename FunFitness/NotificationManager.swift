@@ -68,9 +68,14 @@ final class NotificationManager {
 
     // MARK: - Milestone Nudge
 
-    // Fires once if remaining ≤ 10% of the milestone's range.
-    func scheduleMilestoneNudge(type: ActivityType, milestoneTitle: String, remaining: String) {
+    // Fires once if remaining ≤ 10% of the milestone's range. Each milestone nudges at most once:
+    // this runs on every activity change, so without the check a nudge was re-armed after
+    // each log for as long as the user sat near the same milestone. (v2.4)
+    func scheduleMilestoneNudge(type: ActivityType, milestoneId: String, milestoneTitle: String, remaining: String) {
         let id = "\(NotificationCategory.milestoneNudge.rawValue)_\(type.rawValue)"
+        let nudgedKey = "lastNudgedMilestone_\(type.rawValue)"
+        guard UserDefaults.standard.string(forKey: nudgedKey) != milestoneId else { return }
+        UserDefaults.standard.set(milestoneId, forKey: nudgedKey)
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
 
         let content = UNMutableNotificationContent()

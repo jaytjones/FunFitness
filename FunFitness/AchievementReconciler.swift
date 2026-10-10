@@ -58,14 +58,15 @@ enum AchievementReconciler {
         return plan
     }
 
-    /// Plans and applies a reconcile pass, returning the unlocked milestone ids afterwards.
+    /// Plans and applies a reconcile pass. Returns the unlocked milestone ids afterwards and the
+    /// ids this pass newly inserted (so callers can celebrate imports).
     @MainActor
     static func reconcile(
         earned: Set<String>,
         records: [UnlockedAchievement],
         allowRevocation: Bool,
         context: ModelContext
-    ) -> Set<String> {
+    ) -> (unlocked: Set<String>, inserted: Set<String>) {
         let plan = plan(earned: earned, records: records, allowRevocation: allowRevocation)
 
         for id in plan.idsToInsert {
@@ -78,8 +79,9 @@ enum AchievementReconciler {
             try? context.save()
         }
 
-        return Set(records.map(\.milestoneId))
+        let unlocked = Set(records.map(\.milestoneId))
             .subtracting(plan.revokedIds)
             .union(plan.idsToInsert)
+        return (unlocked, plan.idsToInsert)
     }
 }

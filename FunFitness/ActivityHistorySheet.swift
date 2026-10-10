@@ -100,17 +100,10 @@ struct ActivityHistorySheet: View {
         activity.loggedAt = loggedAt
         activity.notes    = notes
         try? modelContext.save()
-        reconcileAchievements()
-    }
-
-    // Runs after a local edit, which may lower a total, so revocation is allowed.
-    private func reconcileAchievements() {
-        viewModel.unlockedAchievementIds = AchievementReconciler.reconcile(
-            earned: viewModel.earnedMilestoneIds(),
-            records: achievements,
-            allowRevocation: true,
-            context: modelContext
-        )
+        // An in-place edit doesn't reassign the activities array, so refresh the cached totals.
+        viewModel.refreshTotals()
+        // A local edit may lower a total, so revocation is allowed.
+        viewModel.reconcileAchievements(records: achievements, context: modelContext, forceRevocation: true)
     }
 }
 

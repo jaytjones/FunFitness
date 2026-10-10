@@ -10,16 +10,30 @@ import SwiftData
 @Observable
 final class AppViewModel {
     // Source of truth — synced from ContentView's @Query result
-    var activities: [ActivityLog] = []
+    var activities: [ActivityLog] = [] {
+        didSet { refreshTotals() }
+    }
 
-    // MARK: - Computed totals (derived from activities; never cached)
+    // MARK: - Totals (cached per type)
+
+    // Rebuilt in one pass whenever `activities` is reassigned. Scanning every activity on each
+    // read cost ~120 ms per Home render at 9,000 entries. Editing an entry in place doesn't
+    // reassign the array, so in-place edits must call refreshTotals(). (v2.4)
+    private var cachedTotals: [ActivityType: Double] = [:]
+
+    /// Recomputes per-type totals. Call after changing an activity's value in place.
+    func refreshTotals() {
+        var totals: [ActivityType: Double] = [:]
+        for activity in activities {
+            totals[activity.activityType, default: 0] += activity.effectiveValue
+        }
+        cachedTotals = totals
+    }
 
     /// Total accumulated (effective) value for a given activity type. Weight multiplies by
     /// reps via `effectiveValue`; other types accumulate their value. One place, all types. (v2.2)
     func total(for type: ActivityType) -> Double {
-        activities.lazy
-            .filter { $0.activityType == type }
-            .reduce(0) { $0 + $1.effectiveValue }
+        cachedTotals[type] ?? 0
     }
 
     var totalDistance: Double { total(for: .distance) }
@@ -49,6 +63,9 @@ final class AppViewModel {
     // Set by a local activity delete so the next reconcile may revoke badges that are no longer
     // earned. Changes arriving from CloudKit never revoke. (v2.3)
     var revokeAchievementsOnNextReconcile: Bool = false
+    // Set after a HealthKit import adds workouts, so the next reconcile celebrates the badges it
+    // unlocks instead of backfilling them silently. (v2.4)
+    var celebrateNewlyEarnedOnNextReconcile: Bool = false
     // Completed monthly-challenge badge keys ("<id>#<year>"), synced from the store. (v2.2)
     var unlockedChallengeKeys: Set<String> = []
     var activePack: ThemePack = ThemePackCatalog.default
@@ -62,6 +79,54 @@ final class AppViewModel {
     var isActiveThisWeekStreak: Bool = false
     var shieldsAvailable: Int = 0
     var pendingShieldActivation: Bool = false
+
+    // MARK: - Achievement reconcile & celebration (v2.4)
+
+    /// Reconciles stored badges with current totals. Revocation is allowed when `forceRevocation`
+    /// is set (local edit) or a local delete flagged it; both flags are consumed here. Badges
+    /// newly unlocked by a flagged HealthKit import are celebrated.
+    @discardableResult
+    func reconcileAchievements(
+        records: [UnlockedAchievement],
+        context: ModelContext,
+        forceRevocation: Bool = false
+    ) -> Set<String> {
+        let allowRevocation = forceRevocation || revokeAchievementsOnNextReconcile
+        let shouldCelebrate = celebrateNewlyEarnedOnNextReconcile
+        revokeAchievementsOnNextReconcile = false
+        celebrateNewlyEarnedOnNextReconcile = false
+
+        let result = AchievementReconciler.reconcile(
+            earned: earnedMilestoneIds(),
+            records: records,
+            allowRevocation: allowRevocation,
+            context: context
+        )
+        unlockedAchievementIds = result.unlocked
+        if shouldCelebrate {
+            celebrate(result.inserted.compactMap(ComparisonEngine.milestone(withId:)))
+        }
+        return result.inserted
+    }
+
+    /// Shows the celebration screen for newly crossed milestones, at most one per activity type:
+    /// the highest one crossed. A big backdated entry or a history import shows one screen, not
+    /// a screen per milestone. Adds to a celebration that's already showing.
+    func celebrate(_ crossed: [Milestone]) {
+        var highest: [ActivityUnit: Milestone] = [:]
+        for milestone in crossed where milestone.threshold > (highest[milestone.unit]?.threshold ?? -1) {
+            highest[milestone.unit] = milestone
+        }
+        let shown = Set(pendingMilestones.map(\.id))
+        let top = crossed.filter { highest[$0.unit]?.id == $0.id && !shown.contains($0.id) }
+        guard !top.isEmpty else { return }
+        if showMilestoneModal {
+            pendingMilestones += top
+        } else {
+            pendingMilestones = top
+            showMilestoneModal = true
+        }
+    }
 
     // MARK: - Milestone helpers
 

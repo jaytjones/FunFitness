@@ -6,7 +6,7 @@
 import Foundation
 
 // Stored-unit tags for milestone thresholds (SI since v1.2).
-enum ActivityUnit: Equatable, Sendable {
+enum ActivityUnit: Hashable, Sendable {
     case kilometers
     case kilograms
     case minutes      // v2.2 duration thresholds (total minutes)

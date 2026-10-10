@@ -215,10 +215,7 @@ struct LogActivitySheet: View {
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
         )
-        if !newMilestones.isEmpty {
-            viewModel.pendingMilestones = newMilestones
-            viewModel.showMilestoneModal = true
-        }
+        viewModel.celebrate(newMilestones)
 
         dismiss()
     }

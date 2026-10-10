@@ -53,16 +53,17 @@ struct UnitConverter {
 
     // MARK: - Formatted display strings
 
+    // Display strings use locale grouping ("1,234.5 mi"); the *InputString pre-fills below stay
+    // ungrouped so text fields can parse them back. (v2.4)
     static func distanceString(_ km: Double, pref: UnitPreference) -> String {
-        String(format: "%.1f %@", fromKm(km, to: pref), pref.distanceUnit)
+        "\(fromKm(km, to: pref).formatted(.number.precision(.fractionLength(1)))) \(pref.distanceUnit)"
     }
 
     /// Formats a weight value. If reps > 1, appends "× N".
     static func weightString(_ kg: Double, reps: Int? = nil, pref: UnitPreference) -> String {
         let value = fromKg(kg, to: pref)
-        let formatted = pref == .imperial
-            ? String(format: "%.0f %@", value, pref.weightUnit)
-            : String(format: "%.1f %@", value, pref.weightUnit)
+        let digits = pref == .imperial ? 0 : 1
+        let formatted = "\(value.formatted(.number.precision(.fractionLength(digits)))) \(pref.weightUnit)"
         if let reps, reps > 1 { return "\(formatted) × \(reps)" }
         return formatted
     }
@@ -72,14 +73,14 @@ struct UnitConverter {
     /// Formats stored minutes. Reads as hours once it crosses an hour so big totals stay legible.
     static func durationString(_ minutes: Double) -> String {
         if minutes >= 60 {
-            return String(format: "%.1f hr", minutes / 60)
+            return "\((minutes / 60).formatted(.number.precision(.fractionLength(1)))) hr"
         }
-        return String(format: "%.0f min", minutes)
+        return "\(minutes.formatted(.number.precision(.fractionLength(0)))) min"
     }
 
     /// Formats a stored rep count.
     static func repsString(_ count: Double) -> String {
-        String(format: "%.0f reps", count)
+        "\(count.formatted(.number.precision(.fractionLength(0)))) reps"
     }
 
     // MARK: - Pre-fill helpers for text fields

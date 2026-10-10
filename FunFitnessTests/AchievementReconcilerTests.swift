@@ -77,12 +77,13 @@ struct AchievementReconcilerTests {
         try context.save()
 
         let records = try context.fetch(FetchDescriptor<UnlockedAchievement>())
-        let unlocked = AchievementReconciler.reconcile(
+        let result = AchievementReconciler.reconcile(
             earned: ["D1", "D1b"], records: records, allowRevocation: true, context: context
         )
 
         let remaining = try context.fetch(FetchDescriptor<UnlockedAchievement>()).map(\.milestoneId)
-        #expect(unlocked == ["D1", "D1b"])
+        #expect(result.unlocked == ["D1", "D1b"])
+        #expect(result.inserted == ["D1b"])
         #expect(remaining.sorted() == ["D1", "D1b"])
     }
 }

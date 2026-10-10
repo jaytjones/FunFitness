@@ -78,6 +78,8 @@ struct ContentView: View {
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
+                        // Catch in-place edits that synced from another device while away.
+                        viewModel.refreshTotals()
                         Task { await syncHealthKitIfEnabled() }
                     }
                 }
@@ -153,11 +155,16 @@ struct ContentView: View {
 
     // Imports new distance workouts when the user has opted in. Inserting the
     // new logs triggers onChange(of: activities), which runs the existing
-    // reconcile/streak/notification/widget pipeline — so an import can fire a
-    // milestone or save a streak with no extra wiring here.
+    // reconcile/streak/notification/widget pipeline. The flag makes that reconcile
+    // celebrate badges the import unlocked (one screen per type) instead of adding
+    // them silently. It's set after the import so badges arriving from iCloud
+    // during the import aren't celebrated. (v2.4)
     private func syncHealthKitIfEnabled() async {
         guard let profile = profiles.first, profile.healthKitImportEnabled else { return }
-        _ = await HealthKitSync.run(existing: activities, context: modelContext)
+        let imported = await HealthKitSync.run(existing: activities, context: modelContext)
+        if imported > 0 {
+            viewModel.celebrateNewlyEarnedOnNextReconcile = true
+        }
     }
 
     // MARK: - Notifications
@@ -186,6 +193,7 @@ struct ContentView: View {
                     let remainingDisplay = UnitConverter.displayString(remaining, type: type, pref: viewModel.unitPreference)
                     nm.scheduleMilestoneNudge(
                         type: type,
+                        milestoneId: milestone.id,
                         milestoneTitle: milestone.title(pref: viewModel.unitPreference),
                         remaining: remainingDisplay
                     )
@@ -228,14 +236,7 @@ struct ContentView: View {
     // Inserts earned achievements not yet recorded and removes duplicate rows. Badges are only
     // revoked after a local delete flags it; see AchievementReconciler for why. (v2.3)
     private func reconcileAchievements() {
-        let allowRevocation = viewModel.revokeAchievementsOnNextReconcile
-        viewModel.revokeAchievementsOnNextReconcile = false
-        viewModel.unlockedAchievementIds = AchievementReconciler.reconcile(
-            earned: viewModel.earnedMilestoneIds(),
-            records: achievements,
-            allowRevocation: allowRevocation,
-            context: modelContext
-        )
+        viewModel.reconcileAchievements(records: achievements, context: modelContext)
     }
 
     // MARK: - Challenge Reconciliation (v2.2)
