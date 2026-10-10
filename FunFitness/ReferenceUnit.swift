@@ -77,16 +77,16 @@ enum ReferenceUnitCatalog {
     private static let animals: [ReferenceUnit] = [
         ReferenceUnit(id: "animals.blueWhaleLength", emoji: "🐳", singular: "blue whale length", plural: "blue whale lengths", type: .distance, magnitude: 0.03),
         ReferenceUnit(id: "animals.camelTrek", emoji: "🐪", singular: "camel day-trek", plural: "camel day-treks", type: .distance, magnitude: 40),
-        ReferenceUnit(id: "animals.wildebeestMigration", emoji: "🐃", singular: "wildebeest migration", plural: "wildebeest migrations", type: .distance, magnitude: 2_900),
+        ReferenceUnit(id: "animals.wildebeestMigration", emoji: "🐃", singular: "wildebeest migration", plural: "wildebeest migrations", type: .distance, magnitude: 800),
         ReferenceUnit(id: "animals.ternMigration", emoji: "🐦", singular: "Arctic tern migration", plural: "Arctic tern migrations", type: .distance, magnitude: 70_000),
 
         ReferenceUnit(id: "animals.houseCat", emoji: "🐱", singular: "house cat", plural: "house cats", type: .weight, magnitude: 4.5),
-        ReferenceUnit(id: "animals.grizzly", emoji: "🐻", singular: "grizzly bear", plural: "grizzly bears", type: .weight, magnitude: 270),
+        ReferenceUnit(id: "animals.grizzly", emoji: "🐻", singular: "grizzly bear", plural: "grizzly bears", type: .weight, magnitude: 220),
         ReferenceUnit(id: "animals.hippo", emoji: "🦛", singular: "hippo", plural: "hippos", type: .weight, magnitude: 1_500),
         ReferenceUnit(id: "animals.elephant", emoji: "🐘", singular: "African elephant", plural: "African elephants", type: .weight, magnitude: 6_000),
         ReferenceUnit(id: "animals.blueWhale", emoji: "🐋", singular: "blue whale", plural: "blue whales", type: .weight, magnitude: 150_000),
 
-        ReferenceUnit(id: "animals.giraffeSleep", emoji: "🦒", singular: "giraffe night's sleep", plural: "giraffe nights' sleep", type: .duration, magnitude: 30),
+        ReferenceUnit(id: "animals.giraffeSleep", emoji: "🦒", singular: "giraffe night's sleep", plural: "giraffe nights' sleep", type: .duration, magnitude: 60),
         ReferenceUnit(id: "animals.koalaSnooze", emoji: "🐨", singular: "koala daily snooze", plural: "koala daily snoozes", type: .duration, magnitude: 1_200),
         ReferenceUnit(id: "animals.penguinEggWatch", emoji: "🐧", singular: "emperor penguin egg-watch", plural: "emperor penguin egg-watches", type: .duration, magnitude: 93_600),
 
@@ -112,11 +112,11 @@ enum ReferenceUnitCatalog {
 
         ReferenceUnit(id: "cities.spanishSteps", emoji: "🪜", singular: "climb of Rome's Spanish Steps", plural: "climbs of Rome's Spanish Steps", type: .reps, magnitude: 135),
         ReferenceUnit(id: "cities.empireStateStairs", emoji: "🏢", singular: "Empire State Building stair climb", plural: "Empire State Building stair climbs", type: .reps, magnitude: 1_576),
-        ReferenceUnit(id: "cities.marathonHighFives", emoji: "🙌", singular: "high-five for every NYC Marathon finisher", plural: "high-fives for every NYC Marathon finisher", type: .reps, magnitude: 50_000),
+        ReferenceUnit(id: "cities.marathonHighFives", emoji: "🙌", singular: "high-five line for the whole NYC Marathon field", plural: "high-five lines for the whole NYC Marathon field", type: .reps, magnitude: 59_000),
     ]
 
     private static let landmarks: [ReferenceUnit] = [
-        ReferenceUnit(id: "landmarks.eiffelHeight", emoji: "🗼", singular: "Eiffel Tower", plural: "Eiffel Towers", type: .distance, magnitude: 0.33),
+        ReferenceUnit(id: "landmarks.eiffelHeight", emoji: "🗼", singular: "Eiffel Tower height", plural: "Eiffel Tower heights", type: .distance, magnitude: 0.33),
         ReferenceUnit(id: "landmarks.goldenGate", emoji: "🌉", singular: "Golden Gate Bridge crossing", plural: "Golden Gate Bridge crossings", type: .distance, magnitude: 2.7),
         ReferenceUnit(id: "landmarks.panamaCanal", emoji: "🚢", singular: "Panama Canal transit", plural: "Panama Canal transits", type: .distance, magnitude: 82),
         ReferenceUnit(id: "landmarks.route66", emoji: "🛣️", singular: "Route 66 road trip", plural: "Route 66 road trips", type: .distance, magnitude: 3_940),
@@ -125,12 +125,12 @@ enum ReferenceUnitCatalog {
         ReferenceUnit(id: "landmarks.oscar", emoji: "🏆", singular: "Oscar statuette", plural: "Oscar statuettes", type: .weight, magnitude: 3.85),
         ReferenceUnit(id: "landmarks.libertyBell", emoji: "🔔", singular: "Liberty Bell", plural: "Liberty Bells", type: .weight, magnitude: 943),
         ReferenceUnit(id: "landmarks.bigBenBell", emoji: "🕰️", singular: "Big Ben bell", plural: "Big Ben bells", type: .weight, magnitude: 13_760),
-        ReferenceUnit(id: "landmarks.statueOfLiberty", emoji: "🗽", singular: "Statue of Liberty", plural: "Statues of Liberty", type: .weight, magnitude: 225_000),
+        ReferenceUnit(id: "landmarks.statueOfLiberty", emoji: "🗽", singular: "Statue of Liberty", plural: "Statues of Liberty", type: .weight, magnitude: 204_000),
         ReferenceUnit(id: "landmarks.eiffelIron", emoji: "🗼", singular: "Eiffel Tower", plural: "Eiffel Towers", type: .weight, magnitude: 7_300_000),
 
         ReferenceUnit(id: "landmarks.oldFaithful", emoji: "⛲", singular: "Old Faithful wait", plural: "Old Faithful waits", type: .duration, magnitude: 90),
         ReferenceUnit(id: "landmarks.kilimanjaro", emoji: "🏔️", singular: "Kilimanjaro climb", plural: "Kilimanjaro climbs", type: .duration, magnitude: 8_640),
-        ReferenceUnit(id: "landmarks.eiffelBuild", emoji: "🏗️", singular: "Eiffel Tower construction", plural: "Eiffel Tower constructions", type: .duration, magnitude: 1_144_800),
+        ReferenceUnit(id: "landmarks.eiffelBuild", emoji: "🏗️", singular: "Eiffel Tower build", plural: "Eiffel Tower builds", type: .duration, magnitude: 1_144_800),
 
         ReferenceUnit(id: "landmarks.libertyCrown", emoji: "👑", singular: "Statue of Liberty crown climb", plural: "Statue of Liberty crown climbs", type: .reps, magnitude: 354),
         ReferenceUnit(id: "landmarks.toriiGates", emoji: "⛩️", singular: "walk through Fushimi Inari's torii gates", plural: "walks through Fushimi Inari's torii gates", type: .reps, magnitude: 10_000),
@@ -150,8 +150,8 @@ enum ReferenceUnitCatalog {
         ReferenceUnit(id: "food.dryAgedSteak", emoji: "🍖", singular: "dry-aged steak", plural: "dry-aged steaks", type: .duration, magnitude: 40_320),
         ReferenceUnit(id: "food.parmesanAging", emoji: "🧀", singular: "year of Parmesan aging", plural: "years of Parmesan aging", type: .duration, magnitude: 525_600),
 
-        ReferenceUnit(id: "food.sesameSeeds", emoji: "🍔", singular: "Big Mac bun's worth of sesame seeds", plural: "Big Mac buns' worth of sesame seeds", type: .reps, magnitude: 178),
-        ReferenceUnit(id: "food.cornKernels", emoji: "🌽", singular: "ear of corn's worth of kernels", plural: "ears of corn's worth of kernels", type: .reps, magnitude: 800),
+        ReferenceUnit(id: "food.sesameSeeds", emoji: "🍔", singular: "Big Mac bun's worth of sesame seeds", plural: "Big Mac buns' worth of sesame seeds", type: .reps, magnitude: 390),
+        ReferenceUnit(id: "food.cornKernels", emoji: "🌽", singular: "ear's worth of corn kernels", plural: "ears' worth of corn kernels", type: .reps, magnitude: 800),
     ]
 
     private static let dinosaurs: [ReferenceUnit] = [
