@@ -10,6 +10,7 @@ import Foundation
 @testable import FunFitness
 
 @Suite("SeasonalEngine")
+@MainActor
 struct SeasonalTests {
 
     private let cal = Calendar.current

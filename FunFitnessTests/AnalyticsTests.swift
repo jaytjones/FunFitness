@@ -11,6 +11,7 @@ import Foundation
 @testable import FunFitness
 
 @Suite("AnalyticsEngine")
+@MainActor
 struct AnalyticsTests {
 
     private let cal = Calendar.current

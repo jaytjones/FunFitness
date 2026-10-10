@@ -11,6 +11,7 @@ import SwiftData
 @testable import FunFitness
 
 @Suite("HealthKitImporter")
+@MainActor
 struct HealthKitImporterTests {
 
     private func workout(_ uuid: UUID = UUID(), km: Double, at date: Date) -> ImportedWorkout {
@@ -97,6 +98,7 @@ struct HealthKitImporterTests {
 }
 
 @Suite("ActivityWriter")
+@MainActor
 struct ActivityWriterTests {
 
     private func makeContext() throws -> ModelContext {

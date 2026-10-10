@@ -11,7 +11,8 @@
 
 import Foundation
 
-extension ActivityType {
+// nonisolated: pure descriptors, read from SwiftData models (which are nonisolated) as well as UI.
+nonisolated extension ActivityType {
 
     /// User-facing name for pickers, buttons, and labels.
     var displayName: String {

@@ -12,6 +12,7 @@ import Foundation
 @testable import FunFitness
 
 @Suite("ActivityType descriptor")
+@MainActor
 struct ActivityKindTests {
 
     @Test func onlyWeightUsesReps() {

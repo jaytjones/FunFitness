@@ -10,6 +10,7 @@ import Foundation
 @testable import FunFitness
 
 @Suite("Monthly challenges")
+@MainActor
 struct ChallengeTests {
 
     // Fixed local date so evaluation never depends on the wall clock.

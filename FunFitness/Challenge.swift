@@ -74,7 +74,8 @@ enum ChallengeCatalog {
 enum ChallengeEngine {
 
     /// Composite badge key: "<challengeId>#<year>", so each year's occurrence is its own badge.
-    static func unlockKey(id: String, year: Int) -> String { "\(id)#\(year)" }
+    // nonisolated: pure, and called from UnlockedChallenge's (nonisolated) @Model initializer.
+    nonisolated static func unlockKey(id: String, year: Int) -> String { "\(id)#\(year)" }
 
     /// The challenge active for the month containing `date`, if any.
     static func activeChallenge(on date: Date, calendar: Calendar = .current) -> Challenge? {

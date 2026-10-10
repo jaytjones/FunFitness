@@ -138,6 +138,7 @@ struct CachedTotalsTests {
 }
 
 @Suite("Display formatting")
+@MainActor
 struct DisplayFormattingTests {
 
     @Test func largeTotalsUseGroupingSeparators() {

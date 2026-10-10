@@ -65,9 +65,12 @@ struct ProfileView: View {
 
                         // Avatar and Name
                         VStack(spacing: 12) {
+                            // Read on the main actor here: PhotosPicker's label closure is nonisolated.
+                            let avatarData = profile?.avatarImageData
+                            let initials = profile?.name.prefix(2).uppercased() ?? "FF"
                             PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                                 ZStack(alignment: .bottomTrailing) {
-                                    if let imageData = profile?.avatarImageData,
+                                    if let imageData = avatarData,
                                        let uiImage = UIImage(data: imageData) {
                                         Image(uiImage: uiImage)
                                             .resizable()
@@ -79,7 +82,7 @@ struct ProfileView: View {
                                             Circle()
                                                 .fill(Color(hex: "#5B21B6"))
                                                 .frame(width: 80, height: 80)
-                                            Text(profile?.name.prefix(2).uppercased() ?? "FF")
+                                            Text(initials)
                                                 .font(.title)
                                                 .fontWeight(.bold)
                                                 .foregroundStyle(.white)

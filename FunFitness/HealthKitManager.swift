@@ -145,7 +145,7 @@ final class HealthKitManager {
 
 /// Pulls total distance in meters from a workout, preferring the modern
 /// statistics API and falling back to the deprecated `totalDistance`.
-private func distanceMeters(for workout: HKWorkout) -> Double? {
+nonisolated private func distanceMeters(for workout: HKWorkout) -> Double? {
     let walkRun = HKQuantityType(.distanceWalkingRunning)
     let cycling = HKQuantityType(.distanceCycling)
     if let stats = workout.statistics(for: walkRun)?.sumQuantity() {

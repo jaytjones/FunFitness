@@ -10,6 +10,7 @@ import Foundation
 // MARK: - ComparisonEngine Tests
 
 @Suite("ComparisonEngine")
+@MainActor
 struct ComparisonEngineTests {
 
     @Test func allMilestonesCountIsExpected() {
@@ -225,6 +226,7 @@ struct ComparisonEngineTests {
 // MARK: - UnitConverter Tests
 
 @Suite("UnitConverter")
+@MainActor
 struct UnitConverterTests {
 
     @Test func imperialToKmConversion() {
@@ -501,6 +503,7 @@ struct StreakEngineTests {
 // MARK: - SillyTitleEngine Tests
 
 @Suite("SillyTitleEngine")
+@MainActor
 struct SillyTitleEngineTests {
 
     @Test func zeroUnlockIsUnranked() {

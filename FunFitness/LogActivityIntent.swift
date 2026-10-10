@@ -12,11 +12,11 @@ import SwiftData
 import WidgetKit
 
 struct LogLastActivityIntent: AppIntent {
-    static var title: LocalizedStringResource = "Log My Last Activity"
-    static var description = IntentDescription("Logs a repeat of your most recent FunFitness activity.")
+    static let title: LocalizedStringResource = "Log My Last Activity"
+    static let description = IntentDescription("Logs a repeat of your most recent FunFitness activity.")
 
     // Log quietly in the background; no need to bring the app forward.
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
