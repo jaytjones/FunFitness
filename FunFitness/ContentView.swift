@@ -68,7 +68,6 @@ struct ContentView: View {
                     }
                     viewModel.activities = activities
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
-                    runMigrationsIfNeeded()
                     reconcileAchievements()
                     reconcileChallenges()
                     updateStreak()
@@ -224,61 +223,19 @@ struct ContentView: View {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    // MARK: - v1.2 Migration
-
-    // Runs once per install: converts stored miles → km and lbs → kg.
-    // Also migrates profile height (inches string → cm) and body weight (lbs → kg).
-    private func runMigrationsIfNeeded() {
-        let migrationKey = "v1_2_unitMigration"
-        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
-
-        for activity in activities {
-            switch activity.activityType {
-            case .distance: activity.value *= UnitConverter.kmPerMile
-            case .weight:   activity.value *= UnitConverter.kgPerLb
-            case .duration, .reps: break   // v2.2 types are unit-agnostic; nothing to migrate
-            }
-        }
-
-        if let profile = profiles.first {
-            // weightKg column previously stored lbs — convert to kg
-            if let oldLbs = profile.weightKg, oldLbs > 0 {
-                profile.weightKg = oldLbs * UnitConverter.kgPerLb
-            }
-            // heightInches string → heightCm double
-            if let heightStr = profile.heightInches,
-               let heightIn = Double(heightStr), heightIn > 0 {
-                profile.heightCm = heightIn * 2.54
-            }
-        }
-
-        try? modelContext.save()
-        UserDefaults.standard.set(true, forKey: migrationKey)
-
-        // Refresh vm with converted values
-        viewModel.activities = activities
-    }
-
     // MARK: - Achievement Reconciliation
 
-    // Bidirectional: inserts earned achievements not yet recorded,
-    // removes recorded achievements no longer supported by current totals.
+    // Inserts earned achievements not yet recorded and removes duplicate rows. Badges are only
+    // revoked after a local delete flags it; see AchievementReconciler for why. (v2.3)
     private func reconcileAchievements() {
-        let earned   = viewModel.earnedMilestoneIds()
-        let recorded = Set(achievements.map(\.milestoneId))
-
-        for id in earned.subtracting(recorded) {
-            modelContext.insert(UnlockedAchievement(milestoneId: id))
-            viewModel.unlockedAchievementIds.insert(id)
-        }
-
-        let stale = recorded.subtracting(earned)
-        if !stale.isEmpty {
-            for record in achievements where stale.contains(record.milestoneId) {
-                modelContext.delete(record)
-                viewModel.unlockedAchievementIds.remove(record.milestoneId)
-            }
-        }
+        let allowRevocation = viewModel.revokeAchievementsOnNextReconcile
+        viewModel.revokeAchievementsOnNextReconcile = false
+        viewModel.unlockedAchievementIds = AchievementReconciler.reconcile(
+            earned: viewModel.earnedMilestoneIds(),
+            records: achievements,
+            allowRevocation: allowRevocation,
+            context: modelContext
+        )
     }
 
     // MARK: - Challenge Reconciliation (v2.2)

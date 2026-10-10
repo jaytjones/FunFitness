@@ -86,6 +86,9 @@ struct ActivityHistorySheet: View {
     }
 
     private func deleteActivity(_ activity: ActivityLog) {
+        // A local delete may drop a total below a milestone, so let ContentView's reconcile
+        // (triggered by the activities change) revoke badges this time.
+        viewModel.revokeAchievementsOnNextReconcile = true
         viewModel.activities.removeAll { $0.id == activity.id }
         modelContext.delete(activity)
         try? modelContext.save()
@@ -100,18 +103,14 @@ struct ActivityHistorySheet: View {
         reconcileAchievements()
     }
 
+    // Runs after a local edit, which may lower a total, so revocation is allowed.
     private func reconcileAchievements() {
-        let earned   = viewModel.earnedMilestoneIds()
-        let recorded = Set(achievements.map(\.milestoneId))
-
-        for id in earned.subtracting(recorded) {
-            modelContext.insert(UnlockedAchievement(milestoneId: id))
-            viewModel.unlockedAchievementIds.insert(id)
-        }
-        for record in achievements where recorded.subtracting(earned).contains(record.milestoneId) {
-            modelContext.delete(record)
-            viewModel.unlockedAchievementIds.remove(record.milestoneId)
-        }
+        viewModel.unlockedAchievementIds = AchievementReconciler.reconcile(
+            earned: viewModel.earnedMilestoneIds(),
+            records: achievements,
+            allowRevocation: true,
+            context: modelContext
+        )
     }
 }
 

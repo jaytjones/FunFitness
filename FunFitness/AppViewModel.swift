@@ -46,6 +46,9 @@ final class AppViewModel {
     // MARK: - Stored state
 
     var unlockedAchievementIds: Set<String> = []
+    // Set by a local activity delete so the next reconcile may revoke badges that are no longer
+    // earned. Changes arriving from CloudKit never revoke. (v2.3)
+    var revokeAchievementsOnNextReconcile: Bool = false
     // Completed monthly-challenge badge keys ("<id>#<year>"), synced from the store. (v2.2)
     var unlockedChallengeKeys: Set<String> = []
     var activePack: ThemePack = ThemePackCatalog.default
@@ -99,7 +102,7 @@ final class AppViewModel {
         var earned: Set<String> = []
         for type in ActivityType.allCases {
             let total = total(for: type)
-            for milestone in ComparisonEngine.milestones(for: type) where milestone.threshold <= total {
+            for milestone in ComparisonEngine.milestones(for: type) where milestone.isReached(by: total) {
                 earned.insert(milestone.id)
             }
         }

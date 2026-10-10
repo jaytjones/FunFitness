@@ -22,6 +22,12 @@ struct Milestone: Identifiable {
     let unit: ActivityUnit
     let title: String
 
+    /// Whether `total` has reached this milestone. The tiny relative slack absorbs
+    /// floating-point error from summing entries (3 × 25 mi can land a hair under 75 mi).
+    func isReached(by total: Double) -> Bool {
+        total >= threshold * (1 - 1e-9)
+    }
+
     func getEmoji(for pack: ThemePack) -> String {
         ComparisonEngine.content(packId: pack.id, milestoneId: id)?.emoji ?? "🎯"
     }
@@ -44,34 +50,41 @@ struct ComparisonEngine {
 
     // MARK: - Distance Milestones (sorted ascending; thresholds in km)
 
+    // Imperial-titled thresholds are derived from their source unit with the same constant the
+    // log sheet uses for input, so logging exactly "75 mi" lands on the threshold. Never raise
+    // an existing threshold — users who earned the badge would lose it. (v2.3)
+    private static func miles(_ value: Double) -> Double { value * UnitConverter.kmPerMile }
+    private static func pounds(_ value: Double) -> Double { value * UnitConverter.kgPerLb }
+
     static let distanceMilestones: [Milestone] = [
-        Milestone(id: "D1",  threshold: 1.60934,  unit: .kilometers, title: "You've run 1 mile!"),
-        Milestone(id: "D1b", threshold: 4.02336,  unit: .kilometers, title: "You've run 2.5 miles!"),
-        Milestone(id: "D2",  threshold: 8.04672,  unit: .kilometers, title: "You've run 5 miles!"),
-        Milestone(id: "D2b", threshold: 16.0934,  unit: .kilometers, title: "You've run 10 miles!"),
-        Milestone(id: "D3",  threshold: 21.0975,  unit: .kilometers, title: "Half Marathon Complete!"),
-        Milestone(id: "D3b", threshold: 28.1635,  unit: .kilometers, title: "You've run 17.5 miles!"),
-        Milestone(id: "D4",  threshold: 42.195,   unit: .kilometers, title: "Full Marathon Complete!"),
-        Milestone(id: "D4b", threshold: 56.3270,  unit: .kilometers, title: "You've run 35 miles!"),
-        Milestone(id: "D5",  threshold: 80.4672,  unit: .kilometers, title: "You've run 50 miles!"),
-        Milestone(id: "D5b", threshold: 120.701,  unit: .kilometers, title: "You've run 75 miles!"),
-        Milestone(id: "D6",  threshold: 160.934,  unit: .kilometers, title: "You've run 100 miles!"),
+        Milestone(id: "D1",  threshold: miles(1),    unit: .kilometers, title: "You've run 1 mile!"),
+        Milestone(id: "D1b", threshold: miles(2.5),  unit: .kilometers, title: "You've run 2.5 miles!"),
+        Milestone(id: "D2",  threshold: miles(5),    unit: .kilometers, title: "You've run 5 miles!"),
+        Milestone(id: "D2b", threshold: miles(10),   unit: .kilometers, title: "You've run 10 miles!"),
+        Milestone(id: "D3",  threshold: 21.0975,     unit: .kilometers, title: "Half Marathon Complete!"),
+        Milestone(id: "D3b", threshold: miles(17.5), unit: .kilometers, title: "You've run 17.5 miles!"),
+        Milestone(id: "D4",  threshold: 42.195,      unit: .kilometers, title: "Full Marathon Complete!"),
+        Milestone(id: "D4b", threshold: miles(35),   unit: .kilometers, title: "You've run 35 miles!"),
+        Milestone(id: "D5",  threshold: miles(50),   unit: .kilometers, title: "You've run 50 miles!"),
+        Milestone(id: "D5b", threshold: miles(75),   unit: .kilometers, title: "You've run 75 miles!"),
+        Milestone(id: "D6",  threshold: miles(100),  unit: .kilometers, title: "You've run 100 miles!"),
     ]
 
     // MARK: - Weight Milestones (sorted ascending; thresholds in kg)
 
     static let weightMilestones: [Milestone] = [
-        Milestone(id: "W1",  threshold: 226.796,  unit: .kilograms, title: "You've lifted 500 lbs!"),
-        Milestone(id: "W1b", threshold: 453.592,  unit: .kilograms, title: "You've lifted 1,000 lbs!"),
-        Milestone(id: "W2",  threshold: 1133.98,  unit: .kilograms, title: "You've lifted 2,500 lbs!"),
-        Milestone(id: "W2b", threshold: 2267.96,  unit: .kilograms, title: "You've lifted 5,000 lbs!"),
-        Milestone(id: "W3",  threshold: 4535.92,  unit: .kilograms, title: "You've lifted 10,000 lbs!"),
-        Milestone(id: "W3b", threshold: 6803.89,  unit: .kilograms, title: "You've lifted 15,000 lbs!"),
-        Milestone(id: "W4",  threshold: 11339.8,  unit: .kilograms, title: "You've lifted 25,000 lbs!"),
-        Milestone(id: "W4b", threshold: 15875.7,  unit: .kilograms, title: "You've lifted 35,000 lbs!"),
-        Milestone(id: "W5",  threshold: 22679.6,  unit: .kilograms, title: "You've lifted 50,000 lbs!"),
-        Milestone(id: "W5b", threshold: 34019.4,  unit: .kilograms, title: "You've lifted 75,000 lbs!"),
-        Milestone(id: "W6",  threshold: 45359.2,  unit: .kilograms, title: "You've lifted 100,000 lbs!"),
+        Milestone(id: "W1",  threshold: pounds(500),     unit: .kilograms, title: "You've lifted 500 lbs!"),
+        Milestone(id: "W1b", threshold: pounds(1_000),   unit: .kilograms, title: "You've lifted 1,000 lbs!"),
+        Milestone(id: "W2",  threshold: pounds(2_500),   unit: .kilograms, title: "You've lifted 2,500 lbs!"),
+        Milestone(id: "W2b", threshold: pounds(5_000),   unit: .kilograms, title: "You've lifted 5,000 lbs!"),
+        Milestone(id: "W3",  threshold: pounds(10_000),  unit: .kilograms, title: "You've lifted 10,000 lbs!"),
+        Milestone(id: "W3b", threshold: pounds(15_000),  unit: .kilograms, title: "You've lifted 15,000 lbs!"),
+        Milestone(id: "W4",  threshold: pounds(25_000),  unit: .kilograms, title: "You've lifted 25,000 lbs!"),
+        // Kept at the original literal: pounds(35_000) is 0.02 kg higher, and thresholds never rise.
+        Milestone(id: "W4b", threshold: 15875.7,         unit: .kilograms, title: "You've lifted 35,000 lbs!"),
+        Milestone(id: "W5",  threshold: pounds(50_000),  unit: .kilograms, title: "You've lifted 50,000 lbs!"),
+        Milestone(id: "W5b", threshold: pounds(75_000),  unit: .kilograms, title: "You've lifted 75,000 lbs!"),
+        Milestone(id: "W6",  threshold: pounds(100_000), unit: .kilograms, title: "You've lifted 100,000 lbs!"),
     ]
 
     // MARK: - Duration Milestones (sorted ascending; thresholds in total minutes) (v2.2)
@@ -344,7 +357,7 @@ struct ComparisonEngine {
     }
 
     static func nextMilestone(for type: ActivityType, currentTotal: Double) -> Milestone? {
-        milestones(for: type).first { $0.threshold > currentTotal }
+        milestones(for: type).first { !$0.isReached(by: currentTotal) }
     }
 
     static func milestone(withId id: String) -> Milestone? {
@@ -358,8 +371,8 @@ struct ComparisonEngine {
         unlockedIds: Set<String>
     ) -> [Milestone] {
         return milestones(for: type).filter { milestone in
-            milestone.threshold > previousTotal &&
-            milestone.threshold <= newTotal &&
+            !milestone.isReached(by: previousTotal) &&
+            milestone.isReached(by: newTotal) &&
             !unlockedIds.contains(milestone.id)
         }.sorted { $0.threshold < $1.threshold }
     }
