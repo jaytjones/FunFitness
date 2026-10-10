@@ -109,6 +109,7 @@ struct MilestoneThresholdTests {
     // Logging exactly the titled imperial amount must earn the badge (D5b and W3b used to miss).
     @Test(arguments: [
         ("D1b", 2.5), ("D2", 5.0), ("D3b", 17.5), ("D4b", 35.0), ("D5", 50.0), ("D5b", 75.0), ("D6", 100.0),
+        ("D7", 250.0), ("D8", 500.0), ("D9", 1_000.0), ("D10", 2_190.0),
     ])
     func exactMilesReachDistanceMilestone(id: String, miles: Double) throws {
         let milestone = try #require(ComparisonEngine.milestone(withId: id))
@@ -134,6 +135,18 @@ struct MilestoneThresholdTests {
             type: .distance, previousTotal: total - entry, newTotal: total, unlockedIds: []
         )
         #expect(crossed.map(\.id).contains("D5b"))
+    }
+
+    // v2.3 Journey anchors are new badges but deliberately don't move the silly-title rank.
+    @Test func journeyTiersDoNotAffectRank() {
+        let journey: Set<String> = ["D7", "D8", "D9", "D10"]
+        #expect(journey.isSubset(of: Set(ComparisonEngine.byId.keys)))
+        #expect(journey.isDisjoint(with: SillyTitleEngine.rankedMilestoneIds))
+    }
+
+    @Test func appalachianTrailKeepsItsName() throws {
+        let d10 = try #require(ComparisonEngine.milestone(withId: "D10"))
+        #expect(d10.title(pref: .metric) == "Appalachian Trail Complete!")
     }
 
     @Test func justBelowThresholdIsNotReached() throws {

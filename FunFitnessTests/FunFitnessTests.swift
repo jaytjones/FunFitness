@@ -13,9 +13,10 @@ import Foundation
 struct ComparisonEngineTests {
 
     @Test func allMilestonesCountIsExpected() {
-        // 11 distance + 11 weight + 8 duration + 8 reps = 38 total
-        // (intermediate distance/weight milestones added in 1.1; duration/reps added in 2.2)
-        #expect(ComparisonEngine.allMilestones.count == 38)
+        // 15 distance + 11 weight + 8 duration + 8 reps = 42 total
+        // (intermediate distance/weight milestones added in 1.1; duration/reps added in 2.2;
+        // D7–D10 Journey anchors added in 2.3)
+        #expect(ComparisonEngine.allMilestones.count == 42)
     }
 
     @Test func byIdContainsAllMilestones() {
