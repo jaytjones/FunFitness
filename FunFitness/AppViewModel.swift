@@ -111,17 +111,14 @@ final class AppViewModel {
 
     // MARK: - Absurdity Ticker
 
-    /// "You're 43% of [ticker] [emoji]". Returns nil with no activities or past the last milestone.
+    /// "1,200 lbs is 2.9 grizzly bears 🐻". Restates the total as the active pack's best-fitting
+    /// reference unit, so it keeps working past the last milestone. Nil with no activities. (v2.3)
     func absurdityTickerText(for type: ActivityType) -> String? {
         let currentTotal = total(for: type)
-        guard currentTotal > 0 else { return nil }
-        guard let next = ComparisonEngine.nextMilestone(for: type, currentTotal: currentTotal) else {
+        guard let fit = ReferenceUnitEngine.bestFit(total: currentTotal, type: type, packId: activePack.id) else {
             return nil
         }
-        let pct = Int(progressToNextMilestone(type: type) * 100)
-        let reference = next.getTicker(for: activePack)
-        let emoji = next.getEmoji(for: activePack)
-        return "You're \(pct)% of \(reference) \(emoji)"
+        return "\(displayTotal(for: type)) is \(fit.phrase) \(fit.unit.emoji)"
     }
 
     // MARK: - Unit-aware display helpers

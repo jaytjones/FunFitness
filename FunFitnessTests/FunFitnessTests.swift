@@ -411,33 +411,28 @@ struct AppViewModelTests {
 
     @Test func absurdityTickerReturnsTextForPositiveTotal() {
         let vm = AppViewModel()
-        vm.activities = [ActivityLog(type: .distance, value: 0.5)]
-        let text = vm.absurdityTickerText(for: .distance)
-        #expect(text != nil)
-        #expect(text?.contains("You're") == true)
-        #expect(text?.contains("%") == true)
+        vm.unitPreference = .imperial
+        vm.activePack = ThemePackCatalog.animals
+        vm.activities = [ActivityLog(type: .weight, value: 3_000)]   // 2 hippos
+        #expect(vm.absurdityTickerText(for: .weight) == "\(vm.displayTotal(for: .weight)) is 2 hippos 🦛")
     }
 
-    @Test func absurdityTickerPercentageIsBounded() {
+    // v2.3: past the last milestone the ticker keeps going instead of disappearing.
+    @Test func absurdityTickerWorksPastTheLastMilestone() {
         let vm = AppViewModel()
-        // D1 threshold = 1.60934 km; half of that = 0.80467 km → 50%
-        vm.activities = [ActivityLog(type: .distance, value: 0.80467)]
-        let text = vm.absurdityTickerText(for: .distance)
-        #expect(text?.contains("50%") == true)
-    }
-
-    @Test func absurdityTickerReturnsNilWhenAllMilestonesCleared() {
-        let vm = AppViewModel()
+        vm.activePack = ThemePackCatalog.animals
         vm.activities = [ActivityLog(type: .distance, value: 999_999)]
-        #expect(vm.absurdityTickerText(for: .distance) == nil)
+        let text = vm.absurdityTickerText(for: .distance)
+        #expect(text?.contains("Arctic tern migrations") == true)
     }
 
     // Reps count should not affect distance ticker
     @Test func absurdityTickerIgnoresRepsForDistance() {
         let vm = AppViewModel()
-        vm.activities = [ActivityLog(type: .distance, value: 0.80467, reps: 5)]
+        vm.activePack = ThemePackCatalog.animals
+        vm.activities = [ActivityLog(type: .distance, value: 80, reps: 5)]
         let text = vm.absurdityTickerText(for: .distance)
-        #expect(text?.contains("50%") == true)
+        #expect(text?.contains("2 camel day-treks") == true)
     }
 }
 
