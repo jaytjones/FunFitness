@@ -5,9 +5,8 @@ B1 live tracking (GPS walks/runs, Live Activity, live strength sessions) and C9 
 (version 3.1, build 5). **192 unit tests pass; `main` is pushed.** Build 5 is ready to archive once
 the CloudKit schema is deployed (steps below).
 
-**Update:** build 5 was uploaded; a new app icon (neon dinosaur footprint, `7d76467`) follows as
-**build 6** (app + widget `CURRENT_PROJECT_VERSION = 6`). Archive/upload steps below are the same —
-just expect 3.1 (6).
+**Update (end of session):** builds 5 and 6 are uploaded and the CloudKit schema is deployed — see
+[Wrap-up](#wrap-up-end-of-session) at the bottom. The checklist below is kept for reference.
 
 ---
 
@@ -129,3 +128,31 @@ App Store release.
 - Rest of 3.1: B2 heart rate, B3 medium widget, Apple Watch, Journey Mode (pick Texas Triangle vs.
   Appalachian Trail first).
 - D1 ("improve the floating action button") still needs clarification.
+
+## Wrap-up (end of session)
+
+- **TestFlight:** 3.1 (5) uploaded, then **3.1 (6)** with the new app icon (neon dinosaur footprint,
+  `7d76467`; build bump `e80b711`). Build 5 is **expired**. The 1.0 builds (2–4) can be expired too.
+  Testers see the Group A fixes (2.4.4) for the first time in 3.1 (6), because the earlier "1.0 (4)"
+  upload predates them.
+- **CloudKit Production schema confirmed** (by Jay): includes `CD_RouteSummary` and
+  `CD_ActivityLog.CD_surfaceRaw`. The shared scheme keeps a disabled `-initCloudKitSchema` argument
+  (`7db521a`) — tick it for the next schema deploy, then untick.
+- **Next upload is build 7** (app + widget together).
+- `main` is clean and pushed.
+
+### What testers should focus on in 3.1 (6)
+
+1. **GPS walk/run** — distance accuracy vs. another app, pause/resume, Hide, screen locked, route map,
+   save with a surface, Health workout + route (if Health saving is on), battery on a longer walk.
+2. **Lock Screen / Dynamic Island** — live clock, Pause/Resume/End; End from the Lock Screen → open
+   the app → summary to save.
+3. **Strength session** — weighted and bodyweight sets, rest countdown in the app and on the Lock
+   Screen, Log Set from the Lock Screen, Skip rest, End; every set in History.
+4. **Group A fixes** — streak/share overlap, reps default + typed count, `+` remembers the last type,
+   Reps hint, Recent Activity delete, "History" label.
+5. **Smaller** — surface on manual entries (and editing it), new icon, a tracked run's route and
+   surface syncing to a second device on the same iCloud.
+
+Known limits to tell testers: a run is lost if iOS closes the app mid-run; no Apple Watch app yet;
+strength sessions aren't saved to Apple Health.
