@@ -26,6 +26,7 @@ struct ActivityWriter {
         date: Date,
         source: ActivitySource = .manual,
         healthKitUUID: UUID? = nil,
+        surface: DistanceSurface? = nil,
         existingActivities: [ActivityLog],
         unlockedIds: Set<String>,
         context: ModelContext
@@ -43,7 +44,9 @@ struct ActivityWriter {
             reps: effectiveReps,
             loggedAt: date,
             source: source,
-            healthKitUUID: healthKitUUID
+            healthKitUUID: healthKitUUID,
+            // Only distance has a surface.
+            surface: type == .distance ? surface : nil
         )
         context.insert(activity)
 
@@ -71,12 +74,13 @@ struct ActivityWriter {
         value: Double,
         reps: Int?,
         date: Date,
+        surface: DistanceSurface? = nil,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool = false
     ) -> [Milestone] {
         let result = logSyncingViewModel(
-            type: type, value: value, reps: reps, date: date, source: .manual,
+            type: type, value: value, reps: reps, date: date, source: .manual, surface: surface,
             context: context, viewModel: viewModel
         )
 
@@ -102,6 +106,7 @@ struct ActivityWriter {
     @MainActor
     static func logTracked(
         _ workout: TrackedWorkoutResult,
+        surface: DistanceSurface? = nil,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool
@@ -109,7 +114,7 @@ struct ActivityWriter {
         let distanceKm = workout.distanceMeters / 1000
         let result = logSyncingViewModel(
             type: .distance, value: distanceKm, reps: nil, date: workout.endedAt, source: .tracked,
-            context: context, viewModel: viewModel
+            surface: surface, context: context, viewModel: viewModel
         )
 
         let route = RouteSummary(
@@ -147,6 +152,7 @@ struct ActivityWriter {
         reps: Int?,
         date: Date,
         source: ActivitySource,
+        surface: DistanceSurface? = nil,
         context: ModelContext,
         viewModel: AppViewModel
     ) -> (activity: ActivityLog, newMilestones: [Milestone]) {
@@ -156,6 +162,7 @@ struct ActivityWriter {
             reps: reps,
             date: date,
             source: source,
+            surface: surface,
             existingActivities: viewModel.activities,
             unlockedIds: viewModel.unlockedAchievementIds,
             context: context

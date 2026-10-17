@@ -20,6 +20,7 @@ struct LogActivitySheet: View {
         let type = initialType ?? viewModel.defaultLogType
         _selectedType = State(initialValue: type)
         _repsText = State(initialValue: Self.prefilledReps(for: type, viewModel: viewModel))
+        _surface = State(initialValue: viewModel.lastSurface)
     }
 
     private enum Field { case value, reps }
@@ -30,6 +31,8 @@ struct LogActivitySheet: View {
     @State private var includeReps = true
     // Typed rep count as text, so the field can be cleared while editing (2.4.4).
     @State private var repsText: String
+    // Distance surface, prefilled from the last distance entry that had one. (3.1)
+    @State private var surface: DistanceSurface?
     @State private var logDate: Date = Date()
     @State private var showValidationError = false
     @State private var showRepsError = false
@@ -217,6 +220,11 @@ struct LogActivitySheet: View {
                             }
                         }
 
+                        if selectedType == .distance {
+                            SurfacePicker(selection: $surface)
+                                .padding(.horizontal)
+                        }
+
                         // Date Picker
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Date & Time")
@@ -306,6 +314,7 @@ struct LogActivitySheet: View {
             value: siValue,
             reps: reps,
             date: logDate,
+            surface: surface,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false

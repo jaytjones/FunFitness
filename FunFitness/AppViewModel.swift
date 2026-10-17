@@ -53,6 +53,14 @@ final class AppViewModel {
         lastActivity?.activityType ?? .distance
     }
 
+    // Surface of the most recent distance entry that recorded one, to prefill pickers. (3.1)
+    var lastSurface: DistanceSurface? {
+        activities
+            .filter { $0.activityType == .distance && $0.surfaceRaw != nil }
+            .max { $0.loggedAt < $1.loggedAt }?
+            .surface
+    }
+
     // Rep count from the most recent `type` entry that recorded one, to prefill the log sheet. (2.4.4)
     func lastReps(for type: ActivityType) -> Int? {
         activities

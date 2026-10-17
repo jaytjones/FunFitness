@@ -78,8 +78,8 @@ struct ActivityHistorySheet: View {
                 EditActivitySheet(
                     activity: activity,
                     pref: viewModel.unitPreference
-                ) { value, reps, loggedAt, notes in
-                    commitEdit(activity: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes)
+                ) { value, reps, loggedAt, notes, surface in
+                    commitEdit(activity: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes, surface: surface)
                 }
             }
         }
@@ -89,11 +89,12 @@ struct ActivityHistorySheet: View {
         ActivityWriter.delete(activity, context: modelContext, viewModel: viewModel)
     }
 
-    private func commitEdit(activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?) {
+    private func commitEdit(activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?, surface: DistanceSurface?) {
         activity.value    = value
         activity.reps     = reps
         activity.loggedAt = loggedAt
         activity.notes    = notes
+        activity.surface  = activity.activityType == .distance ? surface : nil
         try? modelContext.save()
         // An in-place edit doesn't reassign the activities array, so refresh the cached totals.
         viewModel.refreshTotals()
@@ -112,9 +113,17 @@ struct ActivityRow: View {
         UnitConverter.displayString(activity.value, type: activity.activityType, reps: activity.reps, pref: pref)
     }
 
+    // "Oct 16, 2026 at 8:11 PM · Trail" — the surface only when one was recorded. (3.1)
+    private var subtitle: String {
+        let date = activity.loggedAt.formatted(date: .abbreviated, time: .shortened)
+        guard let surface = activity.surface else { return date }
+        return "\(date) · \(surface.displayName)"
+    }
+
     private var accessibilityLabel: String {
         let date = activity.loggedAt.formatted(date: .abbreviated, time: .shortened)
-        return "\(activity.activityType.displayName), \(valueLabel), logged \(date)"
+        let surface = activity.surface.map { ", on \($0.displayName.lowercased())" } ?? ""
+        return "\(activity.activityType.displayName), \(valueLabel)\(surface), logged \(date)"
     }
 
     var body: some View {
@@ -128,7 +137,7 @@ struct ActivityRow: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
-                Text(activity.loggedAt.formatted(date: .abbreviated, time: .shortened))
+                Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -152,12 +161,13 @@ struct EditActivitySheet: View {
 
     let activity: ActivityLog
     let pref: UnitPreference
-    let onSave: (Double, Int?, Date, String?) -> Void
+    let onSave: (Double, Int?, Date, String?, DistanceSurface?) -> Void
 
     @State private var inputValue = ""
     @State private var includeReps = false
     @State private var repsCount = 1
     @State private var loggedAt = Date()
+    @State private var surface: DistanceSurface?
     @State private var showValidationError = false
     @FocusState private var isInputFocused: Bool
 
@@ -265,6 +275,15 @@ struct EditActivitySheet: View {
                             }
                         }
 
+                        if kind == .distance {
+                            // GPS-tracked runs were outdoors, so no treadmill option for them.
+                            SurfacePicker(
+                                selection: $surface,
+                                options: activity.source == .tracked ? DistanceSurface.outdoor : DistanceSurface.allCases
+                            )
+                            .padding(.horizontal)
+                        }
+
                         // Date picker
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Date & Time")
@@ -322,6 +341,7 @@ struct EditActivitySheet: View {
                     repsCount   = existingReps
                 }
                 loggedAt       = activity.loggedAt
+                surface        = activity.surface
                 isInputFocused = true
             }
         }
@@ -335,7 +355,7 @@ struct EditActivitySheet: View {
         }
         let siValue = UnitConverter.toSI(rawValue, type: kind, from: pref)
         let reps = (kind.usesReps && includeReps) ? repsCount : nil
-        onSave(siValue, reps, loggedAt, activity.notes)
+        onSave(siValue, reps, loggedAt, activity.notes, surface)
         dismiss()
     }
 }

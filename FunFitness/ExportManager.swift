@@ -13,7 +13,8 @@ struct ExportManager {
     // MARK: - CSV
 
     static func generateCSV(activities: [ActivityLog], pref: UnitPreference) -> String {
-        var rows = ["Type,Value,Unit,Reps,Date,Notes"]
+        // Surface is appended last (3.1) so existing column positions don't move.
+        var rows = ["Type,Value,Unit,Reps,Date,Notes,Surface"]
         let formatter = ISO8601DateFormatter()
 
         for activity in activities.sorted(by: { $0.loggedAt < $1.loggedAt }) {
@@ -28,7 +29,9 @@ struct ExportManager {
                 .replacingOccurrences(of: ",", with: ";")
                 .replacingOccurrences(of: "\n", with: " ")
 
-            rows.append("\(type),\(value),\(unit),\(reps),\(date),\(notes)")
+            let surface = activity.surface?.rawValue ?? ""
+
+            rows.append("\(type),\(value),\(unit),\(reps),\(date),\(notes),\(surface)")
         }
 
         return rows.joined(separator: "\n")
@@ -51,11 +54,12 @@ struct ExportManager {
                 ]
                 if let reps  = activity.reps  { dict["reps"]  = reps  }
                 if let notes = activity.notes { dict["notes"] = notes }
+                if let surface = activity.surface { dict["surface"] = surface.rawValue }
                 return dict
             }
 
         let root: [String: Any] = [
-            "schemaVersion": "1.2",
+            "schemaVersion": "1.3",   // 1.3 (3.1): optional "surface" on distance entries
             "activities": activityDicts
         ]
 

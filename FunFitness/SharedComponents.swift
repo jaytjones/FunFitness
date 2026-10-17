@@ -183,3 +183,30 @@ struct FlowLayout: Layout {
         }
     }
 }
+
+// MARK: - Surface Picker (3.1)
+
+/// Optional distance-surface chips. Tapping the selected chip clears it (surface not set).
+struct SurfacePicker: View {
+    @Binding var selection: DistanceSurface?
+    var options: [DistanceSurface] = DistanceSurface.allCases
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Surface (optional)")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            FlowLayout(spacing: 8) {
+                ForEach(options, id: \.self) { surface in
+                    SelectionChip(
+                        title: surface.displayName,
+                        isSelected: selection == surface,
+                        selectedBackground: Color(hex: "#A78BFA"),
+                        action: { selection = selection == surface ? nil : surface }
+                    )
+                }
+            }
+        }
+        .accessibilityIdentifier("surfacePicker")
+    }
+}

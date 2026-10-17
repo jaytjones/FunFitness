@@ -24,6 +24,28 @@ enum ActivitySource: String, Codable {
     case tracked
 }
 
+// What a distance activity was on (3.1, feedback C9). Optional on every entry: nil = not set,
+// which is also what imported Health workouts get — Health only says "indoor", which could be
+// a treadmill or an indoor track. Raw values are persisted, so never rename them.
+enum DistanceSurface: String, Codable, CaseIterable {
+    case road
+    case track
+    case trail
+    case treadmill
+
+    var displayName: String {
+        switch self {
+        case .road:      return "Road"
+        case .track:     return "Track"
+        case .trail:     return "Trail"
+        case .treadmill: return "Treadmill"
+        }
+    }
+
+    /// Surfaces a GPS-tracked (outdoor) walk or run can be on.
+    static let outdoor: [DistanceSurface] = [.road, .track, .trail]
+}
+
 @Model
 final class ActivityLog {
     // Every stored property carries a default value so the schema is CloudKit-compatible
@@ -43,6 +65,8 @@ final class ActivityLog {
     // Set for imported workouts and for manual entries written back to Health.
     // Used as the exact-match dedup / echo-prevention key.
     var healthKitUUID: UUID?
+    // Distance surface (3.1). Optional, so the schema stays CloudKit-legal and older builds ignore it.
+    var surfaceRaw: String?
 
     init(
         id: UUID = UUID(),
@@ -52,7 +76,8 @@ final class ActivityLog {
         loggedAt: Date = Date(),
         notes: String? = nil,
         source: ActivitySource = .manual,
-        healthKitUUID: UUID? = nil
+        healthKitUUID: UUID? = nil,
+        surface: DistanceSurface? = nil
     ) {
         self.id = id
         self.type = type.rawValue
@@ -62,6 +87,7 @@ final class ActivityLog {
         self.notes = notes
         self.sourceRaw = source.rawValue
         self.healthKitUUID = healthKitUUID
+        self.surfaceRaw = surface?.rawValue
     }
 
     var activityType: ActivityType {
@@ -70,6 +96,11 @@ final class ActivityLog {
 
     var source: ActivitySource {
         ActivitySource(rawValue: sourceRaw) ?? .manual
+    }
+
+    var surface: DistanceSurface? {
+        get { surfaceRaw.flatMap(DistanceSurface.init(rawValue:)) }
+        set { surfaceRaw = newValue?.rawValue }
     }
 
     // Value counted toward totals. Types that use reps (weight) multiply value × reps;

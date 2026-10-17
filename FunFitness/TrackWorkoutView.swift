@@ -22,6 +22,8 @@ struct TrackWorkoutView: View {
     @State private var selectedKind: TrackedWorkoutKind = .walk
     @State private var showFinishConfirm = false
     @State private var showDiscardConfirm = false
+    // Outdoor surface for the saved run; prefilled from the last one used. (3.1)
+    @State private var surface: DistanceSurface?
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -246,6 +248,17 @@ struct TrackWorkoutView: View {
                         .clipShape(.rect(cornerRadius: 20))
                 }
 
+                SurfacePicker(selection: $surface, options: DistanceSurface.outdoor)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.appCard)
+                    .clipShape(.rect(cornerRadius: 20))
+                    .onAppear {
+                        if surface == nil, let last = viewModel.lastSurface, DistanceSurface.outdoor.contains(last) {
+                            surface = last
+                        }
+                    }
+
                 if !result.isSavable {
                     Text("That's too short to save — GPS may not have found you. You can discard it and try again outdoors.")
                         .font(.caption)
@@ -284,6 +297,7 @@ struct TrackWorkoutView: View {
         // Celebrations wait for this cover to close (ContentView's onDismiss shows them).
         viewModel.deferredMilestones += ActivityWriter.logTracked(
             result,
+            surface: surface,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false

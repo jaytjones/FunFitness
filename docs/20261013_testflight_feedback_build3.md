@@ -225,6 +225,13 @@ The items below all depend on a parent "workout" that groups entries.
   limited, so park it.
 
 ### C9. Distance surface: road, track, trail, treadmill
+
+> **Status (2026-10-16): done in 3.1.** Optional `ActivityLog.surfaceRaw` (needs the same CloudKit
+> schema deploy as `RouteSummary`). Road/Track/Trail/Treadmill chips in the log sheet (prefilled
+> from the last distance entry with one) and edit sheet; Road/Track/Trail on a GPS run's summary.
+> Shown in history rows, kept by Repeat Last and Siri, exported (CSV `Surface` column, JSON
+> `surface`, schema 1.3). Health imports stay blank — `HKMetadataKeyIndoorWorkout` can't tell a
+> treadmill from an indoor track.
 > "Would be good to track distance on road vs track vs trail vs treadmill" — 2026-10-10
 
 - An additive `surface: String?` on `ActivityLog` with a small picker in the log sheet. Treadmill
