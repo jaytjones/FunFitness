@@ -5,6 +5,10 @@ B1 live tracking (GPS walks/runs, Live Activity, live strength sessions) and C9 
 (version 3.1, build 5). **192 unit tests pass; `main` is pushed.** Build 5 is ready to archive once
 the CloudKit schema is deployed (steps below).
 
+**Update:** build 5 was uploaded; a new app icon (neon dinosaur footprint, `7d76467`) follows as
+**build 6** (app + widget `CURRENT_PROJECT_VERSION = 6`). Archive/upload steps below are the same —
+just expect 3.1 (6).
+
 ---
 
 ## 2.4.4 — build 3 feedback, Group A (build 4)
