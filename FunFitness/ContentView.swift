@@ -76,8 +76,14 @@ struct ContentView: View {
                 .task(id: hasProfile) {
                     await syncHealthKitIfEnabled()
                 }
+                .task {
+                    // A Live Activity left from a previous launch has no workout behind it now.
+                    WorkoutLiveActivityController.shared.endOrphanedActivities(tracker: WorkoutTracker.shared)
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
+                        // A run ended from the Live Activity's End button waits for review here.
+                        if WorkoutTracker.shared.phase == .finished { viewModel.showTracker = true }
                         // Catch in-place edits that synced from another device while away.
                         viewModel.refreshTotals()
                         Task { await syncHealthKitIfEnabled() }

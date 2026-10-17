@@ -12,5 +12,6 @@ import SwiftUI
 struct FunFitnessWidgetsBundle: WidgetBundle {
     var body: some Widget {
         FunFitnessWidget()
+        WorkoutLiveActivityWidget()   // 3.1 tracked walk/run Live Activity
     }
 }

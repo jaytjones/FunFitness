@@ -215,10 +215,7 @@ final class AppViewModel {
     /// The same playful restatement for a single distance, e.g. a tracked run in progress:
     /// "2.3 km is 1 honeybee flight 🐝". nil for zero. (3.1)
     func comparisonPhrase(distanceKm: Double) -> String? {
-        guard let fit = ReferenceUnitEngine.bestFit(total: distanceKm, type: .distance, packId: activePack.id) else {
-            return nil
-        }
-        return "\(displayDistance(distanceKm)) is \(fit.phrase) \(fit.unit.emoji)"
+        ReferenceUnitEngine.distancePhrase(distanceKm: distanceKm, pref: unitPreference, packId: activePack.id)
     }
 
     // MARK: - Unit-aware display helpers

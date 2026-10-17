@@ -110,6 +110,11 @@
 			path = FunFitnessWidgets;
 			sourceTree = "<group>";
 		};
+		86B1B0A13090000000ABCDEF /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		86EEF7E62F79F3E00076F515 /* FunFitness */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -201,6 +206,7 @@
 				86EEF8022F79F3E10076F515 /* FunFitnessUITests */,
 				86687D4D3015872C00E05A84 /* docs */,
 				869F00F1307AF83700DCE148 /* FunFitnessWidgets */,
+				86B1B0A13090000000ABCDEF /* Shared */,
 				869F00EC307AF83700DCE148 /* Frameworks */,
 				86EEF7E52F79F3E00076F515 /* Products */,
 			);
@@ -234,6 +240,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				869F00F1307AF83700DCE148 /* FunFitnessWidgets */,
+				86B1B0A13090000000ABCDEF /* Shared */,
 			);
 			name = FunFitnessWidgetsExtension;
 			packageProductDependencies = (
@@ -257,6 +264,7 @@
 				869F00FA307AF83800DCE148 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				86B1B0A13090000000ABCDEF /* Shared */,
 				86EEF7E62F79F3E00076F515 /* FunFitness */,
 			);
 			name = FunFitness;
@@ -557,6 +565,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness uses your location while you track a walk or run to measure distance and draw your route.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -597,6 +606,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness uses your location while you track a walk or run to measure distance and draw your route.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

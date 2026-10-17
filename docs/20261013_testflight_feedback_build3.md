@@ -111,7 +111,9 @@ Groups:
 
 > **Status (2026-10-16):** in progress as 3.1. **B1a done** — live GPS walk/run tracking on iPhone
 > (time, distance, pace, route map, pause/resume, hide-and-keep-tracking, save with route, optional
-> Health workout + route). B1b (Live Activity) and B1c (live strength mode) next. Decisions: keep
+> Health workout + route). **B1b done** — Lock Screen / Dynamic Island Live Activity (live clock,
+> distance, pace, comparison line; Pause/Resume/End buttons; End waits in the app for review).
+> B1c (live strength mode) next. Decisions: keep
 > iOS 18 (iOS 26 `HKWorkoutSession` noted as a future enhancement), tracking works without Health,
 > version 3.1 / build 5.
 

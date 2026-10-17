@@ -104,6 +104,7 @@ struct TrackWorkoutView: View {
             Spacer(minLength: 0)
 
             Button {
+                WorkoutLiveActivityController.shared.configure(pref: pref, packId: viewModel.activePack.id)
                 tracker.start(kind: selectedKind)
             } label: {
                 Text("Start \(selectedKind.displayName)")

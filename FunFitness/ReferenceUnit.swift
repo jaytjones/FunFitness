@@ -40,6 +40,13 @@ struct ReferenceFit: Sendable {
 
 enum ReferenceUnitEngine {
 
+    /// "2.3 km is 1 honeybee flight 🐝" for a single distance (a tracked run, not a running
+    /// total). nil for zero. Shared by the tracking summary and the Live Activity. (3.1)
+    static func distancePhrase(distanceKm: Double, pref: UnitPreference, packId: String) -> String? {
+        guard let fit = bestFit(total: distanceKm, type: .distance, packId: packId) else { return nil }
+        return "\(UnitConverter.distanceString(distanceKm, pref: pref)) is \(fit.phrase) \(fit.unit.emoji)"
+    }
+
     /// Restates `total` (SI) as a count of the active pack's units for `type`.
     ///
     /// Picks the largest unit the total covers at least once, so counts stay small and readable;

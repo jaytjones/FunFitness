@@ -4,7 +4,8 @@
 //
 //  Records a live GPS walk or run on iPhone (3.1 B1a). Core Location → `RouteAccumulator`;
 //  all the math lives in RouteMath.swift so it's unit-tested. A single shared instance so the
-//  tracking screen, Home, and (in B1b) Live Activity buttons all see the same workout.
+//  tracking screen, Home, and the Live Activity buttons all see the same workout. Every state
+//  change is mirrored to the Live Activity via `WorkoutLiveActivityController` (3.1 B1b).
 //
 //  Location: `CLLocationUpdate.liveUpdates(.fitness)` plus a `CLBackgroundActivitySession`, which
 //  keeps updates flowing with the screen locked under When In Use authorization and shows the
@@ -55,6 +56,7 @@ final class WorkoutTracker {
     private var updatesTask: Task<Void, Never>?
     private var serviceSession: CLServiceSession?
     private var backgroundSession: CLBackgroundActivitySession?
+    private var liveActivity: WorkoutLiveActivityController { .shared }
 
     private init() {}
 
@@ -81,18 +83,21 @@ final class WorkoutTracker {
         hasLocationFix = false
         phase = .active
         startLocationUpdates()
+        liveActivity.start(for: self, at: date)
     }
 
     func pause(at date: Date = Date()) {
         guard phase == .active else { return }
         accumulator.pause(at: date)
         phase = .paused
+        liveActivity.update(for: self, force: true, at: date)
     }
 
     func resume(at date: Date = Date()) {
         guard phase == .paused else { return }
         accumulator.resume(at: date)
         phase = .active
+        liveActivity.update(for: self, force: true, at: date)
     }
 
     /// Stops recording and produces the result to review and save.
@@ -112,12 +117,15 @@ final class WorkoutTracker {
         )
         result = finished
         phase = .finished
+        // The Live Activity stays up showing the final numbers until the run is saved or discarded.
+        liveActivity.update(for: self, force: true, at: date)
         return finished
     }
 
     /// Returns to idle after the result is saved or discarded (or abandons a recording).
     func reset() {
         stopLocationUpdates()
+        liveActivity.endAll()
         accumulator = RouteAccumulator(kind: .walk)
         result = nil
         locationIssue = nil
@@ -162,11 +170,12 @@ final class WorkoutTracker {
 
         guard let location = update.location else { return }
         hasLocationFix = true
-        accumulator.add(RoutePoint(
+        let accepted = accumulator.add(RoutePoint(
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
             timestamp: location.timestamp,
             horizontalAccuracy: location.horizontalAccuracy
         ))
+        if accepted { liveActivity.update(for: self) }   // throttled
     }
 }
