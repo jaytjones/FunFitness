@@ -85,18 +85,41 @@ final class AppViewModel {
     var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
-    // Live walk/run tracking screen (3.1). Milestones a saved run crosses wait here until the
-    // tracker's full-screen cover has closed, since only one cover can show at a time.
+    // Live session screens (3.1): GPS walk/run tracking and the strength session. Milestones
+    // crossed while one is up wait in `deferredMilestones` until its full-screen cover closes,
+    // since only one cover can show at a time.
     var showTracker: Bool = false
-    var milestonesAfterTracker: [Milestone] = []
-    // Set by the log sheet's "track it live" link; the sheet's onDismiss then opens the tracker,
-    // because a cover can't be presented while the sheet is still on screen.
-    var trackerRequestedFromLogSheet: Bool = false
+    var showStrengthSession: Bool = false
+    var deferredMilestones: [Milestone] = []
 
-    func presentTrackerIfRequested() {
-        guard trackerRequestedFromLogSheet else { return }
-        trackerRequestedFromLogSheet = false
-        showTracker = true
+    /// Celebrates now, or holds the milestones while a live session screen is showing.
+    func celebrateOrDefer(_ crossed: [Milestone]) {
+        if showTracker || showStrengthSession {
+            deferredMilestones += crossed
+        } else {
+            celebrate(crossed)
+        }
+    }
+
+    /// Shows milestones held while a live session screen was up (its cover's onDismiss).
+    func celebrateDeferred() {
+        let crossed = deferredMilestones
+        deferredMilestones = []
+        celebrate(crossed)
+    }
+
+    // Set by the log sheet's "live" links; the sheet's onDismiss then opens that screen, because
+    // a cover can't be presented while the sheet is still on screen.
+    enum LiveSessionRequest { case tracker, strength }
+    var liveSessionRequestedFromLogSheet: LiveSessionRequest?
+
+    func presentLiveSessionIfRequested() {
+        guard let request = liveSessionRequestedFromLogSheet else { return }
+        liveSessionRequestedFromLogSheet = nil
+        switch request {
+        case .tracker:  showTracker = true
+        case .strength: showStrengthSession = true
+        }
     }
 
     // MARK: - Streak state (updated by ContentView after each activity change)

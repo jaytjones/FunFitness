@@ -96,7 +96,7 @@ struct ProgressTabView: View {
                     .accessibilityLabel("Log activity")
                 }
             }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentTrackerIfRequested) {
+            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
                 LogActivitySheet(viewModel: viewModel)
             }
             .sheet(isPresented: $showHistory) {

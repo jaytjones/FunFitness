@@ -137,10 +137,11 @@ struct ActivityWriter {
         return result.newMilestones
     }
 
-    /// Shared by the main-app logging paths: inserts via the context-only `log`, then mirrors the
-    /// new entry and unlocked ids into `viewModel`.
+    /// Shared by the main-app logging paths (and strength sessions, which need the saved entry):
+    /// inserts via the context-only `log`, then mirrors the new entry and unlocked ids into
+    /// `viewModel`. No Health write-back.
     @MainActor
-    private static func logSyncingViewModel(
+    static func logSyncingViewModel(
         type: ActivityType,
         value: Double,
         reps: Int?,

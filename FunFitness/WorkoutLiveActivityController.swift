@@ -2,9 +2,10 @@
 //  WorkoutLiveActivityController.swift
 //  FunFitness
 //
-//  Starts, updates, and ends the workout Live Activity from `WorkoutTracker` (3.1 B1b), and runs
-//  its Lock Screen / Dynamic Island buttons. Updates are local (no push tokens) and throttled:
-//  the clock ticks by itself via `Text(timerInterval:)`, so only distance/pace need refreshing.
+//  Starts, updates, and ends the workout Live Activity from `WorkoutTracker` (3.1 B1b) and
+//  `StrengthSessionManager` (B1c), and runs its Lock Screen / Dynamic Island buttons. Updates are
+//  local (no push tokens); walk/run updates are throttled since the clock ticks by itself via
+//  `Text(timerInterval:)` and only distance/pace need refreshing.
 //
 
 import Foundation
@@ -44,6 +45,52 @@ enum WorkoutLiveActivityContent {
         )
     }
 
+    /// Strength session content (3.1 B1c): sets done, last set, a rest countdown, and a running
+    /// "weight lifted" comparison.
+    static func strengthState(
+        session: StrengthSession,
+        isFinished: Bool,
+        elapsedSeconds: TimeInterval,
+        now: Date,
+        pref: UnitPreference,
+        packId: String
+    ) -> WorkoutActivityAttributes.ContentState {
+        let resting = !isFinished && session.isResting(at: now)
+        return WorkoutActivityAttributes.ContentState(
+            isPaused: false,
+            isFinished: isFinished,
+            timerStart: now.addingTimeInterval(-elapsedSeconds),
+            elapsedText: UnitConverter.elapsedString(elapsedSeconds),
+            primaryValue: "\(session.setCount)",
+            primaryLabel: session.setCount == 1 ? "Set" : "Sets",
+            secondaryValue: session.lastSet.map { setText($0, pref: pref) } ?? "—",
+            secondaryLabel: "Last set",
+            comparison: strengthComparison(session: session, isFinished: isFinished, pref: pref, packId: packId),
+            restStart: resting ? session.restStartedAt : nil,
+            restEnd: resting ? session.restEndsAt : nil,
+            canLogSet: !isFinished && session.lastSet != nil
+        )
+    }
+
+    /// "135 lbs × 10" or "20 reps".
+    static func setText(_ set: StrengthSet, pref: UnitPreference) -> String {
+        UnitConverter.displayString(set.valueSI, type: set.type, reps: set.reps, pref: pref)
+    }
+
+    private static func strengthComparison(session: StrengthSession, isFinished: Bool, pref: UnitPreference, packId: String) -> String? {
+        let lifted = session.totalLiftedKg
+        let liftedText = lifted > 0 ? UnitConverter.weightString(lifted, pref: pref) : nil
+        if isFinished {
+            let sets = "\(session.setCount) set\(session.setCount == 1 ? "" : "s") saved"
+            return liftedText.map { "\(sets) · \($0) lifted" } ?? sets
+        }
+        if let liftedText, let fit = ReferenceUnitEngine.bestFit(total: lifted, type: .weight, packId: packId) {
+            return "\(liftedText) lifted — \(fit.phrase) \(fit.unit.emoji)"
+        }
+        let reps = session.totalBodyweightReps
+        return reps > 0 ? "\(reps) bodyweight reps so far" : nil
+    }
+
     static func shouldUpdate(lastUpdate: Date?, now: Date, force: Bool) -> Bool {
         guard !force, let lastUpdate else { return true }
         return now.timeIntervalSince(lastUpdate) >= updateInterval
@@ -74,17 +121,49 @@ final class WorkoutLiveActivityController {
     /// Live Activities are off in Settings — tracking works the same without one.
     func start(for tracker: WorkoutTracker, at date: Date = Date()) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        request(
+            WorkoutActivityAttributes(title: tracker.kind.displayName, emoji: tracker.kind.emoji),
+            state: state(for: tracker, at: date),
+            at: date
+        )
+    }
+
+    /// Starts the Live Activity for a strength session (3.1 B1c).
+    func startStrength(for manager: StrengthSessionManager, at date: Date = Date()) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled, let state = strengthState(for: manager, at: date) else { return }
+        request(WorkoutActivityAttributes(title: "Strength", emoji: "🏋️", isStrength: true), state: state, at: date)
+    }
+
+    /// Strength changes are discrete (a set, a skipped rest), so every one is pushed.
+    func updateStrength(for manager: StrengthSessionManager, at date: Date = Date()) {
+        guard let activity, let state = strengthState(for: manager, at: date) else { return }
+        lastUpdate = date
+        let id = activity.id
+        Task { await Self.update(activityID: id, to: ActivityContent(state: state, staleDate: nil)) }
+    }
+
+    /// Shows the session's final numbers on the Lock Screen for a while, then lets it go. The sets
+    /// are already saved, so unlike a run there's nothing waiting in the app.
+    func finishStrength(for manager: StrengthSessionManager, at date: Date = Date()) {
+        guard let activity, let state = strengthState(for: manager, at: date) else { return }
+        self.activity = nil
+        lastUpdate = nil
+        let id = activity.id
+        let content = ActivityContent(state: state, staleDate: nil)
+        Task { await Self.end(activityID: id, finalContent: content, dismissAt: date.addingTimeInterval(15 * 60)) }
+    }
+
+    private func request(_ attributes: WorkoutActivityAttributes, state: WorkoutActivityAttributes.ContentState, at date: Date) {
         endAll()
-        let attributes = WorkoutActivityAttributes(title: tracker.kind.displayName, emoji: tracker.kind.emoji)
         do {
             activity = try Activity.request(
                 attributes: attributes,
-                content: ActivityContent(state: state(for: tracker, at: date), staleDate: nil),
+                content: ActivityContent(state: state, staleDate: nil),
                 pushType: nil
             )
             lastUpdate = date
         } catch {
-            activity = nil   // e.g. too many Live Activities running; tracking continues regardless
+            activity = nil   // e.g. too many Live Activities running; the session continues regardless
         }
     }
 
@@ -117,15 +196,26 @@ final class WorkoutLiveActivityController {
         }
     }
 
+    private nonisolated static func end(
+        activityID: String,
+        finalContent: ActivityContent<WorkoutActivityAttributes.ContentState>,
+        dismissAt: Date
+    ) async {
+        for running in Activity<WorkoutActivityAttributes>.activities where running.id == activityID {
+            await running.end(finalContent, dismissalPolicy: .after(dismissAt))
+        }
+    }
+
     private nonisolated static func end(activityIDs: [String]) async {
         for running in Activity<WorkoutActivityAttributes>.activities where activityIDs.contains(running.id) {
             await running.end(nil, dismissalPolicy: .immediate)
         }
     }
 
-    /// Clears orphaned Live Activities at launch when no workout is being tracked.
-    func endOrphanedActivities(tracker: WorkoutTracker) {
-        guard tracker.phase == .idle, !Activity<WorkoutActivityAttributes>.activities.isEmpty else { return }
+    /// Clears orphaned Live Activities at launch when no live session is running.
+    func endOrphanedActivities(tracker: WorkoutTracker, strength: StrengthSessionManager) {
+        guard tracker.phase == .idle, strength.phase == .idle,
+              !Activity<WorkoutActivityAttributes>.activities.isEmpty else { return }
         endAll()
     }
 
@@ -140,6 +230,18 @@ final class WorkoutLiveActivityController {
             packId: packId
         )
     }
+
+    private func strengthState(for manager: StrengthSessionManager, at date: Date) -> WorkoutActivityAttributes.ContentState? {
+        guard let session = manager.session else { return nil }
+        return WorkoutLiveActivityContent.strengthState(
+            session: session,
+            isFinished: manager.phase == .finished,
+            elapsedSeconds: manager.elapsedSeconds(at: date),
+            now: date,
+            pref: pref,
+            packId: packId
+        )
+    }
 }
 
 // MARK: - Button handling
@@ -148,12 +250,19 @@ final class WorkoutLiveActivityController {
 enum WorkoutLiveActivityActions {
     static func handle(_ command: WorkoutLiveActivityCommand) async {
         let tracker = WorkoutTracker.shared
+        let strength = StrengthSessionManager.shared
         switch command {
         case .pause:  tracker.pause()
         case .resume: tracker.resume()
-        // Finishing doesn't save: the summary opens the next time the app comes to the
-        // foreground, so nothing is logged without the person reviewing it.
-        case .end:    tracker.finish()
+        case .logSet: strength.repeatLastSet()
+        case .end:
+            if strength.isActive {
+                strength.end()
+            } else {
+                // Finishing doesn't save: the summary opens the next time the app comes to the
+                // foreground, so nothing is logged without the person reviewing it.
+                tracker.finish()
+            }
         }
     }
 }

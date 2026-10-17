@@ -78,12 +78,14 @@ struct ContentView: View {
                 }
                 .task {
                     // A Live Activity left from a previous launch has no workout behind it now.
-                    WorkoutLiveActivityController.shared.endOrphanedActivities(tracker: WorkoutTracker.shared)
+                    WorkoutLiveActivityController.shared.endOrphanedActivities(
+                        tracker: WorkoutTracker.shared, strength: StrengthSessionManager.shared)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
-                        // A run ended from the Live Activity's End button waits for review here.
+                        // A session ended from the Live Activity's End button waits for review here.
                         if WorkoutTracker.shared.phase == .finished { viewModel.showTracker = true }
+                        if StrengthSessionManager.shared.phase == .finished { viewModel.showStrengthSession = true }
                         // Catch in-place edits that synced from another device while away.
                         viewModel.refreshTotals()
                         Task { await syncHealthKitIfEnabled() }
@@ -121,14 +123,13 @@ struct ContentView: View {
                 }
             }
         }
-        // Live walk/run tracking (3.1). Attached here, not on the TabView, so it doesn't compete
-        // with the milestone cover; a saved run's celebrations show once this one has closed.
-        .fullScreenCover(isPresented: $viewModel.showTracker, onDismiss: {
-            let crossed = viewModel.milestonesAfterTracker
-            viewModel.milestonesAfterTracker = []
-            viewModel.celebrate(crossed)
-        }) {
+        // Live session screens (3.1). Attached here, not on the TabView, so they don't compete
+        // with the milestone cover; celebrations earned meanwhile show once they close.
+        .fullScreenCover(isPresented: $viewModel.showTracker, onDismiss: viewModel.celebrateDeferred) {
             TrackWorkoutView(viewModel: viewModel)
+        }
+        .fullScreenCover(isPresented: $viewModel.showStrengthSession, onDismiss: viewModel.celebrateDeferred) {
+            StrengthSessionView(viewModel: viewModel)
         }
     }
 

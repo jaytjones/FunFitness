@@ -46,6 +46,8 @@ struct HomeView: View {
 
                         TrackWorkoutCard(viewModel: viewModel)
 
+                        StrengthSessionCard(viewModel: viewModel)
+
                         if let last = viewModel.lastActivity {
                             RepeatLastButton(label: repeatLabel(for: last)) {
                                 repeatLast(last)
@@ -105,7 +107,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("homeLogActivityButton")
                 }
             }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentTrackerIfRequested) {
+            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
                 LogActivitySheet(viewModel: viewModel, initialType: logType)
             }
             .sheet(isPresented: $showHistory) {
@@ -483,6 +485,75 @@ struct TrackWorkoutCard: View {
             return UnitConverter.distanceString(tracker.distanceMeters / 1000, pref: viewModel.unitPreference) + " so far"
         case .finished:
             return "Review and save it"
+        }
+    }
+}
+
+// MARK: - Strength Session Card (3.1)
+
+/// Starts a live strength session, or — while one is running — shows it and reopens it.
+struct StrengthSessionCard: View {
+    let viewModel: AppViewModel
+    private let manager = StrengthSessionManager.shared
+
+    var body: some View {
+        Button {
+            viewModel.showStrengthSession = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: manager.isActive ? "timer" : "dumbbell.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .symbolEffect(.pulse, isActive: manager.isActive)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                Spacer()
+                Text(manager.phase == .idle ? "Start" : "Open")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.2))
+                    .clipShape(.capsule)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#7C3AED"), Color(hex: "#5B21B6")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title). \(subtitle)")
+        .accessibilityIdentifier("strengthSessionCard")
+    }
+
+    private var title: String {
+        switch manager.phase {
+        case .idle:     return "Start a Strength Session"
+        case .active:   return "Strength session running"
+        case .finished: return "Strength session done"
+        }
+    }
+
+    private var subtitle: String {
+        let sets = manager.session?.setCount ?? 0
+        switch manager.phase {
+        case .idle:     return "Log sets as you go, with a rest timer between them"
+        case .active:   return "\(sets) set\(sets == 1 ? "" : "s") so far"
+        case .finished: return "See your summary"
         }
     }
 }

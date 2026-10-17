@@ -103,6 +103,16 @@ struct TrackWorkoutView: View {
 
             Spacer(minLength: 0)
 
+            // One live session at a time (they share the Live Activity).
+            let strengthRunning = StrengthSessionManager.shared.phase != .idle
+            if strengthRunning {
+                Text("End your strength session before starting a walk or run.")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
             Button {
                 WorkoutLiveActivityController.shared.configure(pref: pref, packId: viewModel.activePack.id)
                 tracker.start(kind: selectedKind)
@@ -112,9 +122,10 @@ struct TrackWorkoutView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(Color(hex: "#059669"))
+                    .background(Color(hex: "#059669").opacity(strengthRunning ? 0.4 : 1))
                     .clipShape(.capsule)
             }
+            .disabled(strengthRunning)
             .padding(.horizontal)
             .padding(.bottom)
             .accessibilityIdentifier("trackerStartButton")
@@ -271,7 +282,7 @@ struct TrackWorkoutView: View {
 
     private func save(_ result: TrackedWorkoutResult) {
         // Celebrations wait for this cover to close (ContentView's onDismiss shows them).
-        viewModel.milestonesAfterTracker = ActivityWriter.logTracked(
+        viewModel.deferredMilestones += ActivityWriter.logTracked(
             result,
             context: modelContext,
             viewModel: viewModel,

@@ -109,11 +109,14 @@ Groups:
 
 ### B1. Live tracking of walks and runs
 
-> **Status (2026-10-16):** in progress as 3.1. **B1a done** — live GPS walk/run tracking on iPhone
+> **Status (2026-10-16): B1 done in 3.1 (B1a–B1c).** **B1a done** — live GPS walk/run tracking on iPhone
 > (time, distance, pace, route map, pause/resume, hide-and-keep-tracking, save with route, optional
 > Health workout + route). **B1b done** — Lock Screen / Dynamic Island Live Activity (live clock,
 > distance, pace, comparison line; Pause/Resume/End buttons; End waits in the app for review).
-> B1c (live strength mode) next. Decisions: keep
+> **B1c done** — live strength sessions: session clock, Log Set (weight × reps or bodyweight reps,
+> each saved immediately as a normal entry), rest timer with Skip and an optional rest-over
+> notification, summary; the same Live Activity shows sets, last set, rest countdown, and Log
+> Set / End. Sessions live in memory only; stored sessions remain C1. Decisions: keep
 > iOS 18 (iOS 26 `HKWorkoutSession` noted as a future enhancement), tracking works without Health,
 > version 3.1 / build 5.
 

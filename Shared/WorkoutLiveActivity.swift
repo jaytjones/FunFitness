@@ -2,10 +2,10 @@
 //  WorkoutLiveActivity.swift
 //  Shared (compiled into both FunFitness and FunFitnessWidgetsExtension)
 //
-//  The Live Activity for a workout in progress (3.1 B1b): its ActivityKit attributes and the
-//  Lock Screen / Dynamic Island button intents. Both targets need these types — the app starts
-//  and updates the activity and runs the intents; the widget extension draws it and builds the
-//  buttons. Types are explicitly nonisolated because the two targets use different default actor
+//  The Live Activity for a workout in progress — a GPS walk/run (3.1 B1b) or a strength session
+//  (B1c): its ActivityKit attributes and the Lock Screen / Dynamic Island button intents. Both
+//  targets need these types — the app starts and updates the activity and runs the intents; the
+//  widget extension draws it and builds the buttons. Types are explicitly nonisolated because the two targets use different default actor
 //  isolation.
 //
 //  Strings arrive pre-formatted in the user's units, so the extension needs no app logic.
@@ -32,11 +32,18 @@ nonisolated struct WorkoutActivityAttributes: ActivityAttributes {
         var secondaryLabel: String    // "Pace"
         /// "1.2 mi is 3 blue whales 🐋", when there's enough distance for one.
         var comparison: String?
+        /// Strength rest countdown, while resting between sets.
+        var restStart: Date?
+        var restEnd: Date?
+        /// Strength: there's a set to repeat with the Log Set button.
+        var canLogSet: Bool = false
     }
 
-    /// "Walk" or "Run".
+    /// "Walk", "Run", or "Strength".
     var title: String
     var emoji: String
+    /// Strength sessions show Log Set instead of Pause/Resume, and a rest countdown.
+    var isStrength: Bool = false
 }
 
 // MARK: - Button intents
@@ -46,6 +53,7 @@ nonisolated enum WorkoutLiveActivityCommand: String, Sendable {
     case pause
     case resume
     case end
+    case logSet
 }
 
 // `LiveActivityIntent`s run in the app's process, so `WorkoutLiveActivityActions` is the app's real
@@ -83,6 +91,18 @@ nonisolated struct EndWorkoutIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         await WorkoutLiveActivityActions.handle(.end)
+        return .result()
+    }
+}
+
+nonisolated struct LogSetIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Log Another Set"
+    static let isDiscoverable = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        await WorkoutLiveActivityActions.handle(.logSet)
         return .result()
     }
 }

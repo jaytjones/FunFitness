@@ -377,7 +377,7 @@ struct ProfileView: View {
             } message: {
                 Text("This will delete your profile, all activities, and all achievements — on this device and from iCloud on any device signed into your account. You'll need to set up again. This action cannot be undone.")
             }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentTrackerIfRequested) {
+            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
                 LogActivitySheet(viewModel: viewModel)
             }
             .sheet(isPresented: $showExportSheet, onDismiss: { exportURL = nil }) {

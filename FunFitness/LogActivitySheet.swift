@@ -74,10 +74,12 @@ struct LogActivitySheet: View {
                             showRepsError = false
                         }
 
-                        // Live GPS tracking is the other way to log distance. (3.1)
-                        if selectedType == .distance && !WorkoutTracker.shared.isRecording {
+                        // Live sessions are the other way to log (3.1): GPS for distance, a
+                        // strength session for weight and bodyweight reps. One at a time.
+                        let liveSessionRunning = WorkoutTracker.shared.isRecording || StrengthSessionManager.shared.isActive
+                        if selectedType == .distance && !liveSessionRunning {
                             Button {
-                                viewModel.trackerRequestedFromLogSheet = true
+                                viewModel.liveSessionRequestedFromLogSheet = .tracker
                                 dismiss()
                             } label: {
                                 Label("Track a walk or run live instead", systemImage: "location.fill")
@@ -85,6 +87,17 @@ struct LogActivitySheet: View {
                                     .foregroundStyle(Color(hex: "#A78BFA"))
                             }
                             .accessibilityIdentifier("trackLiveInsteadButton")
+                        }
+                        if (selectedType == .weight || selectedType == .reps) && !liveSessionRunning {
+                            Button {
+                                viewModel.liveSessionRequestedFromLogSheet = .strength
+                                dismiss()
+                            } label: {
+                                Label("Start a live strength session instead", systemImage: "timer")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color(hex: "#A78BFA"))
+                            }
+                            .accessibilityIdentifier("strengthLiveInsteadButton")
                         }
 
                         // Value Input

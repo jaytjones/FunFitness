@@ -11,6 +11,7 @@ enum NotificationCategory: String {
     case milestoneNudge = "MILESTONE_NUDGE"
     case weeklyRecap    = "WEEKLY_RECAP"
     case comparisonDay  = "COMPARISON_DAY"
+    case strengthRest   = "STRENGTH_REST"     // 3.1 live strength session rest timer
 }
 
 @MainActor
@@ -156,6 +157,26 @@ final class NotificationManager {
     }
 
     // MARK: - Cancel helpers
+
+    // MARK: - Strength session rest timer (3.1)
+
+    /// Alerts when rest is over. Only schedules if notifications are already allowed — a strength
+    /// session never prompts for permission; the Live Activity countdown covers everyone else.
+    func scheduleRestOver(at date: Date) {
+        cancel(.strengthRest)
+        let interval = date.timeIntervalSinceNow
+        guard interval > 1 else { return }
+        Task {
+            guard await isAuthorized() else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "Rest's up 💪"
+            content.body = "Time for your next set."
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+            let request = UNNotificationRequest(identifier: NotificationCategory.strengthRest.rawValue, content: content, trigger: trigger)
+            try? await UNUserNotificationCenter.current().add(request)
+        }
+    }
 
     func cancel(_ category: NotificationCategory) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(
