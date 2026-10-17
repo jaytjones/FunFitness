@@ -44,6 +44,8 @@ struct HomeView: View {
 
                         SeasonalCard(viewModel: viewModel)
 
+                        TrackWorkoutCard(viewModel: viewModel)
+
                         if let last = viewModel.lastActivity {
                             RepeatLastButton(label: repeatLabel(for: last)) {
                                 repeatLast(last)
@@ -103,7 +105,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("homeLogActivityButton")
                 }
             }
-            .sheet(isPresented: $showLogSheet) {
+            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentTrackerIfRequested) {
                 LogActivitySheet(viewModel: viewModel, initialType: logType)
             }
             .sheet(isPresented: $showHistory) {
@@ -409,6 +411,78 @@ struct SeasonalCard: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(season.name) special. \(comparison.text)")
             .accessibilityIdentifier("seasonalCard")
+        }
+    }
+}
+
+// MARK: - Track Workout Card (3.1)
+
+/// Starts a live GPS walk/run, or — while one is recording — shows it and reopens the tracker.
+struct TrackWorkoutCard: View {
+    let viewModel: AppViewModel
+    private let tracker = WorkoutTracker.shared
+
+    var body: some View {
+        Button {
+            viewModel.showTracker = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: tracker.isRecording ? "location.fill" : "figure.walk.motion")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .symbolEffect(.pulse, isActive: tracker.phase == .active)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                Spacer()
+                Text(tracker.isRecording ? "Open" : "Start")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.2))
+                    .clipShape(.capsule)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(.rect(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title). \(subtitle)")
+        .accessibilityIdentifier("trackWorkoutCard")
+    }
+
+    private var title: String {
+        switch tracker.phase {
+        case .idle:     return "Track a Walk or Run"
+        case .active:   return "Tracking your \(tracker.kind.displayName.lowercased())"
+        case .paused:   return "\(tracker.kind.displayName) paused"
+        case .finished: return "\(tracker.kind.displayName) finished"
+        }
+    }
+
+    private var subtitle: String {
+        switch tracker.phase {
+        case .idle:
+            return "Live GPS distance, pace, and a map of your route"
+        case .active, .paused:
+            return UnitConverter.distanceString(tracker.distanceMeters / 1000, pref: viewModel.unitPreference) + " so far"
+        case .finished:
+            return "Review and save it"
         }
     }
 }

@@ -115,6 +115,15 @@ struct ContentView: View {
                 }
             }
         }
+        // Live walk/run tracking (3.1). Attached here, not on the TabView, so it doesn't compete
+        // with the milestone cover; a saved run's celebrations show once this one has closed.
+        .fullScreenCover(isPresented: $viewModel.showTracker, onDismiss: {
+            let crossed = viewModel.milestonesAfterTracker
+            viewModel.milestonesAfterTracker = []
+            viewModel.celebrate(crossed)
+        }) {
+            TrackWorkoutView(viewModel: viewModel)
+        }
     }
 
     // MARK: - Streak

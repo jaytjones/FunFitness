@@ -85,6 +85,19 @@ final class AppViewModel {
     var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
+    // Live walk/run tracking screen (3.1). Milestones a saved run crosses wait here until the
+    // tracker's full-screen cover has closed, since only one cover can show at a time.
+    var showTracker: Bool = false
+    var milestonesAfterTracker: [Milestone] = []
+    // Set by the log sheet's "track it live" link; the sheet's onDismiss then opens the tracker,
+    // because a cover can't be presented while the sheet is still on screen.
+    var trackerRequestedFromLogSheet: Bool = false
+
+    func presentTrackerIfRequested() {
+        guard trackerRequestedFromLogSheet else { return }
+        trackerRequestedFromLogSheet = false
+        showTracker = true
+    }
 
     // MARK: - Streak state (updated by ContentView after each activity change)
     var currentStreak: Int = 0
@@ -197,6 +210,15 @@ final class AppViewModel {
             return nil
         }
         return "\(displayTotal(for: type)) is \(fit.phrase) \(fit.unit.emoji)"
+    }
+
+    /// The same playful restatement for a single distance, e.g. a tracked run in progress:
+    /// "2.3 km is 1 honeybee flight 🐝". nil for zero. (3.1)
+    func comparisonPhrase(distanceKm: Double) -> String? {
+        guard let fit = ReferenceUnitEngine.bestFit(total: distanceKm, type: .distance, packId: activePack.id) else {
+            return nil
+        }
+        return "\(displayDistance(distanceKm)) is \(fit.phrase) \(fit.unit.emoji)"
     }
 
     // MARK: - Unit-aware display helpers

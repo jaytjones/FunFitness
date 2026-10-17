@@ -83,6 +83,29 @@ struct UnitConverter {
         "\(count.formatted(.number.precision(.fractionLength(0)))) reps"
     }
 
+    // MARK: - Live tracking (3.1)
+
+    /// Stopwatch-style elapsed time: "12:05", or "1:02:05" past an hour.
+    static func elapsedString(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds.rounded(.down)))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0
+            ? String(format: "%d:%02d:%02d", h, m, s)
+            : String(format: "%d:%02d", m, s)
+    }
+
+    /// Pace per display unit, e.g. "9:41 /mi". "--:--" when there isn't a pace yet.
+    static func paceString(secondsPerKm: Double?, pref: UnitPreference) -> String {
+        guard let secondsPerKm, secondsPerKm.isFinite, secondsPerKm > 0 else {
+            return "--:-- /\(pref.distanceUnit)"
+        }
+        let perUnit = pref == .imperial ? secondsPerKm * kmPerMile : secondsPerKm
+        // Slower than 99 minutes per unit is standing around, not a pace.
+        guard perUnit < 99 * 60 else { return "--:-- /\(pref.distanceUnit)" }
+        let total = Int(perUnit.rounded())
+        return String(format: "%d:%02d /%@", total / 60, total % 60, pref.distanceUnit)
+    }
+
     // MARK: - Pre-fill helpers for text fields
 
     static func distanceInputString(_ km: Double, pref: UnitPreference) -> String {

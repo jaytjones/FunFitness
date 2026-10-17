@@ -108,6 +108,13 @@ Groups:
 ## B — Fits 3.1
 
 ### B1. Live tracking of walks and runs
+
+> **Status (2026-10-16):** in progress as 3.1. **B1a done** — live GPS walk/run tracking on iPhone
+> (time, distance, pace, route map, pause/resume, hide-and-keep-tracking, save with route, optional
+> Health workout + route). B1b (Live Activity) and B1c (live strength mode) next. Decisions: keep
+> iOS 18 (iOS 26 `HKWorkoutSession` noted as a future enhancement), tracking works without Health,
+> version 3.1 / build 5.
+
 > "Include a way to track live a walking/running activity. Brainstorm a way to add easier live
 > logging for other activities." — 2026-10-10
 

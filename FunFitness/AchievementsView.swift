@@ -106,7 +106,7 @@ struct AchievementsView: View {
                     .accessibilityLabel("Log activity")
                 }
             }
-            .sheet(isPresented: $showLogSheet) {
+            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentTrackerIfRequested) {
                 LogActivitySheet(viewModel: viewModel)
             }
         }

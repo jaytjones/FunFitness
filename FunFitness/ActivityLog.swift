@@ -20,6 +20,8 @@ enum ActivityType: String, Codable, CaseIterable {
 enum ActivitySource: String, Codable {
     case manual
     case healthKit
+    // Recorded live with GPS in the app (3.1). Has a matching RouteSummary by activity id.
+    case tracked
 }
 
 @Model

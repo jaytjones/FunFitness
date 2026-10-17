@@ -74,6 +74,19 @@ struct LogActivitySheet: View {
                             showRepsError = false
                         }
 
+                        // Live GPS tracking is the other way to log distance. (3.1)
+                        if selectedType == .distance && !WorkoutTracker.shared.isRecording {
+                            Button {
+                                viewModel.trackerRequestedFromLogSheet = true
+                                dismiss()
+                            } label: {
+                                Label("Track a walk or run live instead", systemImage: "location.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color(hex: "#A78BFA"))
+                            }
+                            .accessibilityIdentifier("trackLiveInsteadButton")
+                        }
+
                         // Value Input
                         VStack(alignment: .leading, spacing: 8) {
                             Text(UnitConverter.fieldLabel(for: selectedType, pref: pref))

@@ -47,7 +47,9 @@ struct HealthKitSync {
                 healthKitUUID: log.healthKitUUID,
                 distanceKm: log.value,
                 date: log.loggedAt,
-                isManualDistance: log.source == .manual && log.activityType == .distance
+                // Phone-tracked runs (3.1) count too, so the same run recorded by an Apple
+                // Watch isn't imported a second time.
+                isManualDistance: log.source != .healthKit && log.activityType == .distance
             )
         }
 
