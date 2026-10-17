@@ -86,12 +86,7 @@ struct ActivityHistorySheet: View {
     }
 
     private func deleteActivity(_ activity: ActivityLog) {
-        // A local delete may drop a total below a milestone, so let ContentView's reconcile
-        // (triggered by the activities change) revoke badges this time.
-        viewModel.revokeAchievementsOnNextReconcile = true
-        viewModel.activities.removeAll { $0.id == activity.id }
-        modelContext.delete(activity)
-        try? modelContext.save()
+        ActivityWriter.delete(activity, context: modelContext, viewModel: viewModel)
     }
 
     private func commitEdit(activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?) {

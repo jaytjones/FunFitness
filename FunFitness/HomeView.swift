@@ -15,7 +15,9 @@ struct HomeView: View {
 
     @State private var showLogSheet = false
     @State private var showShieldConfirm = false
-    @State private var logType: ActivityType = .distance
+    // nil = general "+" (sheet opens on the last-logged type); set by per-card buttons.
+    @State private var logType: ActivityType? = nil
+    @State private var showHistory = false
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -69,6 +71,10 @@ struct HomeView: View {
                             .accessibilityIdentifier("\(type.rawValue)StatCard")
                         }
 
+                        RecentActivityCard(viewModel: viewModel) {
+                            showHistory = true
+                        }
+
                         AbsurdityTicker(viewModel: viewModel)
 
                         ThemeSelector(selectedPack: $viewModel.activePack)
@@ -86,7 +92,7 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        logType = .distance
+                        logType = nil
                         showLogSheet = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -99,6 +105,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showLogSheet) {
                 LogActivitySheet(viewModel: viewModel, initialType: logType)
+            }
+            .sheet(isPresented: $showHistory) {
+                ActivityHistorySheet(viewModel: viewModel)
             }
             .alert("Use Streak Shield?", isPresented: $showShieldConfirm) {
                 Button("Use Shield", role: .none) {
@@ -146,6 +155,9 @@ struct StreakCard: View {
     let viewModel: AppViewModel
     let onActivateShield: () -> Void
 
+    // Width of the share glyph, scaled with Dynamic Type so it stays clear at large sizes.
+    @ScaledMetric(relativeTo: .subheadline) private var shareButtonReserve: CGFloat = 20
+
     private var streakEmoji: String {
         viewModel.currentStreak == 0 ? "💤" : viewModel.currentStreak >= 8 ? "🔥🔥" : "🔥"
     }
@@ -172,6 +184,11 @@ struct StreakCard: View {
                     Text("week\(viewModel.currentStreak == 1 ? "" : "s")")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.75))
+                }
+                // Reserve trailing space for the share button in the overlay below, so the
+                // streak count doesn't sit under it. (2.4.4)
+                if viewModel.currentStreak > 0 {
+                    Color.clear.frame(width: shareButtonReserve, height: 1)
                 }
             }
 
@@ -444,6 +461,73 @@ struct RepeatLastButton: View {
     }
 }
 
+// MARK: - Recent Activity Card (2.4.4)
+
+/// The last few log entries on Home, so the activity list (and fixing a mistaken entry) is
+/// visible without hunting for Progress's history button. Each row's menu deletes it;
+/// "See all" opens the full Activity History for editing.
+struct RecentActivityCard: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(RecentActivityCard.descriptor) private var recent: [ActivityLog]
+    let viewModel: AppViewModel
+    let onSeeAll: () -> Void
+
+    // Fetch-limited so Home doesn't sort the whole log on every render.
+    private static var descriptor: FetchDescriptor<ActivityLog> {
+        var descriptor = FetchDescriptor<ActivityLog>(sortBy: [SortDescriptor(\.loggedAt, order: .reverse)])
+        descriptor.fetchLimit = 5
+        return descriptor
+    }
+
+    var body: some View {
+        if !recent.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Recent Activity")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button("See all", action: onSeeAll)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .accessibilityHint("Opens your full activity history")
+                        .accessibilityIdentifier("recentActivitySeeAll")
+                }
+
+                ForEach(recent) { activity in
+                    HStack(spacing: 8) {
+                        ActivityRow(activity: activity, pref: viewModel.unitPreference)
+                        Menu {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    ActivityWriter.delete(activity, context: modelContext, viewModel: viewModel)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.title3)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(.rect)
+                        }
+                        .tint(Color(hex: "#A78BFA"))
+                        .accessibilityLabel("Options for \(activity.activityType.displayName) entry")
+                    }
+                    if activity.id != recent.last?.id {
+                        Divider()
+                    }
+                }
+            }
+            .padding()
+            .background(Color.appCard)
+            .clipShape(.rect(cornerRadius: 20))
+            .accessibilityIdentifier("recentActivityCard")
+        }
+    }
+}
+
 // MARK: - Absurdity Ticker
 
 struct AbsurdityTicker: View {
@@ -666,3 +750,4 @@ struct AchievementPreview: View {
     HomeView(viewModel: AppViewModel())
         .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
 }
+

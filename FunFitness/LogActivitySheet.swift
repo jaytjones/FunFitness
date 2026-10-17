@@ -13,20 +13,41 @@ struct LogActivitySheet: View {
 
     @Bindable var viewModel: AppViewModel
 
-    init(viewModel: AppViewModel, initialType: ActivityType = .distance) {
+    /// `initialType` nil (the general "+" buttons) opens on the last-logged type; per-card
+    /// buttons pass their own type. (2.4.4)
+    init(viewModel: AppViewModel, initialType: ActivityType? = nil) {
         self.viewModel = viewModel
-        _selectedType = State(initialValue: initialType)
+        let type = initialType ?? viewModel.defaultLogType
+        _selectedType = State(initialValue: type)
+        _repsText = State(initialValue: Self.prefilledReps(for: type, viewModel: viewModel))
     }
+
+    private enum Field { case value, reps }
 
     @State private var selectedType: ActivityType
     @State private var inputValue: String = ""
-    @State private var includeReps = false
-    @State private var repsCount: Int = 1
+    // Reps are on by default and prefilled from the last entry of the same type (2.4.4).
+    @State private var includeReps = true
+    // Typed rep count as text, so the field can be cleared while editing (2.4.4).
+    @State private var repsText: String
     @State private var logDate: Date = Date()
     @State private var showValidationError = false
-    @FocusState private var isInputFocused: Bool
+    @State private var showRepsError = false
+    @FocusState private var focusedField: Field?
 
     private var pref: UnitPreference { viewModel.unitPreference }
+
+    private static func prefilledReps(for type: ActivityType, viewModel: AppViewModel) -> String {
+        "\(viewModel.lastReps(for: type) ?? 1)"
+    }
+
+    // Steps the typed count by `delta`, treating unparseable text as 1 and staying in range.
+    private func stepReps(by delta: Int) {
+        let range = ActivityType.repCountRange
+        let current = ActivityType.parseRepCount(repsText) ?? range.lowerBound
+        repsText = "\(min(max(current + delta, range.lowerBound), range.upperBound))"
+        showRepsError = false
+    }
 
     var body: some View {
         NavigationStack {
@@ -47,9 +68,10 @@ struct LogActivitySheet: View {
                         .padding(.horizontal)
                         .onChange(of: selectedType) {
                             inputValue = ""
-                            includeReps = false
-                            repsCount = 1
+                            includeReps = true
+                            repsText = Self.prefilledReps(for: selectedType, viewModel: viewModel)
                             showValidationError = false
+                            showRepsError = false
                         }
 
                         // Value Input
@@ -72,8 +94,15 @@ struct LogActivitySheet: View {
                                 RoundedRectangle(cornerRadius: 14)
                                     .stroke(showValidationError ? Color.red : Color.clear, lineWidth: 2)
                             )
-                            .focused($isInputFocused)
+                            .focused($focusedField, equals: .value)
                             .accessibilityIdentifier("activityValueInput")
+
+                            if let hint = selectedType.fieldHint {
+                                Text(hint)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityIdentifier("activityFieldHint")
+                            }
 
                             if showValidationError {
                                 Text("Please enter a valid value greater than 0")
@@ -95,9 +124,10 @@ struct LogActivitySheet: View {
                                 .padding(.horizontal)
 
                                 if includeReps {
+                                    // Tap the number to type a count; +/− nudge it. (2.4.4)
                                     HStack(spacing: 20) {
                                         Button {
-                                            if repsCount > 1 { repsCount -= 1 }
+                                            stepReps(by: -1)
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
                                                 .font(.title2)
@@ -105,13 +135,34 @@ struct LogActivitySheet: View {
                                         }
                                         .accessibilityLabel("Decrease reps")
 
-                                        Text("\(repsCount) reps")
-                                            .font(.system(size: 24, weight: .semibold))
-                                            .foregroundStyle(.primary)
-                                            .frame(minWidth: 80)
+                                        HStack(spacing: 6) {
+                                            TextField("1", text: $repsText)
+                                                .keyboardType(.numberPad)
+                                                .multilineTextAlignment(.trailing)
+                                                .font(.system(size: 24, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                                .fixedSize()
+                                                .focused($focusedField, equals: .reps)
+                                                .accessibilityLabel("Rep count")
+                                                .accessibilityIdentifier("repsInput")
+                                                .onChange(of: repsText) {
+                                                    // Digits only, at most as many as the max count.
+                                                    let maxDigits = String(ActivityType.repCountRange.upperBound).count
+                                                    let digits = String(repsText.filter(\.isNumber).prefix(maxDigits))
+                                                    if digits != repsText { repsText = digits }
+                                                    showRepsError = false
+                                                }
+                                            Text("reps")
+                                                .font(.system(size: 24, weight: .semibold))
+                                                .foregroundStyle(.secondary)
+                                                .accessibilityHidden(true)
+                                        }
+                                        .frame(minWidth: 80)
+                                        .contentShape(.rect)
+                                        .onTapGesture { focusedField = .reps }
 
                                         Button {
-                                            repsCount += 1
+                                            stepReps(by: 1)
                                         } label: {
                                             Image(systemName: "plus.circle.fill")
                                                 .font(.title2)
@@ -123,8 +174,19 @@ struct LogActivitySheet: View {
                                     .frame(maxWidth: .infinity)
                                     .background(Color.appCard)
                                     .clipShape(.rect(cornerRadius: 14))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(showRepsError ? Color.red : Color.clear, lineWidth: 2)
+                                    )
                                     .padding(.horizontal)
                                     .accessibilityIdentifier("repsControl")
+
+                                    if showRepsError {
+                                        Text("Enter a rep count from \(ActivityType.repCountRange.lowerBound) to \(ActivityType.repCountRange.upperBound)")
+                                            .font(.caption)
+                                            .foregroundStyle(.red)
+                                            .padding(.horizontal)
+                                    }
                                 }
                             }
                         }
@@ -182,12 +244,12 @@ struct LogActivitySheet: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") { isInputFocused = false }
+                    Button("Done") { focusedField = nil }
                         .foregroundStyle(Color(hex: "#A78BFA"))
                 }
             }
             .onAppear {
-                isInputFocused = true
+                focusedField = .value
                 logDate = Date()
             }
         }
@@ -201,10 +263,17 @@ struct LogActivitySheet: View {
         }
         showValidationError = false
 
+        var reps: Int? = nil
+        if selectedType.usesReps && includeReps {
+            guard let count = ActivityType.parseRepCount(repsText) else {
+                showRepsError = true
+                return
+            }
+            reps = count
+        }
+
         // Convert user input from display units to SI for storage
         let siValue = UnitConverter.toSI(rawValue, type: selectedType, from: pref)
-
-        let reps = (selectedType.usesReps && includeReps) ? repsCount : nil
 
         let newMilestones = ActivityWriter.log(
             type: selectedType,
@@ -223,5 +292,10 @@ struct LogActivitySheet: View {
 
 #Preview {
     LogActivitySheet(viewModel: AppViewModel())
+        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
+}
+
+#Preview("Weight") {
+    LogActivitySheet(viewModel: AppViewModel(), initialType: .weight)
         .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
 }

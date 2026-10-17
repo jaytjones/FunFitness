@@ -74,6 +74,25 @@ nonisolated extension ActivityType {
         }
     }
 
+    /// One-line explanation shown under the log sheet's value field, for types whose purpose
+    /// isn't obvious from the name alone. (2.4.4)
+    var fieldHint: String? {
+        switch self {
+        case .distance, .weight, .duration: return nil
+        case .reps: return "Bodyweight moves like push-ups or squats"
+        }
+    }
+
     /// Stable lowercase tag for exports and notification identifiers (matches rawValue).
     var exportName: String { rawValue }
+
+    /// Valid rep counts for rep-using types, used by the log sheet's typed rep field. (2.4.4)
+    static let repCountRange: ClosedRange<Int> = 1...999
+
+    /// Parses typed rep-count text, returning nil when it isn't a whole number in range.
+    static func parseRepCount(_ text: String) -> Int? {
+        guard let count = Int(text.trimmingCharacters(in: .whitespaces)),
+              repCountRange.contains(count) else { return nil }
+        return count
+    }
 }

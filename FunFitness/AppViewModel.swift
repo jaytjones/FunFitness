@@ -48,6 +48,19 @@ final class AppViewModel {
         activities.max { $0.loggedAt < $1.loggedAt }
     }
 
+    // Type the general "+" log button opens on: the most recent log's type, else distance. (2.4.4)
+    var defaultLogType: ActivityType {
+        lastActivity?.activityType ?? .distance
+    }
+
+    // Rep count from the most recent `type` entry that recorded one, to prefill the log sheet. (2.4.4)
+    func lastReps(for type: ActivityType) -> Int? {
+        activities
+            .filter { $0.activityType == type && $0.reps != nil }
+            .max { $0.loggedAt < $1.loggedAt }?
+            .reps
+    }
+
     var isActiveThisWeek: Bool {
         let calendar = Calendar.current
         let thisWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())

@@ -104,6 +104,18 @@ struct ActivityWriter {
         return result.newMilestones
     }
 
+    /// Deletes a user's log entry and keeps `viewModel` in sync. Shared by Activity History and
+    /// Home's Recent Activity card. (2.4.4)
+    @MainActor
+    static func delete(_ activity: ActivityLog, context: ModelContext, viewModel: AppViewModel) {
+        // A local delete may drop a total below a milestone, so let ContentView's reconcile
+        // (triggered by the activities change) revoke badges this time.
+        viewModel.revokeAchievementsOnNextReconcile = true
+        viewModel.activities.removeAll { $0.id == activity.id }
+        context.delete(activity)
+        try? context.save()
+    }
+
     // MARK: - Helpers
 
     private static func totalValue(type: ActivityType, in activities: [ActivityLog]) -> Double {

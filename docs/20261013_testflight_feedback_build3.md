@@ -41,6 +41,11 @@ Groups:
 
 ## A — Immediate (2.4.x / build 4)
 
+> **Status (2026-10-16): A1–A6 done in 2.4.4 / build 4.** Decisions: A5 keeps the "Reps" name and
+> adds a hint; A6 adds a Recent Activity card on Home (last 5, delete from each row's ⋯ menu, "See
+> all" opens History) and labels Progress's button "History". Undo-after-log was dropped. B3
+> stays in 3.1.
+
 ### A1. Weekly streak count overlaps the share icon
 > "Weekly streak week count overlaps with share icon" — 2026-10-12
 

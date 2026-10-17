@@ -82,4 +82,52 @@ struct ActivityKindTests {
         #expect(UnitConverter.displayString(kg, type: .weight, reps: 3, pref: .metric)
                 == UnitConverter.weightString(kg, reps: 3, pref: .metric))
     }
+
+    // MARK: - 2.4.4 log sheet defaults
+
+    @Test func onlyRepsTypeHasFieldHint() {
+        #expect(ActivityType.reps.fieldHint != nil)
+        for type in [ActivityType.distance, .weight, .duration] {
+            #expect(type.fieldHint == nil)
+        }
+    }
+
+    @Test func repCountParsingStaysInRange() {
+        #expect(ActivityType.parseRepCount("12") == 12)
+        #expect(ActivityType.parseRepCount(" 8 ") == 8)
+        #expect(ActivityType.parseRepCount("1") == 1)
+        #expect(ActivityType.parseRepCount("999") == 999)
+        #expect(ActivityType.parseRepCount("0") == nil)
+        #expect(ActivityType.parseRepCount("1000") == nil)
+        #expect(ActivityType.parseRepCount("") == nil)
+        #expect(ActivityType.parseRepCount("-3") == nil)
+        #expect(ActivityType.parseRepCount("abc") == nil)
+    }
+
+    @Test func defaultLogTypeIsDistanceWithNoHistory() {
+        #expect(AppViewModel().defaultLogType == .distance)
+    }
+
+    @Test func defaultLogTypeFollowsMostRecentLog() {
+        let vm = AppViewModel()
+        let now = Date()
+        vm.activities = [
+            ActivityLog(type: .weight, value: 60, reps: 10, loggedAt: now),
+            ActivityLog(type: .distance, value: 5, loggedAt: now.addingTimeInterval(-3600)),
+        ]
+        #expect(vm.defaultLogType == .weight)
+    }
+
+    @Test func lastRepsUsesNewestEntryOfTypeWithReps() {
+        let vm = AppViewModel()
+        let now = Date()
+        vm.activities = [
+            ActivityLog(type: .weight, value: 60, reps: 8, loggedAt: now.addingTimeInterval(-7200)),
+            ActivityLog(type: .weight, value: 60, reps: 12, loggedAt: now.addingTimeInterval(-3600)),
+            ActivityLog(type: .weight, value: 60, loggedAt: now),   // no reps — skipped
+            ActivityLog(type: .distance, value: 5, loggedAt: now),
+        ]
+        #expect(vm.lastReps(for: .weight) == 12)
+        #expect(vm.lastReps(for: .distance) == nil)
+    }
 }

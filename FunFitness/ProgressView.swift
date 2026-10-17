@@ -76,11 +76,14 @@ struct ProgressTabView: View {
                     Button {
                         showHistory = true
                     } label: {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.title2)
+                        // Labeled so the history list is discoverable, not just an icon. (2.4.4)
+                        Label("History", systemImage: "clock.arrow.circlepath")
+                            .labelStyle(.titleAndIcon)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(hex: "#A78BFA"))
                     }
                     .accessibilityLabel("Activity history")
+                    .accessibilityIdentifier("progressHistoryButton")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
