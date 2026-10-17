@@ -13,6 +13,8 @@
 		869F00EE307AF83700DCE148 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00ED307AF83700DCE148 /* WidgetKit.framework */; };
 		869F00F0307AF83700DCE148 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00EF307AF83700DCE148 /* SwiftUI.framework */; };
 		869F00FB307AF83800DCE148 /* FunFitnessWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		86AD592B3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md in Resources */ = {isa = PBXBuildFile; fileRef = 86AD592A3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md */; };
+		86AD592D3082FE8100A4C6FE /* 20261010_session_summary.md in Resources */ = {isa = PBXBuildFile; fileRef = 86AD592C3082FE8100A4C6FE /* 20261010_session_summary.md */; };
 		86B3565F301D4695008993F2 /* 20260731_session_summary_2.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */; };
 		86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */; };
 		86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */; };
@@ -68,6 +70,8 @@
 		869F00ED307AF83700DCE148 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		869F00EF307AF83700DCE148 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		869F0103307AF8F300DCE148 /* FunFitnessWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FunFitnessWidgetsExtension.entitlements; sourceTree = "<group>"; };
+		86AD592A3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20261013_testflight_feedback_build3.md; sourceTree = "<group>"; };
+		86AD592C3082FE8100A4C6FE /* 20261010_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20261010_session_summary.md; sourceTree = "<group>"; };
 		86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260731_session_summary_2.md; sourceTree = "<group>"; };
 		86B3D06F301C676500E76696 /* 20260724 CC Refactor Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Plan.md"; sourceTree = "<group>"; };
 		86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "20260724 CC Refactor Results.md"; sourceTree = "<group>"; };
@@ -170,6 +174,8 @@
 				86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */,
 				86B3D077301C78A600E76696 /* 20260731_session_summary.md */,
 				86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */,
+				86AD592A3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md */,
+				86AD592C3082FE8100A4C6FE /* 20261010_session_summary.md */,
 				863D79AA3026250000670EDD /* 20260807_session_summary.md */,
 				86916D7230302095007F843A /* 20260814_session_summary.md */,
 				86FEAE00305F7610005BE4AE /* 20260919_session_summary.md */,
@@ -371,6 +377,8 @@
 				86B3D073301C676500E76696 /* FunFitness_Action_Plan.md in Resources */,
 				86B3D074301C676500E76696 /* 20260724 CC Refactor Plan.md in Resources */,
 				86B3D075301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md in Resources */,
+				86AD592B3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md in Resources */,
+				86AD592D3082FE8100A4C6FE /* 20261010_session_summary.md in Resources */,
 				863D79AB3026250000670EDD /* 20260807_session_summary.md in Resources */,
 				86B3D076301C676500E76696 /* 20260724 CC Refactor Results.md in Resources */,
 				86687D563015A7B700E05A84 /* README.md in Resources */,
