@@ -29,6 +29,7 @@ enum PersistenceController {
             StreakRecord.self,
             UnlockedChallenge.self,
             RouteSummary.self,      // 3.1 — additive record type; deploy schema before release
+            WorkoutSession.self,    // 3.1 C1 — additive record type; deploy schema before release
         ])
     }
 
@@ -102,6 +103,7 @@ enum PersistenceController {
                 StreakRecord.self,
                 UnlockedChallenge.self,
                 RouteSummary.self,
+                WorkoutSession.self,
             ]) else { return }
 
             let container = NSPersistentCloudKitContainer(name: "FunFitness", managedObjectModel: model)

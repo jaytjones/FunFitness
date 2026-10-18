@@ -894,6 +894,6 @@ struct AchievementPreview: View {
 
 #Preview {
     HomeView(viewModel: AppViewModel())
-        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
+        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self], inMemory: true)
 }
 

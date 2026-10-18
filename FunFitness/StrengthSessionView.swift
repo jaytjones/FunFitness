@@ -441,6 +441,6 @@ struct StrengthSessionView: View {
 
 #Preview {
     StrengthSessionView(viewModel: AppViewModel())
-        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self, UserProfile.self], inMemory: true)
+        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self, UserProfile.self, WorkoutSession.self], inMemory: true)
 }
 

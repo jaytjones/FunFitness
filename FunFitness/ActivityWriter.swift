@@ -27,6 +27,7 @@ struct ActivityWriter {
         source: ActivitySource = .manual,
         healthKitUUID: UUID? = nil,
         surface: DistanceSurface? = nil,
+        sessionID: UUID? = nil,
         existingActivities: [ActivityLog],
         unlockedIds: Set<String>,
         context: ModelContext
@@ -48,7 +49,12 @@ struct ActivityWriter {
             // Only distance has a surface.
             surface: type == .distance ? surface : nil
         )
+        activity.sessionID = sessionID
         context.insert(activity)
+        // A strength entry not already in a session may join nearby ones (3.1 C1).
+        if sessionID == nil, SessionGrouping.isGroupable(type) {
+            autoGroup(activity, context: context)
+        }
 
         let newMilestones = ComparisonEngine.checkForNewMilestones(
             type: type,
@@ -101,12 +107,15 @@ struct ActivityWriter {
 
     /// Logs a GPS-tracked walk/run (3.1 B1a): a `.tracked` distance entry dated at the finish,
     /// plus its downsampled `RouteSummary`. With Health saving on, also saves a real workout and
-    /// route to Health and tags both records with its UUID. Returns the new milestones.
+    /// route to Health and tags both records with its UUID. Keeps any heart rate read from Health
+    /// (B2). Returns the new milestones.
     @discardableResult
     @MainActor
     static func logTracked(
         _ workout: TrackedWorkoutResult,
         surface: DistanceSurface? = nil,
+        heartRate: HeartRateSummary? = nil,
+        readsHeartRate: Bool = false,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool
@@ -116,6 +125,8 @@ struct ActivityWriter {
             type: .distance, value: distanceKm, reps: nil, date: workout.endedAt, source: .tracked,
             surface: surface, context: context, viewModel: viewModel
         )
+        result.activity.avgHeartRate = heartRate?.average
+        result.activity.maxHeartRate = heartRate?.maximum
 
         let route = RouteSummary(
             activityID: result.activity.id,
@@ -128,6 +139,19 @@ struct ActivityWriter {
         )
         context.insert(route)
         try? context.save()
+
+        // A Watch can take a little while to sync its readings to the phone, so if none were in
+        // Health when the summary opened, look once more after saving. (3.1 B2)
+        if heartRate == nil, readsHeartRate {
+            let activity = result.activity
+            Task { @MainActor in
+                if let late = await HealthKitManager.shared.heartRateSummary(for: workout) {
+                    activity.avgHeartRate = late.average
+                    activity.maxHeartRate = late.maximum
+                    try? context.save()
+                }
+            }
+        }
 
         if writeBackToHealth {
             let activity = result.activity
@@ -153,6 +177,7 @@ struct ActivityWriter {
         date: Date,
         source: ActivitySource,
         surface: DistanceSurface? = nil,
+        sessionID: UUID? = nil,
         context: ModelContext,
         viewModel: AppViewModel
     ) -> (activity: ActivityLog, newMilestones: [Milestone]) {
@@ -163,6 +188,7 @@ struct ActivityWriter {
             date: date,
             source: source,
             surface: surface,
+            sessionID: sessionID,
             existingActivities: viewModel.activities,
             unlockedIds: viewModel.unlockedAchievementIds,
             context: context
@@ -188,8 +214,145 @@ struct ActivityWriter {
             let routes = (try? context.fetch(FetchDescriptor<RouteSummary>(predicate: #Predicate { $0.activityID == id }))) ?? []
             for route in routes { context.delete(route) }
         }
+        let sessionID = activity.sessionID
         context.delete(activity)
         try? context.save()
+        if let sessionID { cleanUpSession(sessionID, context: context) }
+    }
+
+    // MARK: - Sessions (3.1 C1/C2)
+
+    /// Logs `sets` identical sets ("3 × 10 @ 135 lbs") as one session; a single set is a normal
+    /// log (which may auto-group). The sets are a second apart, ending at `date`, so they keep
+    /// their order. Returns every milestone the sets crossed.
+    @discardableResult
+    @MainActor
+    static func logSets(
+        type: ActivityType,
+        value: Double,
+        reps: Int?,
+        sets: Int,
+        date: Date,
+        context: ModelContext,
+        viewModel: AppViewModel
+    ) -> [Milestone] {
+        guard sets > 1, SessionGrouping.isGroupable(type) else {
+            return log(type: type, value: value, reps: reps, date: date, context: context, viewModel: viewModel)
+        }
+        let first = date.addingTimeInterval(-Double(sets - 1))
+        let session = WorkoutSession(startedAt: first, endedAt: date)
+        context.insert(session)
+        var milestones: [Milestone] = []
+        for index in 0..<sets {
+            milestones += logSyncingViewModel(
+                type: type, value: value, reps: reps, date: first.addingTimeInterval(Double(index)),
+                source: .manual, sessionID: session.id, context: context, viewModel: viewModel
+            ).newMilestones
+        }
+        return milestones
+    }
+
+    /// Puts a just-inserted strength log into an automatic session with nearby strength logs,
+    /// per `SessionGrouping.decide`. Context-only, so Siri's repeat-last groups too.
+    static func autoGroup(_ activity: ActivityLog, context: ModelContext) {
+        let start = activity.loggedAt.addingTimeInterval(-SessionGrouping.autoGroupGap)
+        let end = activity.loggedAt.addingTimeInterval(SessionGrouping.autoGroupGap)
+        let ownID = activity.id
+        let nearby = ((try? context.fetch(FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.loggedAt >= start && $0.loggedAt <= end && $0.id != ownID }
+        ))) ?? []).filter { SessionGrouping.isGroupable($0.activityType) }
+        guard !nearby.isEmpty else { return }
+
+        let sessionIDs = Array(Set(nearby.compactMap(\.sessionID)))
+        let sessions = sessionIDs.isEmpty ? [] : ((try? context.fetch(FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { sessionIDs.contains($0.id) }
+        ))) ?? [])
+        let autoSessionIDs = Set(sessions.filter(\.isAutoGrouped).map(\.id))
+        let candidates = nearby.map {
+            SessionGrouping.Candidate(
+                id: $0.id, date: $0.loggedAt, sessionID: $0.sessionID,
+                sessionIsAutoGrouped: $0.sessionID.map(autoSessionIDs.contains) ?? false,
+                excludedFromAutoGrouping: $0.excludedFromAutoGrouping
+            )
+        }
+
+        switch SessionGrouping.decide(newDate: activity.loggedAt, candidates: candidates) {
+        case .none:
+            return
+        case .join(let sessionID):
+            activity.sessionID = sessionID
+            if let session = sessions.first(where: { $0.id == sessionID }) {
+                session.startedAt = min(session.startedAt, activity.loggedAt)
+                session.endedAt = max(session.endedAt, activity.loggedAt)
+            }
+        case .startSession(let otherID):
+            guard let other = nearby.first(where: { $0.id == otherID }) else { return }
+            let session = WorkoutSession(
+                startedAt: min(other.loggedAt, activity.loggedAt),
+                endedAt: max(other.loggedAt, activity.loggedAt),
+                isAutoGrouped: true
+            )
+            context.insert(session)
+            other.sessionID = session.id
+            activity.sessionID = session.id
+        }
+    }
+
+    /// Deletes a whole session: every set in it and the session record.
+    @MainActor
+    static func deleteSession(_ sessionID: UUID, context: ModelContext, viewModel: AppViewModel) {
+        viewModel.revokeAchievementsOnNextReconcile = true
+        let logs = logs(inSession: sessionID, context: context)
+        let ids = Set(logs.map(\.id))
+        viewModel.activities.removeAll { ids.contains($0.id) }
+        for log in logs { context.delete(log) }
+        for session in sessionRecords(sessionID, context: context) { context.delete(session) }
+        try? context.save()
+    }
+
+    /// Splits a session back into separate entries that won't be auto-grouped again.
+    static func ungroupSession(_ sessionID: UUID, context: ModelContext) {
+        for log in logs(inSession: sessionID, context: context) {
+            log.sessionID = nil
+            log.excludedFromAutoGrouping = true
+        }
+        for session in sessionRecords(sessionID, context: context) { context.delete(session) }
+        try? context.save()
+    }
+
+    /// Takes one set out of its session; it won't be auto-grouped again.
+    static func removeFromSession(_ activity: ActivityLog, context: ModelContext) {
+        guard let sessionID = activity.sessionID else { return }
+        activity.sessionID = nil
+        activity.excludedFromAutoGrouping = true
+        try? context.save()
+        cleanUpSession(sessionID, context: context)
+    }
+
+    /// After a set leaves a session: drop an emptied session, dissolve an automatic one that's
+    /// down to a single set, otherwise keep its time span in step with the sets left.
+    static func cleanUpSession(_ sessionID: UUID, context: ModelContext) {
+        let remaining = logs(inSession: sessionID, context: context)
+        let records = sessionRecords(sessionID, context: context)
+        if remaining.isEmpty || (remaining.count == 1 && records.contains(where: \.isAutoGrouped)) {
+            for log in remaining { log.sessionID = nil }
+            for session in records { context.delete(session) }
+        } else if let first = remaining.map(\.loggedAt).min(), let last = remaining.map(\.loggedAt).max() {
+            for session in records {
+                session.startedAt = first
+                session.endedAt = last
+            }
+        }
+        try? context.save()
+    }
+
+    private static func logs(inSession sessionID: UUID, context: ModelContext) -> [ActivityLog] {
+        let id: UUID? = sessionID
+        return (try? context.fetch(FetchDescriptor<ActivityLog>(predicate: #Predicate { $0.sessionID == id }))) ?? []
+    }
+
+    private static func sessionRecords(_ sessionID: UUID, context: ModelContext) -> [WorkoutSession] {
+        (try? context.fetch(FetchDescriptor<WorkoutSession>(predicate: #Predicate { $0.id == sessionID }))) ?? []
     }
 
     // MARK: - Helpers

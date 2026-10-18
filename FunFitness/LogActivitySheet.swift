@@ -33,6 +33,8 @@ struct LogActivitySheet: View {
     @State private var repsText: String
     // Distance surface, prefilled from the last distance entry that had one. (3.1)
     @State private var surface: DistanceSurface?
+    // Identical sets to save at once, grouped as one session (3.1 C2). Weight and bodyweight reps only.
+    @State private var setsCount = 1
     @State private var logDate: Date = Date()
     @State private var showValidationError = false
     @State private var showRepsError = false
@@ -43,6 +45,8 @@ struct LogActivitySheet: View {
     private static func prefilledReps(for type: ActivityType, viewModel: AppViewModel) -> String {
         "\(viewModel.lastReps(for: type) ?? 1)"
     }
+
+    static let setsRange = 1...20
 
     // Steps the typed count by `delta`, treating unparseable text as 1 and staying in range.
     private func stepReps(by delta: Int) {
@@ -73,6 +77,7 @@ struct LogActivitySheet: View {
                             inputValue = ""
                             includeReps = true
                             repsText = Self.prefilledReps(for: selectedType, viewModel: viewModel)
+                            setsCount = 1
                             showValidationError = false
                             showRepsError = false
                         }
@@ -220,6 +225,10 @@ struct LogActivitySheet: View {
                             }
                         }
 
+                        if SessionGrouping.isGroupable(selectedType) {
+                            setsControl
+                        }
+
                         if selectedType == .distance {
                             SurfacePicker(selection: $surface)
                                 .padding(.horizontal)
@@ -248,7 +257,7 @@ struct LogActivitySheet: View {
                         // Submit
                         Button { logActivity() } label: {
                             HStack {
-                                Text("Log \(selectedType.displayName)")
+                                Text(setsCount > 1 ? "Log \(setsCount) Sets" : "Log \(selectedType.displayName)")
                                     .font(.headline)
                                 Text(selectedType.emoji)
                                     .accessibilityHidden(true)
@@ -309,28 +318,90 @@ struct LogActivitySheet: View {
         // Convert user input from display units to SI for storage
         let siValue = UnitConverter.toSI(rawValue, type: selectedType, from: pref)
 
-        let newMilestones = ActivityWriter.log(
-            type: selectedType,
-            value: siValue,
-            reps: reps,
-            date: logDate,
-            surface: surface,
-            context: modelContext,
-            viewModel: viewModel,
-            writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
-        )
+        let newMilestones: [Milestone]
+        if SessionGrouping.isGroupable(selectedType) {
+            // Strength: one or more sets; several are saved together as a session. (3.1 C2)
+            newMilestones = ActivityWriter.logSets(
+                type: selectedType, value: siValue, reps: reps, sets: setsCount, date: logDate,
+                context: modelContext, viewModel: viewModel
+            )
+        } else {
+            newMilestones = ActivityWriter.log(
+                type: selectedType,
+                value: siValue,
+                reps: reps,
+                date: logDate,
+                surface: surface,
+                context: modelContext,
+                viewModel: viewModel,
+                writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
+            )
+        }
         viewModel.celebrate(newMilestones)
 
         dismiss()
     }
 }
 
+// MARK: - Sets
+
+private extension LogActivitySheet {
+    /// "Sets  − 3 +" with a hint that several sets become one session. (3.1 C2)
+    var setsControl: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 16) {
+                Text("Sets")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button {
+                    setsCount = max(setsCount - 1, Self.setsRange.lowerBound)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color(hex: "#A78BFA").opacity(setsCount > Self.setsRange.lowerBound ? 1 : 0.4))
+                }
+                .disabled(setsCount <= Self.setsRange.lowerBound)
+                .accessibilityLabel("Decrease sets")
+
+                Text("\(setsCount)")
+                    .font(.system(size: 24, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .frame(minWidth: 36)
+                    .accessibilityLabel("\(setsCount) set\(setsCount == 1 ? "" : "s")")
+                    .accessibilityIdentifier("setsCount")
+
+                Button {
+                    setsCount = min(setsCount + 1, Self.setsRange.upperBound)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color(hex: "#A78BFA").opacity(setsCount < Self.setsRange.upperBound ? 1 : 0.4))
+                }
+                .disabled(setsCount >= Self.setsRange.upperBound)
+                .accessibilityLabel("Increase sets")
+            }
+            .padding()
+            .background(Color.appCard)
+            .clipShape(.rect(cornerRadius: 14))
+
+            if setsCount > 1 {
+                Text("Saves \(setsCount) identical sets as one session in History.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal)
+        .accessibilityIdentifier("setsControl")
+    }
+}
+
 #Preview {
     LogActivitySheet(viewModel: AppViewModel())
-        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
+        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self], inMemory: true)
 }
 
 #Preview("Weight") {
     LogActivitySheet(viewModel: AppViewModel(), initialType: .weight)
-        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self], inMemory: true)
+        .modelContainer(for: [ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self], inMemory: true)
 }

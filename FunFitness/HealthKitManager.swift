@@ -46,6 +46,8 @@ final class HealthKitManager {
         var types: Set<HKObjectType> = [HKObjectType.workoutType()]
         if let walkRun = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning) { types.insert(walkRun) }
         if let cycling = HKObjectType.quantityType(forIdentifier: .distanceCycling) { types.insert(cycling) }
+        // Heart rate during tracked walks/runs (3.1 B2). Requesting again later only prompts for this.
+        types.insert(HKQuantityType(.heartRate))
         return types
     }
 
@@ -204,6 +206,44 @@ extension HealthKitManager {
             }
         }
         return workout.uuid
+    }
+}
+
+extension HealthKitManager {
+
+    /// Heart-rate readings saved to Health between `start` and `end` — by an Apple Watch or another
+    /// sensor; FunFitness records none itself. Empty when there are none, or when read access was
+    /// declined (HealthKit doesn't say which). (3.1 B2)
+    func fetchHeartRateSamples(from start: Date, to end: Date) async -> [HeartRateSample] {
+        guard isAvailable, end > start else { return [] }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+        let bpm = HKUnit.count().unitDivided(by: .minute())
+        return await withCheckedContinuation { continuation in
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+            let query = HKSampleQuery(
+                sampleType: HKQuantityType(.heartRate),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sort]
+            ) { _, samples, _ in
+                let readings = ((samples as? [HKQuantitySample]) ?? []).map {
+                    HeartRateSample(bpm: $0.quantity.doubleValue(for: bpm), date: $0.startDate)
+                }
+                continuation.resume(returning: readings)
+            }
+            store.execute(query)
+        }
+    }
+
+    /// Asks for Health access if needed (prompts only for undecided types), then summarizes the
+    /// heart rate recorded during a tracked walk/run. nil when nothing was recorded.
+    func heartRateSummary(for result: TrackedWorkoutResult) async -> HeartRateSummary? {
+        guard isAvailable else { return nil }
+        await requestAuthorization()
+        let samples = await fetchHeartRateSamples(from: result.startedAt, to: result.endedAt)
+        return HeartRateMath.summary(
+            samples: samples, start: result.startedAt, end: result.endedAt, pauses: result.pauseIntervals
+        )
     }
 }
 

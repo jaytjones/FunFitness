@@ -24,6 +24,15 @@ struct TrackWorkoutView: View {
     @State private var showDiscardConfirm = false
     // Outdoor surface for the saved run; prefilled from the last one used. (3.1)
     @State private var surface: DistanceSurface?
+    // Avg/max read from Health once the summary opens; nil when nothing was recorded. (3.1 B2)
+    @State private var heartRate: HeartRateSummary?
+
+    /// Heart rate is read only for people who've turned on a Health option, so a run never
+    /// triggers a surprise Health prompt.
+    private var readsHeartRate: Bool {
+        guard let profile = profiles.first else { return false }
+        return profile.healthKitImportEnabled || profile.healthKitWriteBackEnabled
+    }
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -234,6 +243,10 @@ struct TrackWorkoutView: View {
                 .background(Color.appCard)
                 .clipShape(.rect(cornerRadius: 20))
 
+                if let heartRate {
+                    HeartRateCard(summary: heartRate)
+                }
+
                 if let phrase = viewModel.comparisonPhrase(distanceKm: distanceKm) {
                     Text(phrase)
                         .font(.headline)
@@ -283,6 +296,10 @@ struct TrackWorkoutView: View {
             }
             .padding()
         }
+        .task(id: result.startedAt) {
+            guard readsHeartRate else { return }
+            heartRate = await HealthKitManager.shared.heartRateSummary(for: result)
+        }
         .confirmationDialog("Discard this \(result.kind.displayName.lowercased())?",
                             isPresented: $showDiscardConfirm, titleVisibility: .visible) {
             Button("Discard", role: .destructive) {
@@ -298,6 +315,8 @@ struct TrackWorkoutView: View {
         viewModel.deferredMilestones += ActivityWriter.logTracked(
             result,
             surface: surface,
+            heartRate: heartRate,
+            readsHeartRate: readsHeartRate,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
@@ -336,6 +355,45 @@ private struct LiveStatsGrid: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
+    }
+}
+
+/// "♥ 132 avg · 158 max bpm" on a finished walk/run's summary. (3.1 B2)
+private struct HeartRateCard: View {
+    let summary: HeartRateSummary
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "heart.fill")
+                .font(.title2)
+                .foregroundStyle(Color(hex: "#E11D48"))
+                .accessibilityHidden(true)
+            stat("Avg Heart Rate", summary.averageText)
+            stat("Max Heart Rate", summary.maximumText)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(Color.appCard)
+        .clipShape(.rect(cornerRadius: 20))
+    }
+
+    private func stat(_ label: String, _ bpm: String) -> some View {
+        VStack(spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(bpm)
+                    .font(.title2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(.primary)
+                Text("bpm")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(bpm) beats per minute")
     }
 }
 

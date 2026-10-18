@@ -67,7 +67,7 @@ struct StrengthSessionManagerTests {
     let manager = StrengthSessionManager.shared
 
     init() throws {
-        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self])
+        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self])
         container = try ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
         manager.reset()   // shared instance: start every test idle
     }

@@ -205,7 +205,7 @@ struct TrackedWorkoutSavingTests {
     let container: ModelContainer
 
     init() throws {
-        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, RouteSummary.self])
+        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, RouteSummary.self, WorkoutSession.self])
         container = try ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
     }
 

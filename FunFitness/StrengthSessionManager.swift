@@ -6,7 +6,8 @@
 //  saved immediately as a normal weight or bodyweight-reps ActivityLog through ActivityWriter, so
 //  milestones, streaks, challenges and the widget work exactly as for a manual log, and nothing is
 //  lost if the session is abandoned. A single shared instance so the session screen, Home, and
-//  the Live Activity's "Log set" button all act on the same session.
+//  the Live Activity's "Log set" button all act on the same session. The sets are grouped under
+//  a stored WorkoutSession (C1), created with the first set so an empty session leaves nothing.
 //
 
 import Foundation
@@ -32,6 +33,7 @@ final class StrengthSessionManager {
     // Where sets are saved. Set at `start` from the presenting view's environment.
     @ObservationIgnored private var context: ModelContext?
     @ObservationIgnored private weak var viewModel: AppViewModel?
+    @ObservationIgnored private var record: WorkoutSession?
 
     private var liveActivity: WorkoutLiveActivityController { .shared }
 
@@ -46,6 +48,7 @@ final class StrengthSessionManager {
         self.context = context
         self.viewModel = viewModel
         session = StrengthSession(startedAt: date, restSeconds: restSeconds)
+        record = nil
         endedAt = nil
         phase = .active
         liveActivity.startStrength(for: self, at: date)
@@ -56,9 +59,16 @@ final class StrengthSessionManager {
     @discardableResult
     func logSet(type: ActivityType, valueSI: Double, reps: Int?, at date: Date = Date()) -> Bool {
         guard phase == .active, var current = session, let context, let viewModel, valueSI > 0 else { return false }
+        let record = self.record ?? {
+            let new = WorkoutSession(startedAt: current.startedAt, endedAt: date)
+            context.insert(new)
+            self.record = new
+            return new
+        }()
+        record.endedAt = date
         // Weight and bodyweight reps have no Health equivalent, so there's no write-back.
         let saved = ActivityWriter.logSyncingViewModel(
-            type: type, value: valueSI, reps: reps, date: date, source: .manual,
+            type: type, value: valueSI, reps: reps, date: date, source: .manual, sessionID: record.id,
             context: context, viewModel: viewModel
         )
         current.log(StrengthSet(id: saved.activity.id, type: type, valueSI: valueSI, reps: saved.activity.reps, loggedAt: date))
@@ -95,6 +105,10 @@ final class StrengthSessionManager {
         guard phase == .active else { return }
         endedAt = date
         phase = .finished
+        if let record {
+            record.endedAt = date
+            try? context?.save()
+        }
         NotificationManager.shared.cancel(.strengthRest)
         liveActivity.finishStrength(for: self, at: date)
     }
@@ -104,6 +118,7 @@ final class StrengthSessionManager {
         if phase == .active { NotificationManager.shared.cancel(.strengthRest) }
         liveActivity.endAll()
         session = nil
+        record = nil
         endedAt = nil
         context = nil
         viewModel = nil

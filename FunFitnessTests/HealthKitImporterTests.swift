@@ -102,7 +102,7 @@ struct HealthKitImporterTests {
 struct ActivityWriterTests {
 
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, StreakRecord.self])
+        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, StreakRecord.self, WorkoutSession.self])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
         return ModelContext(container)

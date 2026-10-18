@@ -67,6 +67,14 @@ final class ActivityLog {
     var healthKitUUID: UUID?
     // Distance surface (3.1). Optional, so the schema stays CloudKit-legal and older builds ignore it.
     var surfaceRaw: String?
+    // Heart rate (bpm) read from Health for a tracked walk/run (3.1 B2) — whatever a Watch or
+    // other sensor recorded during it. nil when nothing was recorded or Health is off.
+    var avgHeartRate: Double?
+    var maxHeartRate: Double?
+    // The WorkoutSession this set belongs to (3.1 C1), by id — not a relationship. nil = on its own.
+    var sessionID: UUID?
+    // Set when the person ungroups this entry from a session, so it's never auto-grouped again.
+    var excludedFromAutoGrouping: Bool = false
 
     init(
         id: UUID = UUID(),

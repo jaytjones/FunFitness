@@ -17,7 +17,7 @@ struct SurfaceTests {
     let container: ModelContainer
 
     init() throws {
-        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, RouteSummary.self])
+        let schema = Schema([UserProfile.self, ActivityLog.self, UnlockedAchievement.self, RouteSummary.self, WorkoutSession.self])
         container = try ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
     }
 
@@ -79,12 +79,12 @@ struct SurfaceTests {
             ActivityLog(type: .weight, value: 50, reps: 10, loggedAt: Date(timeIntervalSince1970: 60)),
         ]
         let csv = ExportManager.generateCSV(activities: activities, pref: .metric).split(separator: "\n")
-        #expect(csv[0] == "Type,Value,Unit,Reps,Date,Notes,Surface")
-        #expect(csv[1].hasSuffix(",trail"))
-        #expect(csv[2].hasSuffix(","))   // no surface → empty last column
+        #expect(csv[0] == "Type,Value,Unit,Reps,Date,Notes,Surface,Session")
+        #expect(csv[1].hasSuffix(",trail,"))   // no session → empty last column
+        #expect(csv[2].hasSuffix(",,"))        // no surface or session
 
         let json = ExportManager.generateJSON(activities: activities)
         #expect(json.contains("\"surface\" : \"trail\""))
-        #expect(json.contains("\"schemaVersion\" : \"1.3\""))
+        #expect(json.contains("\"schemaVersion\" : \"1.4\""))
     }
 }
