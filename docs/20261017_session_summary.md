@@ -2,8 +2,12 @@
 
 Covers the rest of Group B (B2 heart rate, B3 medium widget), the first Group C "Workouts" work
 (C1 sessions, C2 sets, C4 time + calories, C5 save to Health, C8 notes/indoor), a Dynamic Island
-fix, and a static launch screen. Version **3.1**, now **build 8** (app + widget). **229 unit tests
-pass; `main` is pushed.** Build 7 was committed but not uploaded; build 8 includes everything.
+fix, and a static launch screen. Version **3.1**. **231 unit tests pass; `main` is pushed.**
+
+**Uploaded as 3.1 (9).** The `65effb9` archive was built as 8, but Xcode's "Manage Version and Build
+Number" renumbered the upload to 9 (most likely a build 8 already existed in App Store Connect). The repo was
+then set to 9, versions moved to project-level settings shared by the app and widget, a guard test
+added, and `docs/release_checklist.md` written. **Next upload: build 10.**
 
 ---
 
@@ -17,7 +21,8 @@ pass; `main` is pushed.** Build 7 was committed but not uploaded; build 8 includ
 | `e79e5ee` | Build 7; heart-rate usage string; docs added to the Xcode project. |
 | `ce415e3` | **Static launch screen:** the app icon (rounded, ~200 pt) on an adaptive background matching the app (dark #0D0D1A / light #F2F2F7). Checked in the simulator, dark and light. |
 | `93ccd86` | **C4** editable session Start/End → Duration (History rows too); calories ≈ 3.5 MET × kg × h, shown only in session detail + Health. **C5** timed live sessions save to Health as Strength Training on End (write-back on); others via a button. **C8** session notes + Indoor/Outdoor. |
-| (this commit) | Build 8; this summary; C4/C5/C7/C8 status; C7 score design draft. |
+| `65effb9` | Build 8 in the repo (uploaded as **9**); this summary; C4/C5/C7/C8 status; C7 score design draft. Tagged `3.1-9`. |
+| (sync commit) | Build numbers aligned at 9; one shared version setting for app + widget; `BuildNumberTests`; release checklist. |
 
 ## Decisions (Jay)
 
@@ -44,7 +49,7 @@ pass; `main` is pushed.** Build 7 was committed but not uploaded; build 8 includ
 - iOS caches launch screens: delete and reinstall (or restart) to see a change on device.
 - The launch image is a copy of the icon (`LaunchLogo.imageset`); regenerate it if the icon changes.
 
-## Jay's checklist — before uploading build 8
+## Jay's checklist — 3.1 (9) (uploaded; now processing)
 
 ### 1. Deploy the CloudKit schema (required)
 
@@ -68,10 +73,10 @@ on `CD_ActivityLog`: `CD_avgHeartRate`, `CD_maxHeartRate`, `CD_sessionID`,
 - **Widget:** medium size shows the challenge and totals. **Dynamic Island:** distance during a walk.
 - **Launch screen:** cold launch shows the icon (delete/reinstall if it's still blank).
 
-### 3. Archive and upload 3.1 (8)
+### 3. Archive and upload — done as 3.1 (9)
 
-Same steps as the 2026-10-16 summary: Any iOS Device › Product › Archive › Distribute › TestFlight.
-Confirm both targets show **3.1 (8)**.
+Future uploads: follow `docs/release_checklist.md` (bump first, untick "Manage Version and Build
+Number" when distributing, tag the commit).
 
 **What to Test** — use the build 7 note drafted this session, plus:
 > • Strength sessions are timed: open a session in History to set its start/end, see its duration
@@ -80,7 +85,7 @@ Confirm both targets show **3.1 (8)**.
 
 ## Next
 
-- Field-test build 8; watch for feedback on the Sets stepper (→ per-set list) and auto-grouping.
+- Field-test build 9; watch for feedback on the Sets stepper (→ per-set list) and auto-grouping.
 - **C7 workout score:** design draft in `docs/20261017_workout_score_design.md` — answer its four
   open questions before building.
 - **C3 named exercises** (with the bundled-JSON content move, ~3.3), then **C6 muscle groups**.
