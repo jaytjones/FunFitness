@@ -44,7 +44,20 @@ struct WorkoutLiveActivityWidget: Widget {
                     }
                 }
             } compactLeading: {
-                Text(context.attributes.emoji)
+                // Walks/runs pair the emoji with distance so the compact island shows both
+                // distance (leading) and time (trailing) at a glance.
+                if context.attributes.isStrength {
+                    Text(context.attributes.emoji)
+                } else {
+                    HStack(spacing: 4) {
+                        Text(context.attributes.emoji)
+                        Text(context.state.primaryValue)
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
             } compactTrailing: {
                 // While resting between sets, the rest countdown matters more than the session clock.
                 CompactTimer(state: context.state)
@@ -52,7 +65,17 @@ struct WorkoutLiveActivityWidget: Widget {
                     .foregroundStyle(context.state.restEnd == nil ? WorkoutLiveActivityStyle.accent : .orange)
                     .frame(maxWidth: 52)
             } minimal: {
-                Text(context.attributes.emoji)
+                // The minimal island (shown when another app's Live Activity shares the island)
+                // only fits one short value: distance for walks/runs, the emoji for strength.
+                if context.attributes.isStrength {
+                    Text(context.attributes.emoji)
+                } else {
+                    Text(context.state.primaryValue)
+                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(WorkoutLiveActivityStyle.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                }
             }
             .keylineTint(WorkoutLiveActivityStyle.accent)
         }
@@ -274,6 +297,12 @@ private extension WorkoutActivityAttributes.ContentState {
 }
 
 #Preview("Compact", as: .dynamicIsland(.compact), using: WorkoutActivityAttributes.preview) {
+    WorkoutLiveActivityWidget()
+} contentStates: {
+    WorkoutActivityAttributes.ContentState.moving
+}
+
+#Preview("Minimal", as: .dynamicIsland(.minimal), using: WorkoutActivityAttributes.preview) {
     WorkoutLiveActivityWidget()
 } contentStates: {
     WorkoutActivityAttributes.ContentState.moving
