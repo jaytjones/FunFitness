@@ -51,7 +51,7 @@ added, and `docs/release_checklist.md` written. **Next upload: build 10.**
 
 ## Jay's checklist — 3.1 (9) (uploaded; now processing)
 
-### 1. Deploy the CloudKit schema (required)
+### 1. Deploy the CloudKit schema — ✅ done (Jay confirmed 2026-10-17; new records show in Production)
 
 New since build 6: record type `CD_WorkoutSession` (incl. `CD_isIndoor`, `CD_healthKitWorkoutUUID`);
 on `CD_ActivityLog`: `CD_avgHeartRate`, `CD_maxHeartRate`, `CD_sessionID`,
