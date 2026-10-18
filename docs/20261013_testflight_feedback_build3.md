@@ -208,6 +208,13 @@ The items below all depend on a parent "workout" that groups entries.
 - Enables per-exercise personal records ("Bench press PR: 185 lbs").
 
 ### C4. Time each session; estimate calories
+
+> **Status (2026-10-17): done for build 8.** Session detail has editable Start/End (live sessions
+> are timed automatically; multi-set and auto-grouped ones start "Not timed" until set) →
+> Duration, also on History rows. Calories: `kcal ≈ 3.5 MET × kg × hours` (`CalorieEstimator`),
+> shown only in the session detail ("≈ 210 kcal (est.)") and in Health. Weight order (Jay): profile
+> weight → Health's latest body weight (asks to read body weight only) → one "Add your weight for
+> calorie estimates" prompt → if declined, duration only (`UserProfile.calorieWeightPromptDeclined`).
 > "Each session's length should be timed as well. Good for reference and comparison, but there may
 > be a metric/basic calculation to determine calories burned based on time spent." — 2026-10-12
 
@@ -216,6 +223,13 @@ The items below all depend on a parent "workout" that groups entries.
 - Prefer HealthKit's own energy estimate when the workout comes from the Watch.
 
 ### C5. Save workouts to Apple Health
+
+> **Status (2026-10-17): done for build 8.** With "Save logs to Apple Health" on, a timed live
+> session saves on End as a Traditional Strength Training workout (start/end, indoor/outdoor,
+> estimated active energy); other sessions have a "Save to Apple Health" button once timed.
+> `WorkoutSession.healthKitWorkoutUUID` prevents double saves. Later edits aren't sent to Health;
+> deleting a session doesn't delete the Health workout (same as distance write-back). Strength
+> workouts aren't imported back (the import is distance-only).
 > "Having full 'workouts' or 'sessions' would help facilitate saving to apple health. How can we
 > assign a proper calorie burn count?" — 2026-10-12
 
@@ -231,6 +245,8 @@ The items below all depend on a parent "workout" that groups entries.
   worked this week" chip row on Progress. Fun angle: muscle groups as reference-unit comparisons.
 
 ### C7. Workout "score" that isn't just calories
+
+> **Status (2026-10-17): design draft** in `docs/20261017_workout_score_design.md` — not built.
 > "Should there be some sort of workout 'score'? Probably related to calories is the best bet, but a
 > reminder that we don't necessarily want calories being top of mind — another score metric might
 > make sense. It'll need to be documented." — 2026-10-12
@@ -243,6 +259,9 @@ The items below all depend on a parent "workout" that groups entries.
   works" explanation and keep a design doc in `docs/`.
 
 ### C8. Extra workout context fields
+
+> **Status (2026-10-17): easy part done for build 8** — session notes and Indoor/Outdoor/Not set
+> (`WorkoutSession.isIndoor`, sent to Health). Weather and music still parked.
 > "If/when adding 'workouts', add additional fields for context. Freeform notes, maybe weather?
 > Timestamps? Indoor/outdoor (for runs?) Capture music played (maybe/maybe not)" — 2026-10-12
 
