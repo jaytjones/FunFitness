@@ -129,6 +129,12 @@ Groups:
   a running timer, a "log set" button, and rest timer, shown in the same Live Activity. This leads into C1.
 
 ### B2. Heart rate
+
+> **Status (2026-10-17): done for build 7.** Kept the iOS 18 target, so FunFitness doesn't record
+> heart rate itself. When a GPS walk/run finishes, it reads what a Watch/sensor saved to Health in
+> that window (skipping pauses) and shows avg/max on the summary; avg also shows in History. Stored
+> as `ActivityLog.avgHeartRate` / `maxHeartRate` — **new CloudKit fields, deploy schema before build 7.**
+> Only read when a Health toggle is on. Not exported yet; Health imports don't fill it.
 > "Also, opportunity to use heart rate?" — 2026-10-12
 
 - During 3.1 tracked workouts, `HKLiveWorkoutBuilder` (Watch) / `HKWorkoutSession` collect heart rate
@@ -138,6 +144,10 @@ Groups:
 - Could feed a non-calorie score (C7), e.g. time in heart-rate zones.
 
 ### B3. Medium widget lacks context
+
+> **Status (2026-10-17): done for build 7.** Medium widget shows this month's challenge with %,
+> and Run/Lift totals with "X to next milestone" under each progress bar. Last month's challenge
+> is hidden until the app refreshes the widget.
 > "Medium widget size doesn't give context for run or lift, either tracked stats, or percentage
 > towards goal could actually add value there" — 2026-10-10
 
@@ -156,6 +166,18 @@ Most of this group is one feature: **sessions/workouts**. Today every log is a s
 The items below all depend on a parent "workout" that groups entries.
 
 ### C1. Sessions / workouts
+
+> **Status (2026-10-17): done for build 7.** New `WorkoutSession` record + `ActivityLog.sessionID`
+> (by id, no relationship) + `ActivityLog.excludedFromAutoGrouping`. Sessions come from a live
+> strength session, a multi-set log (C2), or **auto-grouping**: a weight/reps log within 30 min of
+> a loose strength log or an auto-grouped session joins it (`SessionGrouping`); sessions the person
+> made are never auto-joined. History shows one row per session ("🏋️ Strength · 5 sets · 2,400
+> lbs", tagged "Auto-grouped" when automatic) → detail with each set (edit / delete / Remove from
+> Session) and a menu with **Ungroup Sets** and **Delete Session**. Ungrouped sets never auto-group
+> again; an auto session left with one set dissolves. Export: CSV `Session` column, JSON
+> `sessionID` (schema 1.4). Home's Recent Activity stays one row per entry.
+> **New CloudKit record type `CD_WorkoutSession` + fields `CD_sessionID`, `CD_excludedFromAutoGrouping`
+> — deploy schema (with the B2 heart-rate fields) before build 7.**
 > "Should be able to create 'sessions', so sets and reps from one instance are captured. Similar to
 > discrete 'workouts' in Apple Fitness." — 2026-10-12
 
@@ -166,6 +188,11 @@ The items below all depend on a parent "workout" that groups entries.
   close together in time? Could do both: automatic grouping with an explicit start/stop.
 
 ### C2. Sets
+
+> **Status (2026-10-17): done for build 7 (Sets stepper).** Weight and bodyweight Reps in the log
+> sheet have a Sets stepper (1–20); "3 × 10 @ 135 lbs" saves 3 entries as one session (totals
+> unchanged). **Fallback if testers don't like the stepper:** a per-set list in the sheet (each set
+> with its own weight/reps, e.g. 135×10, 155×8, 175×5) saved together — Jay's call, 2026-10-17.
 > "Would also be nice to add sets (not just rep counts)" — 2026-10-10
 
 - Each set is one log inside a session (weight × reps). Alternatively, a quick "3 × 10 @ 135" entry can
