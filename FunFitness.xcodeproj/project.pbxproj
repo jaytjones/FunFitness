@@ -572,8 +572,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FunFitness/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically, and the heart rate recorded during the walks and runs you track.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically, the heart rate recorded during the walks and runs you track, and your body weight to estimate calories for strength sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place. Strength sessions are saved as strength training workouts with estimated calories.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness uses your location while you track a walk or run to measure distance and draw your route.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -613,8 +613,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FunFitness/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically, and the heart rate recorded during the walks and runs you track.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your walking, running, hiking, and cycling workouts so it can count them toward your distance milestones automatically, the heart rate recorded during the walks and runs you track, and your body weight to estimate calories for strength sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness can save the distance activities you log, and the walks and runs you track with their routes, to Apple Health so all your workouts live in one place. Strength sessions are saved as strength training workouts with estimated calories.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness uses your location while you track a walk or run to measure distance and draw your route.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -111,6 +111,55 @@ struct SessionHistoryTests {
     }
 }
 
+// MARK: - Time and calories (C4)
+
+@Suite("Session time and calories")
+@MainActor
+struct SessionTimingTests {
+
+    @Test func underAMinuteIsNotTimed() {
+        #expect(!SessionTiming.isTimed(59))
+        #expect(SessionTiming.isTimed(60))
+        #expect(SessionTiming.duration(from: date(10), to: date(0)) == 0)   // end before start
+    }
+
+    @Test func durationText() {
+        #expect(SessionTiming.durationText(42 * 60) == "42 min")
+        #expect(SessionTiming.durationText(60 * 60) == "1 hr")
+        #expect(SessionTiming.durationText(65 * 60) == "1 hr 5 min")
+    }
+
+    @Test func caloriesUseMETWeightAndHours() throws {
+        // 3.5 MET × 80 kg × 0.75 h = 210 kcal
+        let kcal = try #require(CalorieEstimator.kcal(seconds: 45 * 60, weightKg: 80))
+        #expect(abs(kcal - 210) < 0.001)
+        #expect(CalorieEstimator.text(kcal) == "≈ 210 kcal (est.)")
+    }
+
+    @Test func noCaloriesWithoutTimeOrWeight() {
+        #expect(CalorieEstimator.kcal(seconds: 30, weightKg: 80) == nil)
+        #expect(CalorieEstimator.kcal(seconds: 3_600, weightKg: nil) == nil)
+        #expect(CalorieEstimator.kcal(seconds: 3_600, weightKg: 0) == nil)
+    }
+
+    @Test func weightComesFromProfileThenHealthThenPrompt() {
+        #expect(CalorieWeightSource.resolve(profileWeightKg: 80, healthWeightKg: 75, promptDeclined: false) == .use(kg: 80))
+        #expect(CalorieWeightSource.resolve(profileWeightKg: nil, healthWeightKg: 75, promptDeclined: false) == .use(kg: 75))
+        #expect(CalorieWeightSource.resolve(profileWeightKg: nil, healthWeightKg: nil, promptDeclined: false) == .askInApp)
+        #expect(CalorieWeightSource.resolve(profileWeightKg: nil, healthWeightKg: nil, promptDeclined: true) == .durationOnly)
+        // A weight typed later still wins after the prompt was declined.
+        #expect(CalorieWeightSource.resolve(profileWeightKg: 70, healthWeightKg: nil, promptDeclined: true) == .use(kg: 70))
+    }
+
+    @Test func multiSetSessionsStartUntimed() {
+        let session = WorkoutSession(startedAt: date(0), endedAt: date(0).addingTimeInterval(2))
+        #expect(!session.isTimed)
+        session.startedAt = date(-30)
+        #expect(session.isTimed)
+        #expect(session.durationSeconds == 30 * 60 + 2)
+    }
+}
+
 // MARK: - Saving
 
 @Suite("Session saving", .serialized)
@@ -230,16 +279,17 @@ struct SessionSavingTests {
         #expect(vm.totalWeight == 0)
     }
 
-    @Test func deletingASetKeepsAPersonMadeSessionAndItsSpan() throws {
+    @Test func deletingASetKeepsAPersonMadeSessionAndItsTimes() throws {
         let vm = AppViewModel()
         ActivityWriter.logSets(type: .weight, value: 60, reps: 10, sets: 3, date: date(0), context: context, viewModel: vm)
+        let session = try #require(try sessions().first)
+        session.startedAt = date(-45)   // the person set the real start time (C4)
         let first = try #require(try logs().first)
         ActivityWriter.delete(first, context: context, viewModel: vm)
 
-        let session = try #require(try sessions().first)
-        let remaining = try logs()
-        #expect(remaining.count == 2)
-        #expect(session.startedAt == remaining.first?.loggedAt)
+        #expect(try logs().count == 2)
+        #expect(try sessions().first?.startedAt == date(-45))
+        #expect(try sessions().first?.endedAt == date(0))
     }
 
     @Test func deleteSessionRemovesEverySet() throws {
@@ -278,6 +328,8 @@ extension StrengthSessionManagerTests {
         #expect(!session.isAutoGrouped)
         #expect(session.startedAt == date(0))
         #expect(session.endedAt == date(10))
+        #expect(session.isTimed)                         // live sessions are timed for real (C4)
+        #expect(session.durationSeconds == 10 * 60)
         manager.reset()
     }
 

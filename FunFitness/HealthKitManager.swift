@@ -39,6 +39,8 @@ final class HealthKitManager {
         if let cycling = HKObjectType.quantityType(forIdentifier: .distanceCycling) { types.insert(cycling) }
         // GPS routes for tracked walks/runs (3.1). Requesting again later only prompts for this.
         types.insert(HKSeriesType.workoutRoute())
+        // Estimated calories on strength-session workouts (3.1 C5).
+        types.insert(HKQuantityType(.activeEnergyBurned))
         return types
     }
 
@@ -244,6 +246,59 @@ extension HealthKitManager {
         return HeartRateMath.summary(
             samples: samples, start: result.startedAt, end: result.endedAt, pauses: result.pauseIntervals
         )
+    }
+}
+
+extension HealthKitManager {
+
+    /// The most recent body weight in Health, in kg (3.1 C4). With `requestingAccess`, first asks
+    /// to read body weight only — nothing else — so a calorie estimate never prompts for the whole
+    /// Health set. nil when there's none, or read access was declined (HealthKit doesn't say which).
+    func latestBodyMassKg(requestingAccess: Bool) async -> Double? {
+        guard isAvailable else { return nil }
+        let bodyMass = HKQuantityType(.bodyMass)
+        if requestingAccess {
+            try? await store.requestAuthorization(toShare: [], read: [bodyMass])
+        }
+        return await withCheckedContinuation { continuation in
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+            let query = HKSampleQuery(sampleType: bodyMass, predicate: nil, limit: 1, sortDescriptors: [sort]) { _, samples, _ in
+                let kg = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .gramUnit(with: .kilo))
+                continuation.resume(returning: kg)
+            }
+            store.execute(query)
+        }
+    }
+
+    /// Saves a strength session to Health as a Traditional Strength Training workout with its start,
+    /// end, indoor/outdoor flag, and estimated active energy when there is one (3.1 C5). Returns the
+    /// workout's UUID, or nil on any failure. Strength workouts aren't imported back (the import is
+    /// distance-only), so there's no echo to guard against.
+    func saveStrengthSession(start: Date, end: Date, kcal: Double?, isIndoor: Bool?) async -> UUID? {
+        guard isAvailable, end > start else { return nil }
+        await requestAuthorization()
+
+        let config = HKWorkoutConfiguration()
+        config.activityType = .traditionalStrengthTraining
+        config.locationType = isIndoor.map { $0 ? .indoor : .outdoor } ?? .unknown
+        let builder = HKWorkoutBuilder(healthStore: store, configuration: config, device: .local())
+        do {
+            try await builder.beginCollection(at: start)
+            if let kcal, kcal > 0 {
+                let energy = HKCumulativeQuantitySample(
+                    type: HKQuantityType(.activeEnergyBurned),
+                    quantity: HKQuantity(unit: .kilocalorie(), doubleValue: kcal),
+                    start: start,
+                    end: end
+                )
+                try await builder.addSamples([energy])
+            }
+            if let isIndoor { try await builder.addMetadata([HKMetadataKeyIndoorWorkout: isIndoor]) }
+            try await builder.endCollection(at: end)
+            return try await builder.finishWorkout()?.uuid
+        } catch {
+            return nil
+        }
     }
 }
 

@@ -105,9 +105,21 @@ final class StrengthSessionManager {
         guard phase == .active else { return }
         endedAt = date
         phase = .finished
-        if let record {
+        if let record, let context {
             record.endedAt = date
-            try? context?.save()
+            try? context.save()
+            // With "Save logs to Apple Health" on, a timed session goes to Health as a strength
+            // workout with estimated calories. Weight: the profile's, else Health's latest
+            // (without prompting here — the session screen is in front). (3.1 C5)
+            let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
+            if profile?.healthKitWriteBackEnabled == true, record.isTimed {
+                let profileWeight = profile?.weightKg
+                Task { @MainActor in
+                    var weight = profileWeight
+                    if weight == nil { weight = await HealthKitManager.shared.latestBodyMassKg(requestingAccess: false) }
+                    await ActivityWriter.saveSessionToHealth(record, weightKg: weight, context: context)
+                }
+            }
         }
         NotificationManager.shared.cancel(.strengthRest)
         liveActivity.finishStrength(for: self, at: date)

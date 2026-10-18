@@ -17,8 +17,8 @@ struct ActivityHistorySheet: View {
     @State private var editingActivity: ActivityLog? = nil
     @State private var sessionPendingDelete: SessionRoute? = nil
 
-    private var autoGroupedSessionIDs: Set<UUID> {
-        Set(sessions.filter(\.isAutoGrouped).map(\.id))
+    private var sessionsByID: [UUID: WorkoutSession] {
+        Dictionary(sessions.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     var body: some View {
@@ -51,8 +51,14 @@ struct ActivityHistorySheet: View {
                                 case .single(let activity):
                                     activityRow(activity)
                                 case .session(let id, let logs):
+                                    let record = sessionsByID[id]
                                     NavigationLink(value: SessionRoute(id: id)) {
-                                        SessionRow(logs: logs, isAutoGrouped: autoGroupedSessionIDs.contains(id), pref: viewModel.unitPreference)
+                                        SessionRow(
+                                            logs: logs,
+                                            isAutoGrouped: record?.isAutoGrouped ?? false,
+                                            durationSeconds: record.flatMap { $0.isTimed ? $0.durationSeconds : nil },
+                                            pref: viewModel.unitPreference
+                                        )
                                     }
                                     .listRowBackground(Color.appCard)
                                     .listRowSeparatorTint(Color.primary.opacity(0.1))
@@ -162,10 +168,13 @@ struct SessionRoute: Hashable, Identifiable {
 
 // MARK: - Session Row
 
-/// "🏋️ Strength · 5 sets" over the date, with the session total on the right. (3.1 C1)
+/// "🏋️ Strength · 5 sets" over the date (and duration, once timed), with the session total on the
+/// right. Calories stay off the row on purpose — they're only in the detail and Health. (3.1 C1/C4)
 struct SessionRow: View {
     let logs: [ActivityLog]
     let isAutoGrouped: Bool
+    /// The session's timed length, or nil when it isn't timed.
+    var durationSeconds: TimeInterval? = nil
     let pref: UnitPreference
 
     var body: some View {
@@ -199,29 +208,38 @@ struct SessionRow: View {
         }
     }
 
-    // "Oct 16, 2026 at 8:11 PM · Auto-grouped"
+    // "Oct 16, 2026 at 8:11 PM · 42 min · Auto-grouped"
     private func subtitle(_ summary: SessionSummary) -> String {
-        let date = summary.startedAt.formatted(date: .abbreviated, time: .shortened)
-        return isAutoGrouped ? "\(date) · Auto-grouped" : date
+        var parts = [summary.startedAt.formatted(date: .abbreviated, time: .shortened)]
+        if let durationSeconds { parts.append(SessionTiming.durationText(durationSeconds)) }
+        if isAutoGrouped { parts.append("Auto-grouped") }
+        return parts.joined(separator: " · ")
     }
 }
 
 // MARK: - Session Detail
 
-/// One session's sets, with Ungroup and Delete Session. Each set can be edited, deleted, or taken
-/// out of the session. (3.1 C1)
+/// One session: its time (editable start/end → duration and an estimated calorie count), indoor/
+/// outdoor, notes, Save to Apple Health, and its sets — each can be edited, deleted, or taken out.
+/// The ⋯ menu has Ungroup and Delete Session. (3.1 C1, C4, C5, C8)
 struct SessionDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var logs: [ActivityLog]
     @Query private var records: [WorkoutSession]
     @Query private var achievements: [UnlockedAchievement]
+    @Query private var profiles: [UserProfile]
     @Bindable var viewModel: AppViewModel
 
     let sessionID: UUID
     @State private var editingActivity: ActivityLog? = nil
     @State private var showDeleteConfirm = false
     @State private var showUngroupConfirm = false
+    // Calorie weight (C4): Health's latest body weight, asked for once per screen when needed.
+    @State private var healthWeightKg: Double?
+    @State private var checkedHealthWeight = false
+    @State private var showWeightPrompt = false
+    @State private var weightText = ""
 
     init(sessionID: UUID, viewModel: AppViewModel) {
         self.sessionID = sessionID
@@ -232,6 +250,21 @@ struct SessionDetailView: View {
     }
 
     private var pref: UnitPreference { viewModel.unitPreference }
+    private var record: WorkoutSession? { records.first }
+    private var profile: UserProfile? { profiles.first }
+
+    private var weightSource: CalorieWeightSource {
+        CalorieWeightSource.resolve(
+            profileWeightKg: profile?.weightKg,
+            healthWeightKg: healthWeightKg,
+            promptDeclined: profile?.calorieWeightPromptDeclined ?? false
+        )
+    }
+
+    private var calorieWeightKg: Double? {
+        if case .use(let kg) = weightSource { return kg }
+        return nil
+    }
 
     var body: some View {
         ZStack {
@@ -242,9 +275,16 @@ struct SessionDetailView: View {
                     Section {
                         LabeledContent("Sets", value: "\(summary.setCount)")
                         LabeledContent("Total", value: summary.totalText(pref: pref))
-                        LabeledContent("Time", value: timeRange(summary))
                     }
                     .listRowBackground(Color.appCard)
+                }
+
+                if let record {
+                    SessionInfoSections(
+                        session: record,
+                        calorieWeightKg: calorieWeightKg,
+                        savesToHealth: profile?.healthKitWriteBackEnabled ?? false
+                    )
                 }
 
                 Section("Sets") {
@@ -323,6 +363,17 @@ struct SessionDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .alert("Add your weight for calorie estimates", isPresented: $showWeightPrompt) {
+            TextField(UnitConverter.displayUnit(for: .weight, pref: pref), text: $weightText)
+                .keyboardType(.decimalPad)
+            Button("Save") { saveTypedWeight() }
+            Button("No Thanks", role: .cancel) {
+                profile?.calorieWeightPromptDeclined = true
+                try? modelContext.save()
+            }
+        } message: {
+            Text("Used only to estimate calories for timed sessions. You can change it in Profile.")
+        }
         .sheet(item: $editingActivity) { activity in
             EditActivitySheet(activity: activity, pref: pref) { value, reps, loggedAt, notes, surface in
                 ActivityHistorySheet.applyEdit(
@@ -331,17 +382,118 @@ struct SessionDetailView: View {
                 )
             }
         }
+        .task(id: record?.isTimed) { await findCalorieWeightIfNeeded() }
         .onChange(of: logs.isEmpty) {
             // Last set deleted or removed: the session is gone.
             if logs.isEmpty { dismiss() }
         }
     }
 
-    // "8:11 – 8:42 PM"
-    private func timeRange(_ summary: SessionSummary) -> String {
-        let start = records.first?.startedAt ?? summary.startedAt
-        let end = max(records.first?.endedAt ?? summary.endedAt, summary.endedAt)
-        return (start..<max(end, start.addingTimeInterval(1))).formatted(date: .omitted, time: .shortened)
+    /// The weight order Jay chose: profile → Health (asking to read body weight) → one in-app
+    /// prompt → duration only. Only runs for a timed session with no profile weight.
+    private func findCalorieWeightIfNeeded() async {
+        guard record?.isTimed == true, profile != nil, profile?.weightKg == nil, !checkedHealthWeight else { return }
+        checkedHealthWeight = true
+        healthWeightKg = await HealthKitManager.shared.latestBodyMassKg(requestingAccess: true)
+        if weightSource == .askInApp { showWeightPrompt = true }
+    }
+
+    private func saveTypedWeight() {
+        guard let value = Double(weightText.replacingOccurrences(of: ",", with: ".")), value > 0 else { return }
+        profile?.weightKg = UnitConverter.toSI(value, type: .weight, from: pref)
+        try? modelContext.save()
+    }
+}
+
+/// The editable parts of a session record: time, calories, location, notes, Apple Health.
+private struct SessionInfoSections: View {
+    @Environment(\.modelContext) private var modelContext
+    @Bindable var session: WorkoutSession
+    let calorieWeightKg: Double?
+    let savesToHealth: Bool
+
+    @State private var isSavingToHealth = false
+    @State private var healthSaveFailed = false
+
+    private var kcal: Double? {
+        CalorieEstimator.kcal(seconds: session.durationSeconds, weightKg: calorieWeightKg)
+    }
+
+    /// Indoor / Outdoor / Not set, over the optional flag.
+    private var location: Binding<Int> {
+        Binding(
+            get: { session.isIndoor.map { $0 ? 1 : 2 } ?? 0 },
+            set: { session.isIndoor = $0 == 0 ? nil : $0 == 1 }
+        )
+    }
+
+    var body: some View {
+        Section {
+            DatePicker("Start", selection: $session.startedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+            DatePicker("End", selection: $session.endedAt, in: session.startedAt...Date.distantFuture, displayedComponents: [.date, .hourAndMinute])
+            LabeledContent("Duration", value: session.isTimed ? SessionTiming.durationText(session.durationSeconds) : "Not timed")
+            if let kcal {
+                LabeledContent("Calories", value: CalorieEstimator.text(kcal))
+                    .accessibilityIdentifier("sessionCalories")
+            }
+        } header: {
+            Text("Time")
+        } footer: {
+            if !session.isTimed {
+                Text("Set the start and end times to see how long this session took.")
+            } else if kcal != nil {
+                Text("Estimated from the session's length and your body weight (strength training ≈ \(CalorieEstimator.strengthMET.formatted()) MET).")
+            }
+        }
+        .listRowBackground(Color.appCard)
+
+        Section("Details") {
+            Picker("Location", selection: location) {
+                Text("Not set").tag(0)
+                Text("Indoor").tag(1)
+                Text("Outdoor").tag(2)
+            }
+            .pickerStyle(.segmented)
+            TextField("Notes", text: Binding(
+                get: { session.notes ?? "" },
+                set: { session.notes = $0.isEmpty ? nil : $0 }
+            ), axis: .vertical)
+            .lineLimit(1...5)
+            .accessibilityIdentifier("sessionNotes")
+        }
+        .listRowBackground(Color.appCard)
+
+        if savesToHealth {
+            Section {
+                if session.healthKitWorkoutUUID != nil {
+                    Label("Saved to Apple Health", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Button {
+                        Task {
+                            isSavingToHealth = true
+                            healthSaveFailed = !(await ActivityWriter.saveSessionToHealth(session, weightKg: calorieWeightKg, context: modelContext))
+                            isSavingToHealth = false
+                        }
+                    } label: {
+                        Label(isSavingToHealth ? "Saving…" : "Save to Apple Health", systemImage: "heart.fill")
+                    }
+                    .disabled(!session.isTimed || isSavingToHealth)
+                    .accessibilityIdentifier("sessionSaveToHealthButton")
+                }
+            } footer: {
+                if healthSaveFailed {
+                    Text("Couldn't save to Apple Health. Check FunFitness's access in the Health app's Sharing settings.")
+                } else if session.healthKitWorkoutUUID != nil {
+                    Text("Changes made after saving aren't sent to Apple Health.")
+                } else if !session.isTimed {
+                    Text("Set the start and end times to save this session to Apple Health.")
+                } else {
+                    Text("Saves a Strength Training workout with its time and estimated calories.")
+                }
+            }
+            .listRowBackground(Color.appCard)
+        }
     }
 }
 
@@ -612,7 +764,7 @@ struct EditActivitySheet: View {
 
 #Preview("Sessions") {
     let container = try! ModelContainer(
-        for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self,
+        for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self, UserProfile.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let context = container.mainContext
@@ -628,13 +780,19 @@ struct EditActivitySheet: View {
 
 #Preview("Session Detail") {
     let container = try! ModelContainer(
-        for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self,
+        for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self, UserProfile.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let context = container.mainContext
     let vm = AppViewModel()
+    let profile = UserProfile()
+    profile.weightKg = 80
+    profile.healthKitWriteBackEnabled = true
+    context.insert(profile)
     ActivityWriter.logSets(type: .weight, value: 61.2, reps: 10, sets: 3, date: Date(), context: context, viewModel: vm)
-    let sessionID = (try? context.fetch(FetchDescriptor<WorkoutSession>()))?.first?.id ?? UUID()
+    let session = (try? context.fetch(FetchDescriptor<WorkoutSession>()))?.first
+    session?.startedAt = Date().addingTimeInterval(-45 * 60)   // a 45-minute session
+    let sessionID = session?.id ?? UUID()
     return NavigationStack {
         SessionDetailView(sessionID: sessionID, viewModel: vm)
     }

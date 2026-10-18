@@ -43,6 +43,9 @@ final class UserProfile {
     var healthKitImportEnabled: Bool = false
     // Write manually logged distance activities back to Apple Health.
     var healthKitWriteBackEnabled: Bool = false
+    // The person said "No thanks" to the one-time "Add your weight for calorie estimates" prompt,
+    // so strength sessions show duration only. (3.1 C4)
+    var calorieWeightPromptDeclined: Bool = false
 
     init(
         id: UUID = UUID(),

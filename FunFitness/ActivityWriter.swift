@@ -329,21 +329,33 @@ struct ActivityWriter {
         cleanUpSession(sessionID, context: context)
     }
 
-    /// After a set leaves a session: drop an emptied session, dissolve an automatic one that's
-    /// down to a single set, otherwise keep its time span in step with the sets left.
+    /// After a set leaves a session: drop an emptied session, or dissolve an automatic one that's
+    /// down to a single set. The session's start/end stay as they are — they're the workout's
+    /// time (live-timed or set by the person, C4), not just the span of its sets.
     static func cleanUpSession(_ sessionID: UUID, context: ModelContext) {
         let remaining = logs(inSession: sessionID, context: context)
         let records = sessionRecords(sessionID, context: context)
         if remaining.isEmpty || (remaining.count == 1 && records.contains(where: \.isAutoGrouped)) {
             for log in remaining { log.sessionID = nil }
             for session in records { context.delete(session) }
-        } else if let first = remaining.map(\.loggedAt).min(), let last = remaining.map(\.loggedAt).max() {
-            for session in records {
-                session.startedAt = first
-                session.endedAt = last
-            }
         }
         try? context.save()
+    }
+
+    /// Saves a timed session to Health as a strength workout with its estimated calories (C4/C5)
+    /// and remembers the workout's id. Returns false when untimed or the save fails. Later edits
+    /// aren't sent to Health.
+    @discardableResult
+    @MainActor
+    static func saveSessionToHealth(_ session: WorkoutSession, weightKg: Double?, context: ModelContext) async -> Bool {
+        guard session.isTimed, session.healthKitWorkoutUUID == nil else { return false }
+        let kcal = CalorieEstimator.kcal(seconds: session.durationSeconds, weightKg: weightKg)
+        guard let uuid = await HealthKitManager.shared.saveStrengthSession(
+            start: session.startedAt, end: session.endedAt, kcal: kcal, isIndoor: session.isIndoor
+        ) else { return false }
+        session.healthKitWorkoutUUID = uuid
+        try? context.save()
+        return true
     }
 
     private static func logs(inSession sessionID: UUID, context: ModelContext) -> [ActivityLog] {

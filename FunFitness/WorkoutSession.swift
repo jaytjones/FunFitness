@@ -37,6 +37,10 @@ final class WorkoutSession {
     /// logs automatically, and one shrunk to a single set dissolves.
     var isAutoGrouped: Bool = false
     var notes: String?
+    /// Indoor (true) / outdoor (false) / not set (nil). Sent to Health with the workout. (C8)
+    var isIndoor: Bool?
+    /// The Health workout saved for this session, if any. (C5)
+    var healthKitWorkoutUUID: UUID?
 
     init(id: UUID = UUID(), startedAt: Date, endedAt: Date, kind: WorkoutSessionKind = .strength, isAutoGrouped: Bool = false) {
         self.id = id
@@ -48,6 +52,68 @@ final class WorkoutSession {
 
     var kind: WorkoutSessionKind {
         WorkoutSessionKind(rawValue: kindRaw) ?? .strength
+    }
+
+    var durationSeconds: TimeInterval { SessionTiming.duration(from: startedAt, to: endedAt) }
+    var isTimed: Bool { SessionTiming.isTimed(durationSeconds) }
+}
+
+// MARK: - Time and calories (pure, 3.1 C4)
+
+nonisolated enum SessionTiming {
+
+    /// Shorter than this isn't a real timing — e.g. sets logged together from the log sheet are a
+    /// second apart — so no duration or calories are shown until the person sets the times.
+    static let minimumTimedSeconds: TimeInterval = 60
+
+    static func duration(from start: Date, to end: Date) -> TimeInterval {
+        max(0, end.timeIntervalSince(start))
+    }
+
+    static func isTimed(_ seconds: TimeInterval) -> Bool {
+        seconds >= minimumTimedSeconds
+    }
+
+    /// "42 min" or "1 hr 5 min".
+    static func durationText(_ seconds: TimeInterval) -> String {
+        let minutes = Int((seconds / 60).rounded())
+        guard minutes >= 60 else { return "\(minutes) min" }
+        let hours = minutes / 60, rest = minutes % 60
+        return rest == 0 ? "\(hours) hr" : "\(hours) hr \(rest) min"
+    }
+}
+
+/// Calorie estimate for a timed session: kcal ≈ MET × body weight (kg) × hours.
+/// Strength training uses 3.5 MET — the Compendium of Physical Activities value for resistance
+/// training with multiple exercises at moderate effort. It's an estimate, shown as "≈ … (est.)"
+/// and only in the session detail and Apple Health, so calories don't become the headline.
+nonisolated enum CalorieEstimator {
+    static let strengthMET = 3.5
+
+    /// nil when the session isn't timed or there's no usable body weight.
+    static func kcal(seconds: TimeInterval, weightKg: Double?, met: Double = strengthMET) -> Double? {
+        guard SessionTiming.isTimed(seconds), let weightKg, weightKg > 0 else { return nil }
+        return met * weightKg * seconds / 3600
+    }
+
+    /// "≈ 210 kcal (est.)"
+    static func text(_ kcal: Double) -> String {
+        "≈ \(Int(kcal.rounded())) kcal (est.)"
+    }
+}
+
+/// Where a calorie estimate's body weight comes from, in the order Jay chose (2026-10-17): the
+/// profile's weight; else Health's latest body weight (asking to read it); else one in-app
+/// "Add your weight" prompt; if that's declined, duration only.
+nonisolated enum CalorieWeightSource: Equatable {
+    case use(kg: Double)
+    case askInApp
+    case durationOnly
+
+    static func resolve(profileWeightKg: Double?, healthWeightKg: Double?, promptDeclined: Bool) -> CalorieWeightSource {
+        if let kg = profileWeightKg, kg > 0 { return .use(kg: kg) }
+        if let kg = healthWeightKg, kg > 0 { return .use(kg: kg) }
+        return promptDeclined ? .durationOnly : .askInApp
     }
 }
 
