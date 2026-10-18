@@ -18,6 +18,14 @@ enum WidgetDataKey {
     static let nextDistanceMilestone = "nextDistanceMilestone"
     static let nextWeightMilestone  = "nextWeightMilestone"
     static let sillyTitle          = "sillyTitle"
+    // Medium widget context (3.1 B3)
+    static let distanceTotal       = "distanceTotal"
+    static let weightTotal         = "weightTotal"
+    static let distanceRemaining   = "distanceRemaining"
+    static let weightRemaining     = "weightRemaining"
+    static let challengeTitle      = "challengeTitle"
+    static let challengeFraction   = "challengeFraction"
+    static let challengeMonth      = "challengeMonth"   // yyyymm the challenge numbers belong to
 }
 
 struct WidgetSnapshot {
@@ -29,6 +37,13 @@ struct WidgetSnapshot {
     var nextDistanceMilestone: String
     var nextWeightMilestone: String
     var sillyTitle: String
+    var distanceTotal: String = "0 mi"
+    var weightTotal: String = "0 lbs"
+    var distanceRemaining: String = "Log your first run!"
+    var weightRemaining: String = "Log your first lift!"
+    /// "❄️ Frosty Mile Chase", or nil when there's no challenge for the current month.
+    var challengeTitle: String? = nil
+    var challengeFraction: Double = 0
 
     static var empty: WidgetSnapshot {
         WidgetSnapshot(
@@ -43,9 +58,9 @@ struct WidgetSnapshot {
         )
     }
 
-    static func load() -> WidgetSnapshot {
+    static func load(now: Date = .now) -> WidgetSnapshot {
         let d = UserDefaults(suiteName: WidgetDataKey.suiteName)
-        return WidgetSnapshot(
+        var snapshot = WidgetSnapshot(
             streak:                   d?.integer(forKey: WidgetDataKey.streak)               ?? 0,
             longestStreak:            d?.integer(forKey: WidgetDataKey.longestStreak)        ?? 0,
             activeThisWeek:           d?.bool(forKey: WidgetDataKey.activeThisWeek)          ?? false,
@@ -55,5 +70,18 @@ struct WidgetSnapshot {
             nextWeightMilestone:      d?.string(forKey: WidgetDataKey.nextWeightMilestone)   ?? "Log your first lift!",
             sillyTitle:               d?.string(forKey: WidgetDataKey.sillyTitle)            ?? "Future Legend"
         )
+        if let total = d?.string(forKey: WidgetDataKey.distanceTotal)         { snapshot.distanceTotal = total }
+        if let total = d?.string(forKey: WidgetDataKey.weightTotal)           { snapshot.weightTotal = total }
+        if let text = d?.string(forKey: WidgetDataKey.distanceRemaining)      { snapshot.distanceRemaining = text }
+        if let text = d?.string(forKey: WidgetDataKey.weightRemaining)        { snapshot.weightRemaining = text }
+        // The app only refreshes these when it runs, so last month's challenge is hidden rather
+        // than shown with stale progress once the month rolls over.
+        let month = Calendar.current.dateComponents([.year, .month], from: now)
+        let currentMonth = (month.year ?? 0) * 100 + (month.month ?? 0)
+        if d?.integer(forKey: WidgetDataKey.challengeMonth) == currentMonth {
+            snapshot.challengeTitle    = d?.string(forKey: WidgetDataKey.challengeTitle)
+            snapshot.challengeFraction = d?.double(forKey: WidgetDataKey.challengeFraction) ?? 0
+        }
+        return snapshot
     }
 }

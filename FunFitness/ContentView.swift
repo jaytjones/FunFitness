@@ -244,7 +244,30 @@ struct ContentView: View {
         defaults?.set(nextDist,                   forKey: "nextDistanceMilestone")
         defaults?.set(nextWt,                     forKey: "nextWeightMilestone")
         defaults?.set(viewModel.sillyTitle.title, forKey: "sillyTitle")
+        // Medium widget context (3.1 B3): totals, what's left to the next milestone, and this
+        // month's challenge.
+        defaults?.set(viewModel.displayTotal(for: .distance), forKey: "distanceTotal")
+        defaults?.set(viewModel.displayTotal(for: .weight),   forKey: "weightTotal")
+        defaults?.set(widgetRemainingText(type: .distance),   forKey: "distanceRemaining")
+        defaults?.set(widgetRemainingText(type: .weight),     forKey: "weightRemaining")
+        let now = Date()
+        if let challenge = viewModel.currentChallenge(on: now) {
+            let month = Calendar.current.dateComponents([.year, .month], from: now)
+            defaults?.set("\(challenge.emoji) \(challenge.title)",                 forKey: "challengeTitle")
+            defaults?.set(viewModel.challengeFraction(challenge, on: now),         forKey: "challengeFraction")
+            defaults?.set((month.year ?? 0) * 100 + (month.month ?? 0),            forKey: "challengeMonth")
+        } else {
+            defaults?.removeObject(forKey: "challengeTitle")
+        }
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// "1.2 mi to next milestone", or "All milestones done!" past the last one.
+    private func widgetRemainingText(type: ActivityType) -> String {
+        let next = viewModel.remainingToNextMilestone(type: type)
+        guard next.milestone != nil else { return "All milestones done!" }
+        let remaining = UnitConverter.displayString(next.remaining, type: type, pref: viewModel.unitPreference)
+        return "\(remaining) to next milestone"
     }
 
     // MARK: - Achievement Reconciliation
