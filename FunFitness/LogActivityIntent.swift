@@ -59,6 +59,7 @@ struct FunFitnessShortcuts: AppShortcutsProvider {
             intent: LogLastActivityIntent(),
             phrases: [
                 "Log my run in \(.applicationName)",
+                "Log my walk in \(.applicationName)",
                 "Log my last activity in \(.applicationName)",
                 "Repeat my workout in \(.applicationName)",
             ],

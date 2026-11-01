@@ -44,9 +44,14 @@ struct HomeView: View {
 
                         SeasonalCard(viewModel: viewModel)
 
-                        TrackWorkoutCard(viewModel: viewModel)
+                        // While one is running, the pinned "now tracking" bar shows it instead. (FB-0003)
+                        if WorkoutTracker.shared.phase == .idle {
+                            TrackWorkoutCard(viewModel: viewModel)
+                        }
 
-                        StrengthSessionCard(viewModel: viewModel)
+                        if StrengthSessionManager.shared.phase == .idle {
+                            StrengthSessionCard(viewModel: viewModel)
+                        }
 
                         if let last = viewModel.lastActivity {
                             RepeatLastButton(label: repeatLabel(for: last)) {

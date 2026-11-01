@@ -37,26 +37,34 @@ extension Color {
 
 // MARK: - Adaptive semantic colors
 
-extension Color {
+// The dynamic providers are `nonisolated`: UIKit resolves them on whatever thread is drawing,
+// including SwiftUI's background render thread. With the target's default MainActor isolation,
+// a plain closure here was inferred @MainActor and trapped when resolved off the main thread
+// (TestFlight FB-0002, crash in 3.1 (9)).
+extension UIColor {
     /// Primary screen background — dark navy in dark mode, system grouped background in light mode.
-    static var appBackground: Color {
-        Color(UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 13/255, green: 13/255, blue: 26/255, alpha: 1)
-                : UIColor.systemGroupedBackground
-        })
+    nonisolated static let appBackground = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 13/255, green: 13/255, blue: 26/255, alpha: 1)
+            : UIColor.systemGroupedBackground
     }
 
     /// Card / secondary surface — dark navy in dark mode. In light mode a soft
     /// light gray that sits distinctly darker than `appBackground` (~#F2F2F7),
     /// so neutral cards read with clear contrast instead of near-white on near-white.
-    static var appCard: Color {
-        Color(UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 26/255, green: 26/255, blue: 46/255, alpha: 1)
-                : UIColor(red: 228/255, green: 228/255, blue: 238/255, alpha: 1)
-        })
+    nonisolated static let appCard = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 26/255, green: 26/255, blue: 46/255, alpha: 1)
+            : UIColor(red: 228/255, green: 228/255, blue: 238/255, alpha: 1)
     }
+}
+
+extension Color {
+    /// Primary screen background. See `UIColor.appBackground`.
+    static var appBackground: Color { Color(UIColor.appBackground) }
+
+    /// Card / secondary surface. See `UIColor.appCard`.
+    static var appCard: Color { Color(UIColor.appCard) }
 }
 
 // MARK: - Per-activity-type card presentation (v2.2)

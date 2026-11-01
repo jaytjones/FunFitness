@@ -63,6 +63,13 @@ struct StrengthSession: Equatable, Sendable {
         restEndsAt = set.loggedAt.addingTimeInterval(restSeconds)
     }
 
+    /// Replaces the sets with what's saved, after a set is deleted or edited (TestFlight FB-0001).
+    /// The rest timer keeps running unless no sets are left.
+    mutating func replaceSets(_ newSets: [StrengthSet]) {
+        sets = newSets
+        if sets.isEmpty { skipRest() }
+    }
+
     mutating func skipRest() {
         restStartedAt = nil
         restEndsAt = nil

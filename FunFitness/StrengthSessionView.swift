@@ -175,6 +175,7 @@ struct StrengthSessionView: View {
             }
             .padding()
         }
+        .modifier(SwipeActionsContainer())
         .scrollDismissesKeyboard(.interactively)
         .confirmationDialog("End this session?", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("End Session") { manager.end() }
@@ -318,7 +319,28 @@ struct StrengthSessionView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 4)
+                .contentShape(.rect)
                 .accessibilityElement(children: .combine)
+                // Swipe to delete (iOS 27+, see SwipeActionsContainer); long-press works everywhere.
+                // Deleting here or in History removes the set everywhere. (FB-0001)
+                .swipeActions {
+                    Button(role: .destructive) {
+                        manager.deleteSet(id: set.id)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+                .contextMenu {
+                    Button(role: .destructive) {
+                        manager.deleteSet(id: set.id)
+                    } label: {
+                        Label("Delete Set", systemImage: "trash")
+                    }
+                }
+                .accessibilityAction(named: "Delete Set") {
+                    manager.deleteSet(id: set.id)
+                }
             }
         }
         .padding()
@@ -436,6 +458,18 @@ struct StrengthSessionView: View {
         }
         showInputError = !logged
         if logged { focusedField = nil }
+    }
+}
+
+/// Lets `.swipeActions` work on the set rows outside a `List`. Needs iOS 27; earlier versions
+/// fall back to the rows' long-press menu.
+private struct SwipeActionsContainer: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 27, *) {
+            content.swipeActionsContainer()
+        } else {
+            content
+        }
     }
 }
 

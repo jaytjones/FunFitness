@@ -39,7 +39,7 @@ struct WidgetSnapshot {
     var sillyTitle: String
     var distanceTotal: String = "0 mi"
     var weightTotal: String = "0 lbs"
-    var distanceRemaining: String = "Log your first run!"
+    var distanceRemaining: String = "Log a walk or run!"
     var weightRemaining: String = "Log your first lift!"
     /// "❄️ Frosty Mile Chase", or nil when there's no challenge for the current month.
     var challengeTitle: String? = nil
@@ -52,7 +52,7 @@ struct WidgetSnapshot {
             activeThisWeek: false,
             distanceProgress: 0,
             weightProgress: 0,
-            nextDistanceMilestone: "Log your first run!",
+            nextDistanceMilestone: "Log a walk or run!",
             nextWeightMilestone: "Log your first lift!",
             sillyTitle: "Future Legend"
         )
@@ -66,7 +66,7 @@ struct WidgetSnapshot {
             activeThisWeek:           d?.bool(forKey: WidgetDataKey.activeThisWeek)          ?? false,
             distanceProgress:         d?.double(forKey: WidgetDataKey.distanceProgress)      ?? 0,
             weightProgress:           d?.double(forKey: WidgetDataKey.weightProgress)        ?? 0,
-            nextDistanceMilestone:    d?.string(forKey: WidgetDataKey.nextDistanceMilestone) ?? "Log your first run!",
+            nextDistanceMilestone:    d?.string(forKey: WidgetDataKey.nextDistanceMilestone) ?? "Log a walk or run!",
             nextWeightMilestone:      d?.string(forKey: WidgetDataKey.nextWeightMilestone)   ?? "Log your first lift!",
             sillyTitle:               d?.string(forKey: WidgetDataKey.sillyTitle)            ?? "Future Legend"
         )

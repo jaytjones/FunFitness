@@ -31,15 +31,16 @@ struct Milestone: Identifiable {
         self.fixedTitle = title
     }
 
-    /// Display title in the user's preferred units, e.g. "You've run 5 miles!" / "You've run 8 km!".
+    /// Display title in the user's preferred units, e.g. "You've covered 5 miles!" / "You've covered 8 km!".
+    /// "Covered", not "run": distance totals include walks too (TestFlight FB-0004).
     func title(pref: UnitPreference) -> String {
         if let fixedTitle { return fixedTitle }
         switch unit {
         case .kilometers:
             let value = UnitConverter.fromKm(threshold, to: pref)
             let amount = value.formatted(.number.precision(.fractionLength(0...1)))
-            if pref == .metric { return "You've run \(amount) km!" }
-            return "You've run \(amount) \(amount == "1" ? "mile" : "miles")!"
+            if pref == .metric { return "You've covered \(amount) km!" }
+            return "You've covered \(amount) \(amount == "1" ? "mile" : "miles")!"
         case .kilograms:
             let value = UnitConverter.fromKg(threshold, to: pref)
             let amount = value.formatted(.number.precision(.fractionLength(0)))

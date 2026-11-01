@@ -141,7 +141,7 @@ struct MediumWidgetView: View {
                 }
                 Spacer(minLength: 0)
                 MediumStatRow(
-                    label: "Run", systemImage: "figure.run",
+                    label: "Distance", systemImage: "figure.walk",
                     total: snapshot.distanceTotal, remaining: snapshot.distanceRemaining,
                     progress: snapshot.distanceProgress, tint: Color(red: 0.15, green: 0.39, blue: 0.92)
                 )
@@ -159,7 +159,7 @@ struct MediumWidgetView: View {
     }
 }
 
-/// "Run  12.4 mi" over a progress bar and "1.2 mi to next milestone".
+/// "Distance  12.4 mi" over a progress bar and "1.2 mi to next milestone".
 private struct MediumStatRow: View {
     let label: LocalizedStringKey
     let systemImage: String

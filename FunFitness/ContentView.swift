@@ -23,6 +23,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private var hasProfile: Bool { !profiles.isEmpty }
+    private var showsNowTracking: Bool { NowTrackingContent.isShowing }
 
     var body: some View {
         Group {
@@ -31,22 +32,28 @@ struct ContentView: View {
             } else {
                 TabView(selection: $selectedTab) {
                     HomeView(viewModel: viewModel)
+                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
                         .tabItem { Label("Home", systemImage: "house") }
                         .tag(0)
 
                     ProgressTabView(viewModel: viewModel)
+                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
                         .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
                         .tag(1)
 
                     AchievementsView(viewModel: viewModel)
+                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
                         .tabItem { Label("Achievements", systemImage: "trophy") }
                         .tag(2)
 
                     ProfileView(viewModel: viewModel)
+                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
                         .tabItem { Label("Profile", systemImage: "person.circle") }
                         .tag(3)
                 }
                 .tint(Color(hex: "#A78BFA"))
+                // Pinned "now tracking" bar on every tab while a walk/run or strength session runs. (FB-0003)
+                .nowTrackingAccessory(viewModel: viewModel, isShowing: showsNowTracking)
                 .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
                     if currentMilestoneIndex < viewModel.pendingMilestones.count {
                         let milestone = viewModel.pendingMilestones[currentMilestoneIndex]

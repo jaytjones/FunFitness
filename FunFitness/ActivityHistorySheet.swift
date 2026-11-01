@@ -154,6 +154,7 @@ struct ActivityHistorySheet: View {
         activity.notes    = notes
         activity.surface  = activity.activityType == .distance ? surface : nil
         try? context.save()
+        StrengthSessionManager.shared.syncWithStore()   // an edited live set updates there too (FB-0001)
         // An in-place edit doesn't reassign the activities array, so refresh the cached totals.
         viewModel.refreshTotals()
         // A local edit may lower a total, so revocation is allowed.

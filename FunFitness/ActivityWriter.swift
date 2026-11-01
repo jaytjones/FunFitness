@@ -218,6 +218,7 @@ struct ActivityWriter {
         context.delete(activity)
         try? context.save()
         if let sessionID { cleanUpSession(sessionID, context: context) }
+        StrengthSessionManager.shared.syncWithStore()   // keep a live session's set list in step (FB-0001)
     }
 
     // MARK: - Sessions (3.1 C1/C2)
@@ -308,6 +309,7 @@ struct ActivityWriter {
         for log in logs { context.delete(log) }
         for session in sessionRecords(sessionID, context: context) { context.delete(session) }
         try? context.save()
+        StrengthSessionManager.shared.syncWithStore()   // keep a live session's set list in step (FB-0001)
     }
 
     /// Splits a session back into separate entries that won't be auto-grouped again.
@@ -318,6 +320,7 @@ struct ActivityWriter {
         }
         for session in sessionRecords(sessionID, context: context) { context.delete(session) }
         try? context.save()
+        StrengthSessionManager.shared.syncWithStore()   // keep a live session's set list in step (FB-0001)
     }
 
     /// Takes one set out of its session; it won't be auto-grouped again.
@@ -327,6 +330,7 @@ struct ActivityWriter {
         activity.excludedFromAutoGrouping = true
         try? context.save()
         cleanUpSession(sessionID, context: context)
+        StrengthSessionManager.shared.syncWithStore()   // keep a live session's set list in step (FB-0001)
     }
 
     /// After a set leaves a session: drop an emptied session, or dissolve an automatic one that's

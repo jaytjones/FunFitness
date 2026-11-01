@@ -88,6 +88,44 @@ final class StrengthSessionManager {
         return logSet(type: last.type, valueSI: last.valueSI, reps: last.reps, at: date)
     }
 
+    /// Deletes a set from the session screen. Goes through the same delete as History, so totals,
+    /// badges and the stored session follow, and `syncWithStore` updates the live list.
+    @discardableResult
+    func deleteSet(id: UUID) -> Bool {
+        guard phase != .idle, let context, let viewModel,
+              let log = (try? context.fetch(FetchDescriptor<ActivityLog>(predicate: #Predicate { $0.id == id })))?.first
+        else { return false }
+        ActivityWriter.delete(log, context: context, viewModel: viewModel)
+        return true
+    }
+
+    /// Rebuilds the live set list from the logs saved in this session. ActivityWriter calls it
+    /// after every delete, edit, ungroup or remove-from-session, so a set deleted in History
+    /// also disappears here (TestFlight FB-0001). If the stored session was removed (its last set
+    /// was deleted, or it was ungrouped), the next set starts a new one.
+    func syncWithStore(at date: Date = Date()) {
+        guard phase != .idle, var current = session, let context, let record else { return }
+        let recordID = record.id
+        let recordExists = ((try? context.fetchCount(FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { $0.id == recordID }
+        ))) ?? 0) > 0
+        let sessionID: UUID? = recordID
+        let logs = recordExists ? ((try? context.fetch(FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.sessionID == sessionID },
+            sortBy: [SortDescriptor(\.loggedAt)]
+        ))) ?? []) : []
+        if !recordExists { self.record = nil }
+
+        let sets = logs.map {
+            StrengthSet(id: $0.id, type: $0.activityType, valueSI: $0.value, reps: $0.reps, loggedAt: $0.loggedAt)
+        }
+        guard sets != current.sets else { return }
+        current.replaceSets(sets)
+        session = current
+        if sets.isEmpty { NotificationManager.shared.cancel(.strengthRest) }
+        if phase == .active { liveActivity.updateStrength(for: self, at: date) }
+    }
+
     func skipRest(at date: Date = Date()) {
         guard phase == .active, var current = session else { return }
         current.skipRest()

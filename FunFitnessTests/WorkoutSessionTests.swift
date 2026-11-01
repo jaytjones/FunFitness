@@ -341,3 +341,93 @@ extension StrengthSessionManagerTests {
         manager.reset()
     }
 }
+
+// MARK: - Deleting and editing live sets (TestFlight FB-0001)
+
+extension StrengthSessionManagerTests {
+
+    private func loggedSets() throws -> [ActivityLog] {
+        try container.mainContext.fetch(FetchDescriptor<ActivityLog>(sortBy: [SortDescriptor(\.loggedAt)]))
+    }
+
+    @Test func deletingASetInHistoryRemovesItFromTheLiveSession() throws {
+        let vm = AppViewModel()
+        manager.start(restSeconds: 60, context: container.mainContext, viewModel: vm, at: date(0))
+        manager.logSet(type: .weight, valueSI: 60, reps: 10, at: date(1))
+        manager.logSet(type: .weight, valueSI: 40, reps: 12, at: date(2))
+
+        let wrong = try #require(try loggedSets().last)
+        ActivityWriter.delete(wrong, context: container.mainContext, viewModel: vm)
+
+        #expect(manager.session?.setCount == 1)
+        #expect(manager.session?.lastSet?.valueSI == 60)
+        // "Repeat last set" now repeats the set that's left, not the deleted one.
+        #expect(manager.repeatLastSet(at: date(3)))
+        #expect(try loggedSets().map(\.value) == [60, 60])
+        manager.reset()
+    }
+
+    @Test func deletingASetOnTheSessionScreenRemovesItEverywhere() throws {
+        let vm = AppViewModel()
+        manager.start(restSeconds: 60, context: container.mainContext, viewModel: vm, at: date(0))
+        manager.logSet(type: .weight, valueSI: 60, reps: 10, at: date(1))
+        manager.logSet(type: .weight, valueSI: 40, reps: 12, at: date(2))
+        let id = try #require(manager.session?.lastSet?.id)
+
+        #expect(manager.deleteSet(id: id))
+
+        #expect(manager.session?.setCount == 1)
+        #expect(try loggedSets().count == 1)
+        #expect(vm.totalWeight == 600)
+        manager.reset()
+    }
+
+    @Test func deletingTheOnlySetLetsTheNextSetStartANewSession() throws {
+        let context = container.mainContext
+        let vm = AppViewModel()
+        manager.start(restSeconds: 60, context: context, viewModel: vm, at: date(0))
+        manager.logSet(type: .weight, valueSI: 60, reps: 10, at: date(1))
+        manager.deleteSet(id: try #require(manager.session?.lastSet?.id))
+
+        #expect(manager.session?.setCount == 0)
+        #expect(try context.fetch(FetchDescriptor<WorkoutSession>()).isEmpty)
+
+        manager.logSet(type: .weight, valueSI: 50, reps: 8, at: date(2))
+        let session = try #require(try context.fetch(FetchDescriptor<WorkoutSession>()).first)
+        #expect(try loggedSets().map(\.sessionID) == [session.id])
+        #expect(manager.session?.setCount == 1)
+        manager.reset()
+    }
+
+    @Test func deletingTheSessionInHistoryEmptiesTheLiveList() throws {
+        let context = container.mainContext
+        let vm = AppViewModel()
+        manager.start(restSeconds: 60, context: context, viewModel: vm, at: date(0))
+        manager.logSet(type: .weight, valueSI: 60, reps: 10, at: date(1))
+        manager.logSet(type: .reps, valueSI: 15, reps: nil, at: date(2))
+        let sessionID = try #require(try loggedSets().first?.sessionID)
+
+        ActivityWriter.deleteSession(sessionID, context: context, viewModel: vm)
+
+        #expect(manager.session?.setCount == 0)
+        #expect(manager.session?.isResting(at: date(3)) == false)
+        manager.reset()
+    }
+
+    @Test func editingASetInHistoryUpdatesTheLiveSession() throws {
+        let context = container.mainContext
+        let vm = AppViewModel()
+        manager.start(restSeconds: 60, context: context, viewModel: vm, at: date(0))
+        manager.logSet(type: .weight, valueSI: 60, reps: 20, at: date(1))
+        let log = try #require(try loggedSets().first)
+
+        ActivityHistorySheet.applyEdit(
+            to: log, value: 60, reps: 12, loggedAt: log.loggedAt, notes: nil, surface: nil,
+            achievements: [], context: context, viewModel: vm
+        )
+
+        #expect(manager.session?.lastSet?.reps == 12)
+        #expect(manager.session?.totalLiftedKg == 720)
+        manager.reset()
+    }
+}

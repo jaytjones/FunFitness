@@ -76,12 +76,12 @@ struct ComparisonEngineTests {
     // v2.3: distance/weight titles follow the user's units instead of hardcoding imperial.
     @Test func generatedTitlesUseTheUsersUnits() throws {
         let d2 = try #require(ComparisonEngine.milestone(withId: "D2"))
-        #expect(d2.title(pref: .imperial) == "You've run 5 miles!")
+        #expect(d2.title(pref: .imperial) == "You've covered 5 miles!")
         #expect(d2.title(pref: .metric).contains("km"))
         #expect(!d2.title(pref: .metric).contains("mile"))
 
         let d1 = try #require(ComparisonEngine.milestone(withId: "D1"))
-        #expect(d1.title(pref: .imperial) == "You've run 1 mile!")
+        #expect(d1.title(pref: .imperial) == "You've covered 1 mile!")
 
         let w1 = try #require(ComparisonEngine.milestone(withId: "W1"))
         #expect(w1.title(pref: .imperial) == "You've lifted 500 lbs!")

@@ -46,6 +46,21 @@ struct StrengthSessionModelTests {
         #expect(session.restEndsAt == nil)
     }
 
+    // FB-0001: after a delete elsewhere the session takes the saved sets; the rest timer only
+    // stops when no sets are left.
+    @Test func replacingSetsKeepsRestUnlessEmpty() {
+        var session = StrengthSession(startedAt: date(0), restSeconds: 90)
+        let first = weightSet(kg: 60, reps: 10, at: 100)
+        session.log(first)
+        session.log(weightSet(kg: 60, reps: 10, at: 120))
+        session.replaceSets([first])
+        #expect(session.sets == [first])
+        #expect(session.isResting(at: date(130)))
+        session.replaceSets([])
+        #expect(session.setCount == 0)
+        #expect(!session.isResting(at: date(130)))
+    }
+
     @Test func totalsSeparateWeightedAndBodyweightSets() {
         var session = StrengthSession(startedAt: date(0))
         session.log(weightSet(kg: 60, reps: 10, at: 10))
