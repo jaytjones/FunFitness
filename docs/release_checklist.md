@@ -34,4 +34,5 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
 | Build | Commit / tag | Notes |
 |---|---|---|
 | 3.1 (9) | `65effb9` (tag `3.1-9`) | Archived as build 8; Xcode renumbered the upload to 9 (code identical). Repo set to 9 afterwards. |
-| 3.1 (10) | — | Next upload. |
+| 3.1 (10) | `Build 10` commit (tag `3.1-10` after upload) | TestFlight fixes FB-0001–FB-0004; docs no longer bundled in the app. |
+| 3.1 (11) | — | Next upload. |
