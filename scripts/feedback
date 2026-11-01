@@ -1,0 +1,5 @@
+#!/bin/zsh
+# Fetch new TestFlight feedback into docs/feedback/. See scripts/README.md.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec swift scripts/FetchFeedback.swift "$@"

@@ -110,3 +110,10 @@ xcuserdata/
 # End of https://www.toptal.com/developers/gitignore/api/xcode
 # Xcode Cloud manifest (not used; Xcode recreates it)
 *.xcodeproj/xcshareddata/xcodecloud/
+
+# App Store Connect API keys (never commit)
+*.p8
+
+# TestFlight feedback pulled by scripts/feedback (tester names/emails, screenshots). Local only;
+# the triaged review doc (docs/YYYYMMDD_testflight_feedback.md) is what gets committed.
+docs/feedback/
