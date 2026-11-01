@@ -1,4 +1,4 @@
-Home Screen widgets as HUD readouts: small (weekly streak and title) and medium (challenge % plus Run and Lift bars with "to next milestone").
+Home Screen widgets as HUD readouts: small (weekly streak and title) and medium (challenge % plus Distance and Lift bars with "to next milestone").
 
 **Maps to:** `SmallWidgetView` and `MediumWidgetView` in FunFitnessWidgets.
 

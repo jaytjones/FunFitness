@@ -6,7 +6,7 @@ No logo yet; set FunFitness in the display face (Chakra Petch, uppercase, bold) 
 
 ## Content fundamentals
 
-- Write from the user's side, second person: "You've run 5 miles!", "1.6 mi to go".
+- Write from the user's side, second person: "You've covered 5 miles!", "1.6 mi to go".
 - Content is playful, chrome is plain. Jokes live in milestone comparisons and silly titles ("That's about 270 blue whales lined up nose to tail!", "Elite Elephant Wrangler"). Labels, buttons and HUD readouts are short and literal: NEXT 03/15, DIST 3.4 / 5.0 MI, KEEP GOING.
 - Casing: display and HUD text is uppercase (CSS `text-transform`, so the source strings stay sentence case for VoiceOver). Body copy and comparisons are sentence case.
 - Emoji: only where the app already uses them, which is pack art and challenge or season marks (🐳, 🎃). Never decorate chrome with emoji.
@@ -25,7 +25,7 @@ The reference mockup invented several game numbers. Each one is replaced with so
 | +120 XP ON UNLOCK | There is no XP | **+1 BADGE · 4 TO GOLD** | unlocked count vs next tier threshold |
 | EPIC tag on the next card | Made up | **COMMON** (D2 is 3rd of 15) | rarity rule below |
 | NEXT 03/12 | Wrong total | **NEXT 03/15** | position of D2 in the 15 distance milestones |
-| 2× BLUE WHALE | Not real copy | **YOU'VE RUN 5 MILES!** + "That's about 270 blue whales lined up nose to tail!" | `Milestone.title`, pack comparison |
+| 2× BLUE WHALE | Not real copy | **YOU'VE COVERED 5 MILES!** + "That's about 270 blue whales lined up nose to tail!" | `Milestone.title`, pack comparison |
 | COLLECTION · 3/12 | Wrong totals | **COLLECTION · 8/42** | unlocked achievements / 42 |
 | 9 days, best: 14 | Streaks are weekly | **6 weeks · best 9**, 1 shield | `StreakEngine` |
 | 1,240 lbs · 2.5 lions | Not the ticker's output | **1,240 lbs · 2.6 grizzly bears** | `ReferenceUnit` |

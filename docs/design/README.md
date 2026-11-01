@@ -15,6 +15,26 @@ The links are private to April's account until shared.
 - **No default style chosen yet.** Don't build any style until one is picked.
 - Still deciding between one style, or switchable styles shipped one at a time.
 
+## Changes since build 9
+
+The app changed after these guides were written. Fold these into whichever style is chosen.
+Details: `docs/20261031_testflight_feedback.md`.
+
+- **New component, NowTrackingBar (22nd).** A pinned bar above the tab bar on every tab while a walk/run
+  or strength session is running or waiting for review: icon, title, live detail, chevron ("Walk · 1.2 mi ·
+  18:42", "Strength · 3 sets · Rest 0:45"). Tap reopens the session. iOS 26.1+ uses the tab bar's bottom
+  accessory (system glass, shrinks inline when the tab bar minimizes); earlier iOS uses a material capsule.
+  Code: `NowTrackingBar.swift` (`NowTrackingContent`, `NowTrackingRow`). Not specced in any style yet. Spec
+  it once a style is picked, next to TabBar and LiveActivity. (FB-0003)
+- **Home's Track and Strength cards only show when idle.** While a session runs, the bar replaces them.
+- **Live strength sets can be deleted:** swipe left (iOS 27+) or long-press → Delete Set on the session
+  screen's set list. Same rules as ActivityRow swipe actions. (FB-0001)
+- **Copy:** distance milestones say "You've covered 5 miles!", not "You've run". The medium widget's
+  first row is "Distance", not "Run", and its empty state is "Log a walk or run!". (FB-0004; the
+  guides above are updated.)
+- **The `+` button (LogButton) stays as it is until a style is picked.** Testers find it bland
+  (TestFlight FB-0015).
+
 ## How to use these files
 
 - `tokens.json` is the source of truth for colors (light and dark values), type, spacing and radius. Generate Swift tokens and asset-catalog colors from it; don't copy hex values by hand.
