@@ -97,7 +97,6 @@ struct QuickLogView: View {
             }
 
             Button("Log \(title)", action: log)
-                .tint(.green)
                 .disabled(amount <= 0 || (needsExercise && selectedName == nil))
         }
     }

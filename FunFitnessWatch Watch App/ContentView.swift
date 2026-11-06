@@ -31,7 +31,7 @@ struct ContentView: View {
                                 .font(.headline)
                             Gauge(value: context.effortFraction(asOf: timeline.date)) { EmptyView() }
                                 .gaugeStyle(.linearCapacity)
-                                .tint(.yellow)
+                                .tint(Color.brandYellow)
                                 .accessibilityLabel("Effort Points progress")
                             if let streak = context.currentStreakWeeks {
                                 Text("🔥 \(streak)-week streak")
@@ -53,7 +53,6 @@ struct ContentView: View {
                     } label: {
                         Label("Outdoor \(kind.name)", systemImage: kind.symbol)
                     }
-                    .tint(.green)
                 }
                 if let error = workout.errorMessage {
                     Text(error).font(.footnote).foregroundStyle(.red)
@@ -114,7 +113,7 @@ struct WorkoutView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(elapsedText(workout.elapsed(at: timeline.date)))
                     .font(.system(.title, design: .rounded).monospacedDigit().weight(.semibold))
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(Color.brandYellow)
                 Text(distanceText(workout.distanceMeters))
                     .font(.system(.title2, design: .rounded).monospacedDigit())
                 if let bpm = workout.heartRate {
@@ -173,6 +172,12 @@ struct WorkoutView: View {
         let h = total / 3600, m = (total % 3600) / 60, s = total % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%02d:%02d", m, s)
     }
+}
+
+extension Color {
+    /// Playful Bold `brand-yellow` (#FFD43B). The Watch keeps its black ground; the pink accent
+    /// (`accent`) is the app's AccentColor. (3.2)
+    static let brandYellow = Color(red: 1, green: 0xD4 / 255, blue: 0x3B / 255)
 }
 
 #Preview {
