@@ -18,7 +18,7 @@ struct WatchConnectorTests {
     private func makeStore() throws -> (ModelContainer, AppViewModel) {
         UserDefaults.standard.removeObject(forKey: "watchProcessedLogIDs")
         let container = try ModelContainer(
-            for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self, CustomExercise.self,
+            for: ActivityLog.self, UnlockedAchievement.self, WorkoutSession.self, CustomExercise.self, RouteSummary.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let viewModel = AppViewModel()
@@ -70,5 +70,26 @@ struct WatchConnectorTests {
         // The same workout again (e.g. Health import got it first) isn't counted twice.
         WatchConnector.shared.receive(WatchQuickLog(id: UUID(), kind: .distance, value: 5, date: Date(), healthKitUUID: uuid))
         #expect(try container.mainContext.fetchCount(FetchDescriptor<ActivityLog>()) == 1)
+    }
+
+    @Test func trackedWatchRunGetsARoute() throws {
+        let (container, viewModel) = try makeStore()
+        defer { withExtendedLifetime(viewModel) {} }   // the connector holds it weakly
+        let points = [
+            RoutePoint(latitude: 30.0, longitude: -97.0, timestamp: Date(), horizontalAccuracy: 5),
+            RoutePoint(latitude: 30.01, longitude: -97.0, timestamp: Date(), horizontalAccuracy: 5),
+        ]
+        WatchConnector.shared.receive(WatchQuickLog(
+            id: UUID(), kind: .distance, value: 1.1, date: Date(), healthKitUUID: UUID(),
+            routePolyline: RoutePolyline.encode(points), movingSeconds: 600, startDate: Date().addingTimeInterval(-660),
+            trackedKind: .run
+        ))
+        let log = try #require(try container.mainContext.fetch(FetchDescriptor<ActivityLog>()).first)
+        #expect(log.source == .tracked)
+        let route = try #require(try container.mainContext.fetch(FetchDescriptor<RouteSummary>()).first)
+        #expect(route.activityID == log.id)
+        #expect(route.kind == .run)
+        #expect(route.movingSeconds == 600)
+        #expect(route.coordinates.count == 2)
     }
 }

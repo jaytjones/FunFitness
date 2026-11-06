@@ -1,6 +1,6 @@
 //
 //  RouteMath.swift
-//  FunFitness
+//  FunFitness (in WatchShared/: compiled into the iPhone app and the Watch app)
 //
 //  Pure, UI-free math for live walk/run tracking (3.1 B1a): GPS fix filtering, distance and
 //  moving-time accumulation across pauses, pace, route downsampling, and the compact polyline

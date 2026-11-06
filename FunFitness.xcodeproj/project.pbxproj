@@ -746,6 +746,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = FunFitness;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your workouts and heart rate so they count toward your totals.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness saves walks and runs you track on your Apple Watch to Apple Health.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness records the route of walks and runs you track on your Apple Watch.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jaytjones.FunFitness;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -781,6 +782,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = FunFitness;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "FunFitness reads your workouts and heart rate so they count toward your totals.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "FunFitness saves walks and runs you track on your Apple Watch to Apple Health.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "FunFitness records the route of walks and runs you track on your Apple Watch.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jaytjones.FunFitness;
 				LD_RUNPATH_SEARCH_PATHS = (

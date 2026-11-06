@@ -113,13 +113,29 @@ final class WatchConnector: NSObject {
                ((try? context.fetchCount(FetchDescriptor<ActivityLog>(predicate: #Predicate { $0.healthKitUUID == uuid }))) ?? 0) > 0 {
                 milestones = []
             } else {
+                // With moving time (build 12+) it's a tracked walk/run like one recorded on the phone:
+                // it gets a RouteSummary (the map, when there's a route) and real Effort Points.
+                let isTracked = log.movingSeconds != nil && log.trackedKind != nil
+                let source: ActivitySource = isTracked ? .tracked : (log.healthKitUUID == nil ? .manual : .healthKit)
                 let result = ActivityWriter.logSyncingViewModel(
                     type: .distance, value: log.value, reps: nil, date: log.date,
-                    source: log.healthKitUUID == nil ? .manual : .healthKit, healthKitUUID: log.healthKitUUID,
+                    source: source, healthKitUUID: log.healthKitUUID,
                     context: context, viewModel: viewModel
                 )
                 result.activity.avgHeartRate = log.averageHeartRate
                 result.activity.maxHeartRate = log.maximumHeartRate
+                if isTracked, let moving = log.movingSeconds, let kind = log.trackedKind {
+                    context.insert(RouteSummary(
+                        activityID: result.activity.id,
+                        polyline: log.routePolyline,
+                        distanceKm: log.value,
+                        startedAt: log.startDate ?? log.date.addingTimeInterval(-moving),
+                        endedAt: log.date,
+                        movingSeconds: moving,
+                        kind: kind,
+                        healthKitWorkoutUUID: log.healthKitUUID
+                    ))
+                }
                 try? context.save()
                 milestones = result.newMilestones
             }

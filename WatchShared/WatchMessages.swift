@@ -43,6 +43,12 @@ nonisolated struct WatchQuickLog: Codable, Equatable, Sendable, Identifiable {
     var healthKitUUID: UUID? = nil
     var averageHeartRate: Double? = nil
     var maximumHeartRate: Double? = nil
+    // A tracked Watch walk/run (3.1 build 12): the downsampled route (`RoutePolyline`), moving
+    // time, start, and walk/run, so the phone can draw it and score it like a phone-tracked one.
+    var routePolyline: Data? = nil
+    var movingSeconds: Double? = nil
+    var startDate: Date? = nil
+    var trackedKind: TrackedWorkoutKind? = nil
 
     func encoded() -> [String: Any] {
         guard let data = try? JSONEncoder().encode(self) else { return [:] }
