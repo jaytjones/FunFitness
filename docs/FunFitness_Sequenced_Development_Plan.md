@@ -141,7 +141,7 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.1 — "On Your Wrist, On the Map"
 
-> **Status: in TestFlight (builds 5–11), closing out with build 12.**
+> **Status: code complete (2026-11-06).** Builds 5–11 in TestFlight; Watch GPS routes, stats glance and complications are in the next upload. Remaining: the 5K field test (route accuracy and battery on iPhone and Watch).
 
 **Theme:** Presence during the workout itself.
 
@@ -161,6 +161,8 @@ Three dependency rules drive the entire order below:
 ---
 
 ## Release 3.2 — "New Look"
+
+> **Status: built (2026-11-06), not yet uploaded.** Foundation (`b36d94b`) and structure (`2b0137c`). Not yet: bundled Fredoka/Nunito fonts (SF Pro Rounded fallback in use), a contrast/Dynamic Type audit on device.
 
 **Theme:** One coherent visual identity: **Playful Bold** (`docs/design/playful-bold/`) becomes the app's style, replacing today's look.
 
