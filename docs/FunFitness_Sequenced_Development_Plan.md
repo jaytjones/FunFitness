@@ -1,6 +1,6 @@
 # FunFitness — Sequenced Development Plan
 
-**Prepared:** July 30, 2026
+**Prepared:** July 30, 2026 · **Revised:** November 6, 2026 (releases renumbered after 3.1; see "Revision history" at the end)
 **Principle:** Every release is a complete, shippable app. No release depends on a future one to be useful, and each one widens the funnel: first make the solo experience excellent, then make it sticky, then make it connected.
 
 ---
@@ -18,6 +18,8 @@ Three dependency rules drive the entire order below:
 ---
 
 ## Release 1.1 — "The Polished MVP" (App Store debut)
+
+> **Status: built (July 2026).** App Store debut postponed pending the personal-vs-business name decision; the app is in TestFlight. CI (GitHub Actions) is still open.
 
 **Theme:** Ship what exists, but finished.
 
@@ -37,6 +39,8 @@ Three dependency rules drive the entire order below:
 
 ## Release 1.2 — "Everyone's Invited"
 
+> **Status: built (July 2026).**
+
 **Theme:** Units, profile, and data trust. The invisible release that makes everything later possible.
 
 **Scope**
@@ -54,6 +58,8 @@ Three dependency rules drive the entire order below:
 ---
 
 ## Release 1.3 — "The Habit Loop"
+
+> **Status: built (July 2026).**
 
 **Theme:** Come back tomorrow. All local, no accounts, no backend.
 
@@ -74,6 +80,8 @@ Three dependency rules drive the entire order below:
 
 ## Release 1.4 — "It Logs Itself"
 
+> **Status: built (August 2026).** HealthKit sync is distance-only (Health has no "weight lifted" metric).
+
 **Theme:** Kill manual-entry friction; make sharing gorgeous.
 
 **Scope**
@@ -92,6 +100,8 @@ Three dependency rules drive the entire order below:
 
 ## Release 2.1 — "Your Data, Everywhere"
 
+> **Status: built (August 2026), changed scope.** iCloud-only sync through SwiftData + CloudKit private database; no Sign in with Apple (moved to 3.4 Social, which needs a real identity), so there is no server account to delete. CloudKit Production schema deployed October 2026. Two-device sync smoke test still open.
+
 **Theme:** Accounts and sync — the bridge release.
 
 **Scope**
@@ -109,6 +119,8 @@ Three dependency rules drive the entire order below:
 ---
 
 ## Release 2.2 — "Always Something New"
+
+> **Status: built (September 2026).** Followed by two unplanned hardening releases: **2.3** achievement foundation (reconciler, unit-correct titles, reference units, Journey-anchor tiers) and **2.4** (widget extension target, Swift 6, fact-check, TestFlight feedback fixes).
 
 **Theme:** Content depth and self-competition.
 
@@ -129,34 +141,74 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.1 — "On Your Wrist, On the Map"
 
+> **Status: in TestFlight (builds 5–11), closing out with build 12.**
+
 **Theme:** Presence during the workout itself.
 
 **Scope**
-- **Apple Watch companion app**: quick-log, streak glance, complication
-- **GPS activity tracking** (battery-sane background location) with route capture
-- **Journey Mode v1**: cumulative distance rendered as an illustrated virtual trip (Austin → San Antonio → Houston, reusing existing milestone copy) with checkpoint facts
-- Live Activity during a tracked workout
+- **GPS activity tracking** with route capture, works with or without Apple Health ✅
+- **Live Activity** during a tracked walk/run and a live strength session ✅
+- **Apple Watch companion app**: outdoor walk/run tracking saved to Health, quick log for lifts, bodyweight sets and timed activities ✅ (build 11); GPS routes, a stats glance (streak, weekly Effort Points, totals) and a complication (build 12)
+- **Journey Mode v1**: Texas Triangle and Appalachian Trail with a picker, map, and checkpoint facts ✅ (build 11; the checkpoint celebration moves to 3.2 so it's built once, in the new style)
+- Added from TestFlight feedback: heart rate from Health, medium widget, workout sessions and sets, session timing and calorie estimates, saving strength workouts to Health, distance surface, named exercises and muscle groups, Effort Points ✅
 
 **Why this order:** GPS and Watch both demand physical field testing — isolating them in one release keeps that testing burden contained. Journey Mode ships alongside GPS because live-tracked distance flowing into a visible journey map is the payoff moment.
 
 **Why it's usable at this stage:** FunFitness graduates from "logbook" to "companion" — present during exercise, not just after. Still fully valuable to a solo user.
 
-**Exit criteria:** A tracked 5K produces an accurate route with acceptable battery cost; watch-logged workouts sync to phone; Journey Mode reflects the run within seconds.
+**Exit criteria:** A tracked 5K produces an accurate route with acceptable battery cost (iPhone and Watch); watch-logged workouts sync to phone; Journey Mode reflects the run within seconds.
 
 ---
 
-## Release 3.2 — "Bring Your Friends"
+## Release 3.2 — "New Look"
+
+**Theme:** One coherent visual identity: **Playful Bold** (`docs/design/playful-bold/`) becomes the app's style, replacing today's look.
+
+**Scope**
+- **Style foundation (no visible change, its own TestFlight build):** Swift tokens generated from `tokens.json`; a `Style` environment value; every hard-coded color, gradient and font replaced with tokens; slots for the parts each style restructures (tab bar, log button, Home header, badges, celebration). Called "Style" in code; `activeTheme` stays the comparison pack.
+- **Playful Bold:** Sunny (light) is primary, After Dark (dark) the variant. Floating word-only tab bar (Home · Progress · Badges · You); a 64pt log button beside the tab bar with a long-press type menu (closes TestFlight D1); Home leads with one hero stat, other types as flat tiles; card gradients become flat fills with outlines; the pack picker becomes "Compare with"; share cards always render in Sunny.
+- Everything that draws UI follows: widgets, Live Activity, the NowTrackingBar (specced in this style), share cards, the Watch app's accent.
+- **Journey checkpoint celebration**, built directly in the new style.
+- **Style setting stored on the profile** (`UserProfile.activeStyleID`, synced through iCloud), shipped with a single style so every device agrees before 3.3 adds more.
+
+**Why this order:** Every later release adds screens (style picker, social). Restyling first means those are built once. Dropping the old look, rather than keeping it as a fourth style, avoids a fourth variant of every restructured screen and keeps the test matrix at two appearances per style.
+
+**Why it's usable at this stage:** Same features, a clearer and friendlier app — and the bland `+` button (the most-repeated tester complaint about looks) is fixed.
+
+**Exit criteria:** No hard-coded colors or fonts remain outside the token files; both appearances pass a contrast audit and Dynamic Type up to AX sizes; widgets, Live Activity, share cards and Watch match the style; the foundation build shows no visual change.
+
+---
+
+## Release 3.3 — "Your Style"
+
+**Theme:** Choice and reward — styles become something you earn or buy.
+
+**Scope**
+- **Arcade** as the second style (structurally closest to Playful Bold, so cheaper to add)
+- **Style catalog with unlock rules** — a mix of earned (e.g. a rank or badge count) and purchased; exact rules **TBD (Jay)** before this release starts
+- Style picker in Profile with live previews of locked styles
+- **StoreKit 2** pulled forward from 3.5 if any style is sold, so purchases and restore are proven before theme packs use them
+- **Field Guide** (the structural outlier: ruled sections, rulers, redrawn charts) follows here or with 3.5, if still wanted
+
+**Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges or App Store entitlements, so nothing new is stored.
+
+**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold).
+
+---
+
+## Release 3.4 — "Bring Your Friends"
 
 **Theme:** The social layer, in FunFitness's voice.
 
 **Scope**
+- **Sign in with Apple** (deferred from 2.1) for a real identity
 - Lightweight backend for social graph (friends, activity visibility) — CloudKit sharing or a small hosted service
 - Friends feed: see friends' unlocks, send a "high five"
 - **Friend Duels**: weekly head-to-heads scored in silly units ("who lifts more corgis this week?") with gentle, funny consolation screens
 - Friendly leaderboards denominated in theme units
 - Privacy controls: private-by-default, granular sharing
 
-**Why this order:** Social is deliberately late. It requires identity (2.1), benefits from content depth (2.2), and is the first feature set with abuse/moderation surface area. By now the solo product is strong enough that social is amplification, not a crutch.
+**Why this order:** Social is deliberately late. It requires identity, benefits from content depth (2.2) and a finished visual identity (3.2–3.3), and is the first feature set with abuse/moderation surface area. By now the solo product is strong enough that social is amplification, not a crutch.
 
 **Why it's usable at this stage:** Users without friends on the app lose nothing; users with friends gain the accountability loop that market research shows carries people past month one.
 
@@ -164,7 +216,7 @@ Three dependency rules drive the entire order below:
 
 ---
 
-## Release 3.3 — "The Franchise"
+## Release 3.5 — "The Franchise"
 
 **Theme:** Personality and sustainability.
 
@@ -172,15 +224,27 @@ Three dependency rules drive the entire order below:
 - **The Mascot**: companion character reacting to progress (widget-ready) — budget illustrator time separately
 - **Collectible Trophy Shelf**: achievements as illustrated collectible cards
 - **Absurd Units Converter**: standalone screenshot-bait tool
-- Theme-pack IAP via StoreKit 2 (the 2.2 pack pipeline becomes the storefront)
+- Theme-pack IAP via StoreKit 2 (the 2.2 pack pipeline becomes the storefront); comparison copy moves from Swift to bundled JSON first (the exercise catalog already did in 3.1)
 - Community-submitted comparisons with curation/moderation pipeline
 - Milestone Remix: generated one-liner comparisons with curated fallback
 
-**Why this order:** Monetization arrives only after the product has proven retention (fair to users, better conversion). Community submissions need the moderation muscle built in 3.2. The mascot lands last because it's the largest pure-design investment and every prior release gives it more states to react to.
+**Why this order:** Monetization arrives only after the product has proven retention (fair to users, better conversion). Community submissions need the moderation muscle built in 3.4. The mascot lands last because it's the largest pure-design investment and every prior release gives it more states to react to.
 
 **Why it's usable at this stage:** This is the end-state identity: a self-sustaining, personality-rich product with a content flywheel (community packs) and a revenue model that sells *jokes*, not access to your own data.
 
 **Exit criteria:** IAP purchase/restore works across devices; at least one community pack ships through the full submission→curation→release pipeline; mascot states cover the core loop.
+
+---
+
+## Backlog (no release yet)
+
+- C8 weather (WeatherKit) and music context on workouts — parked
+- Per-set list in the log sheet, if testers dislike the Sets stepper
+- C6 body heat map (needs artwork); Effort Points framed in reference units
+- iOS 26 minimum for live iPhone workouts (`HKWorkoutSession`); recovering a run after the app is killed
+- GitHub Actions CI; two-device iCloud sync smoke test
+- Public App Store launch (personal vs business name), external testers, App Privacy review
+- Action-plan ideas: XP levels, gear/shoe tracking, "Explain my workout" receipts
 
 ---
 
@@ -192,11 +256,23 @@ Three dependency rules drive the entire order below:
         └──► 1.3 Streaks/Notifications ◄───────────────────┤
                              │                             │
                              ▼                             ▼
-                    2.1 Accounts + Sync ──► 2.2 Challenges/Content
-                             │                             │
-              ┌──────────────┴──────────────┐              │
-              ▼                             ▼              ▼
-      3.1 Watch + GPS + Journey     3.2 Social/Duels ──► 3.3 Mascot/IAP/Community
+                    2.1 iCloud Sync ──► 2.2 Challenges/Content ──► 2.3/2.4 Hardening
+                             │                                          │
+                             ▼                                          ▼
+                    3.1 Watch + GPS + Journey ──► 3.2 New Look (Playful Bold)
+                                                         │
+                                                         ▼
+                                                  3.3 Your Style (Arcade + unlocks)
+                                                         │
+                                                         ▼
+                                                  3.4 Social/Duels ──► 3.5 Mascot/IAP/Community
 ```
 
-**The through-line:** at 1.1 it's a finished toy; at 1.4 it's a real tracker; at 2.2 it's a habit; at 3.3 it's a brand. A user who stops updating at any release still owns a complete app — and the silly comparisons get louder, not quieter, at every step.
+**The through-line:** at 1.1 it's a finished toy; at 1.4 it's a real tracker; at 2.2 it's a habit; at 3.2 it has a face; at 3.5 it's a brand. A user who stops updating at any release still owns a complete app — and the silly comparisons get louder, not quieter, at every step.
+
+---
+
+## Revision history
+
+- **2026-07-30:** original plan (1.1 → 3.3).
+- **2026-11-06 (Jay):** after 3.1, a visual-identity release is inserted. Playful Bold becomes the default style (today's look is retired, not kept as a fourth style); Arcade and Field Guide become unlockable (earned + purchased, rules TBD); the chosen style syncs across devices. Releases renumbered: 3.2 New Look, 3.3 Your Style, 3.4 Social (was 3.2), 3.5 Franchise (was 3.3).

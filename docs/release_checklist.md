@@ -35,4 +35,5 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
 |---|---|---|
 | 3.1 (9) | `65effb9` (tag `3.1-9`) | Archived as build 8; Xcode renumbered the upload to 9 (code identical). Repo set to 9 afterwards. |
 | 3.1 (10) | `5a87f78` (tag `3.1-10`) | TestFlight fixes FB-0001–FB-0004; docs no longer bundled in the app. Uploaded 2026-10-31; build 9 expired. First distribute failed until the updated Program License Agreement was accepted. |
-| 3.1 (11) | — | Next upload. |
+| 3.1 (11) | `382d9fc` (tag `3.1-11`) | C7 Effort Points, C3/C6 exercises, Journey Mode, first Apple Watch app. Archived as build 10; Xcode renumbered the upload to 11 (code identical). Repo set to 11 afterwards. |
+| 3.1 (12) | — | Next upload. |

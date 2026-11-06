@@ -32,6 +32,16 @@ struct BuildNumberTests {
         #expect(widget.build == app.build)
     }
 
+    @Test func watchAppMatchesTheApp() throws {
+        // The Watch app is embedded in FunFitness.app/Watch and must match too (3.1).
+        let app = versions(of: .main)
+        let watchURL = Bundle.main.bundleURL.appendingPathComponent("Watch/FunFitnessWatch Watch App.app")
+        let watch = versions(of: try #require(Bundle(url: watchURL)))
+
+        #expect(watch.version == app.version)
+        #expect(watch.build == app.build)
+    }
+
     @Test func buildNumberIsAWholeNumber() throws {
         // App Store Connect compares builds numerically; keep it a plain integer (e.g. "9").
         let build = try #require(versions(of: .main).build)
