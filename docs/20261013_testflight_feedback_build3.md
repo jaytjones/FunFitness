@@ -199,6 +199,15 @@ The items below all depend on a parent "workout" that groups entries.
   expand into three logs. Total weight lifted stays as it is today.
 
 ### C3. Named exercises
+
+> **Status (2026-11-06): built for 3.1 (11).** 45 bundled exercises in `FunFitness/Exercises.json`
+> (`ExerciseCatalog`; ids are persisted, never rename them) plus custom exercises
+> (`CustomExercise` @Model, synced). Jay's decisions: an exercise is **required** for every new
+> Weight/Reps set in the log sheet and live session (prefilled from the last one; repeats, Siri and
+> the Live Activity's Log Set inherit it); older entries stay generic and can be named from Edit.
+> Rows, History, the live set list, the Live Activity and CSV/JSON export (schema 1.5) show the
+> name. The comparison-copy JSON move stays at ~3.3. **CloudKit deploy needed before build 11:**
+> new record type `CD_CustomExercise` and field `CD_ActivityLog.CD_exerciseID`.
 > "Should be able to add specific activities (bench press, upright row) and not just generic reps and
 > weights" — 2026-10-10
 
@@ -239,6 +248,11 @@ The items below all depend on a parent "workout" that groups entries.
   it should come after 3.1.
 
 ### C6. Recently used muscle groups
+
+> **Status (2026-11-06): built for 3.1 (11).** Progress tab: "Muscles Worked This Week" chips
+> (sets per muscle group from named exercises) and "Exercise Records" (heaviest weight, then most
+> reps; most reps for bodyweight moves), from `ExerciseStats`. **Future enhancement (Jay):** a
+> front/back body heat map shaded by recent use — needs artwork.
 > "Should we track muscle groups used recently, like the Peloton app does?" — 2026-10-12
 
 - Depends on C3 (exercises tagged with muscle groups). Could show as a body heat map or a "muscles

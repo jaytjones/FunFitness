@@ -63,7 +63,7 @@ enum WorkoutLiveActivityContent {
             elapsedText: UnitConverter.elapsedString(elapsedSeconds),
             primaryValue: "\(session.setCount)",
             primaryLabel: session.setCount == 1 ? "Set" : "Sets",
-            secondaryValue: session.lastSet.map { setText($0, pref: pref) } ?? "—",
+            secondaryValue: session.lastSet.map { namedSetText($0, pref: pref) } ?? "—",
             secondaryLabel: "Last set",
             comparison: strengthComparison(session: session, isFinished: isFinished, pref: pref, packId: packId),
             restStart: resting ? session.restStartedAt : nil,
@@ -75,6 +75,12 @@ enum WorkoutLiveActivityContent {
     /// "135 lbs × 10" or "20 reps".
     static func setText(_ set: StrengthSet, pref: UnitPreference) -> String {
         UnitConverter.displayString(set.valueSI, type: set.type, reps: set.reps, pref: pref)
+    }
+
+    /// "Bench Press · 135 lbs × 10", or just the numbers for a set without an exercise. (3.1 C3)
+    static func namedSetText(_ set: StrengthSet, pref: UnitPreference) -> String {
+        guard let name = ExerciseLibrary.shared.exercise(id: set.exerciseID)?.name else { return setText(set, pref: pref) }
+        return "\(name) · \(setText(set, pref: pref))"
     }
 
     private static func strengthComparison(session: StrengthSession, isFinished: Bool, pref: UnitPreference, packId: String) -> String? {

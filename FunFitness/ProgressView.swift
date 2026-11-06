@@ -61,6 +61,8 @@ struct ProgressTabView: View {
                                 selection: $analyticsType
                             )
                             PersonalRecordsCard(types: visibleTypes, activities: activities, pref: pref)
+                            MusclesWorkedCard(activities: activities)
+                            ExerciseRecordsCard(activities: activities, pref: pref)
                             ActivityHeatmapCard(activities: activities)
                         }
 

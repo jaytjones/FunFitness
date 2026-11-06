@@ -57,7 +57,7 @@ final class StrengthSessionManager {
     /// Saves a set and starts the rest timer. `valueSI` is kg per rep for `.weight` (with `reps`),
     /// or the rep count for bodyweight `.reps`. Returns false if there's no active session.
     @discardableResult
-    func logSet(type: ActivityType, valueSI: Double, reps: Int?, at date: Date = Date()) -> Bool {
+    func logSet(type: ActivityType, valueSI: Double, reps: Int?, exerciseID: String? = nil, at date: Date = Date()) -> Bool {
         guard phase == .active, var current = session, let context, let viewModel, valueSI > 0 else { return false }
         let record = self.record ?? {
             let new = WorkoutSession(startedAt: current.startedAt, endedAt: date)
@@ -69,9 +69,12 @@ final class StrengthSessionManager {
         // Weight and bodyweight reps have no Health equivalent, so there's no write-back.
         let saved = ActivityWriter.logSyncingViewModel(
             type: type, value: valueSI, reps: reps, date: date, source: .manual, sessionID: record.id,
-            context: context, viewModel: viewModel
+            exerciseID: exerciseID, context: context, viewModel: viewModel
         )
-        current.log(StrengthSet(id: saved.activity.id, type: type, valueSI: valueSI, reps: saved.activity.reps, loggedAt: date))
+        current.log(StrengthSet(
+            id: saved.activity.id, type: type, valueSI: valueSI, reps: saved.activity.reps, loggedAt: date,
+            exerciseID: saved.activity.exerciseID
+        ))
         session = current
         viewModel.celebrateOrDefer(saved.newMilestones)
         if let restEndsAt = current.restEndsAt {
@@ -85,7 +88,7 @@ final class StrengthSessionManager {
     @discardableResult
     func repeatLastSet(at date: Date = Date()) -> Bool {
         guard let last = session?.lastSet else { return false }
-        return logSet(type: last.type, valueSI: last.valueSI, reps: last.reps, at: date)
+        return logSet(type: last.type, valueSI: last.valueSI, reps: last.reps, exerciseID: last.exerciseID, at: date)
     }
 
     /// Deletes a set from the session screen. Goes through the same delete as History, so totals,
@@ -117,7 +120,10 @@ final class StrengthSessionManager {
         if !recordExists { self.record = nil }
 
         let sets = logs.map {
-            StrengthSet(id: $0.id, type: $0.activityType, valueSI: $0.value, reps: $0.reps, loggedAt: $0.loggedAt)
+            StrengthSet(
+                id: $0.id, type: $0.activityType, valueSI: $0.value, reps: $0.reps, loggedAt: $0.loggedAt,
+                exerciseID: $0.exerciseID
+            )
         }
         guard sets != current.sets else { return }
         current.replaceSets(sets)

@@ -75,6 +75,9 @@ final class ActivityLog {
     var sessionID: UUID?
     // Set when the person ungroups this entry from a session, so it's never auto-grouped again.
     var excludedFromAutoGrouping: Bool = false
+    // The named exercise for a Weight/Reps entry (3.1 C3): a bundled id ("bench-press") or
+    // "custom-<uuid>". nil = generic, as every entry before 3.1 (11) is.
+    var exerciseID: String?
 
     init(
         id: UUID = UUID(),
@@ -119,10 +122,11 @@ final class ActivityLog {
     }
 }
 
-// Equatable by id + value + loggedAt + reps so onChange(of: activities) fires on
+// Equatable by id + value + loggedAt + reps + exercise so onChange(of: activities) fires on
 // inserts, deletes, and in-place edits (value, date, or rep-count corrections).
 extension ActivityLog: Equatable {
     static func == (lhs: ActivityLog, rhs: ActivityLog) -> Bool {
         lhs.id == rhs.id && lhs.value == rhs.value && lhs.loggedAt == rhs.loggedAt && lhs.reps == rhs.reps
+            && lhs.exerciseID == rhs.exerciseID
     }
 }

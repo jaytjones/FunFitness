@@ -15,6 +15,7 @@ struct ContentView: View {
     @Query private var activities: [ActivityLog]
     @Query private var streakRecords: [StreakRecord]
     @Query private var unlockedChallenges: [UnlockedChallenge]
+    @Query private var customExercises: [CustomExercise]
 
     @State private var viewModel = AppViewModel()
     @State private var selectedTab = 0
@@ -74,6 +75,7 @@ struct ContentView: View {
                         viewModel.unitPreference = profile.unitPref
                     }
                     viewModel.activities = activities
+                    ExerciseLibrary.shared.setCustom(customExercises)
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
                     reconcileAchievements()
                     reconcileChallenges()
@@ -100,6 +102,9 @@ struct ContentView: View {
                 }
                 .onChange(of: viewModel.activePack) {
                     profiles.first?.activeTheme = viewModel.activePack.id
+                }
+                .onChange(of: customExercises) {
+                    ExerciseLibrary.shared.setCustom(customExercises)
                 }
                 .onChange(of: activities) {
                     viewModel.activities = activities

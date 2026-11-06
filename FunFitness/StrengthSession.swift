@@ -18,6 +18,8 @@ struct StrengthSet: Equatable, Identifiable, Sendable {
     let valueSI: Double
     let reps: Int?
     let loggedAt: Date
+    /// The named exercise (3.1 C3); nil for sets logged before exercises existed.
+    var exerciseID: String? = nil
 
     /// Weight lifted in this set (kg × reps); 0 for bodyweight sets.
     var liftedKg: Double {

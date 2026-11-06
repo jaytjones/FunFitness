@@ -40,6 +40,7 @@ struct LogLastActivityIntent: AppIntent {
             reps: last.reps,
             date: Date(),
             surface: last.surface,
+            exerciseID: last.exerciseID,
             existingActivities: activities,
             unlockedIds: unlockedIds,
             context: context

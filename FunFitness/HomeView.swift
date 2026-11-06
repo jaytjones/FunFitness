@@ -147,6 +147,7 @@ struct HomeView: View {
             reps: activity.reps,
             date: Date(),
             surface: activity.surface,
+            exerciseID: activity.exerciseID,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false

@@ -28,6 +28,7 @@ struct ActivityWriter {
         healthKitUUID: UUID? = nil,
         surface: DistanceSurface? = nil,
         sessionID: UUID? = nil,
+        exerciseID: String? = nil,
         existingActivities: [ActivityLog],
         unlockedIds: Set<String>,
         context: ModelContext
@@ -50,6 +51,8 @@ struct ActivityWriter {
             surface: type == .distance ? surface : nil
         )
         activity.sessionID = sessionID
+        // Only strength entries name an exercise. (3.1 C3)
+        activity.exerciseID = SessionGrouping.isGroupable(type) ? exerciseID : nil
         context.insert(activity)
         // A strength entry not already in a session may join nearby ones (3.1 C1).
         if sessionID == nil, SessionGrouping.isGroupable(type) {
@@ -81,13 +84,14 @@ struct ActivityWriter {
         reps: Int?,
         date: Date,
         surface: DistanceSurface? = nil,
+        exerciseID: String? = nil,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool = false
     ) -> [Milestone] {
         let result = logSyncingViewModel(
             type: type, value: value, reps: reps, date: date, source: .manual, surface: surface,
-            context: context, viewModel: viewModel
+            exerciseID: exerciseID, context: context, viewModel: viewModel
         )
 
         // Write-back (distance only — HealthKit has no "weight lifted" metric). Fire-and-forget:
@@ -178,6 +182,7 @@ struct ActivityWriter {
         source: ActivitySource,
         surface: DistanceSurface? = nil,
         sessionID: UUID? = nil,
+        exerciseID: String? = nil,
         context: ModelContext,
         viewModel: AppViewModel
     ) -> (activity: ActivityLog, newMilestones: [Milestone]) {
@@ -189,6 +194,7 @@ struct ActivityWriter {
             source: source,
             surface: surface,
             sessionID: sessionID,
+            exerciseID: exerciseID,
             existingActivities: viewModel.activities,
             unlockedIds: viewModel.unlockedAchievementIds,
             context: context
@@ -234,11 +240,12 @@ struct ActivityWriter {
         reps: Int?,
         sets: Int,
         date: Date,
+        exerciseID: String? = nil,
         context: ModelContext,
         viewModel: AppViewModel
     ) -> [Milestone] {
         guard sets > 1, SessionGrouping.isGroupable(type) else {
-            return log(type: type, value: value, reps: reps, date: date, context: context, viewModel: viewModel)
+            return log(type: type, value: value, reps: reps, date: date, exerciseID: exerciseID, context: context, viewModel: viewModel)
         }
         let first = date.addingTimeInterval(-Double(sets - 1))
         let session = WorkoutSession(startedAt: first, endedAt: date)
@@ -247,7 +254,7 @@ struct ActivityWriter {
         for index in 0..<sets {
             milestones += logSyncingViewModel(
                 type: type, value: value, reps: reps, date: first.addingTimeInterval(Double(index)),
-                source: .manual, sessionID: session.id, context: context, viewModel: viewModel
+                source: .manual, sessionID: session.id, exerciseID: exerciseID, context: context, viewModel: viewModel
             ).newMilestones
         }
         return milestones

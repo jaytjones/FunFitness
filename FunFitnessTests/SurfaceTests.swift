@@ -79,12 +79,12 @@ struct SurfaceTests {
             ActivityLog(type: .weight, value: 50, reps: 10, loggedAt: Date(timeIntervalSince1970: 60)),
         ]
         let csv = ExportManager.generateCSV(activities: activities, pref: .metric).split(separator: "\n")
-        #expect(csv[0] == "Type,Value,Unit,Reps,Date,Notes,Surface,Session")
-        #expect(csv[1].hasSuffix(",trail,"))   // no session → empty last column
-        #expect(csv[2].hasSuffix(",,"))        // no surface or session
+        #expect(csv[0] == "Type,Value,Unit,Reps,Date,Notes,Surface,Session,Exercise")
+        #expect(csv[1].hasSuffix(",trail,,"))  // no session or exercise → empty last columns
+        #expect(csv[2].hasSuffix(",,,"))       // no surface, session, or exercise
 
         let json = ExportManager.generateJSON(activities: activities)
         #expect(json.contains("\"surface\" : \"trail\""))
-        #expect(json.contains("\"schemaVersion\" : \"1.4\""))
+        #expect(json.contains("\"schemaVersion\" : \"1.5\""))
     }
 }

@@ -13,8 +13,8 @@ struct ExportManager {
     // MARK: - CSV
 
     static func generateCSV(activities: [ActivityLog], pref: UnitPreference) -> String {
-        // New columns are appended last (3.1: Surface, then Session) so existing positions don't move.
-        var rows = ["Type,Value,Unit,Reps,Date,Notes,Surface,Session"]
+        // New columns are appended last (3.1: Surface, Session, then Exercise) so existing positions don't move.
+        var rows = ["Type,Value,Unit,Reps,Date,Notes,Surface,Session,Exercise"]
         let formatter = ISO8601DateFormatter()
 
         for activity in activities.sorted(by: { $0.loggedAt < $1.loggedAt }) {
@@ -32,8 +32,11 @@ struct ExportManager {
             let surface = activity.surface?.rawValue ?? ""
             // Sets from one workout share a session id. (3.1 C1)
             let session = activity.sessionID?.uuidString ?? ""
+            // Named exercise (3.1 C3), commas swapped like notes.
+            let exercise = (ExerciseLibrary.shared.exercise(id: activity.exerciseID)?.name ?? "")
+                .replacingOccurrences(of: ",", with: ";")
 
-            rows.append("\(type),\(value),\(unit),\(reps),\(date),\(notes),\(surface),\(session)")
+            rows.append("\(type),\(value),\(unit),\(reps),\(date),\(notes),\(surface),\(session),\(exercise)")
         }
 
         return rows.joined(separator: "\n")
@@ -58,11 +61,15 @@ struct ExportManager {
                 if let notes = activity.notes { dict["notes"] = notes }
                 if let surface = activity.surface { dict["surface"] = surface.rawValue }
                 if let sessionID = activity.sessionID { dict["sessionID"] = sessionID.uuidString }
+                if let exerciseID = activity.exerciseID {
+                    dict["exerciseID"] = exerciseID
+                    if let name = ExerciseLibrary.shared.exercise(id: exerciseID)?.name { dict["exerciseName"] = name }
+                }
                 return dict
             }
 
         let root: [String: Any] = [
-            "schemaVersion": "1.4",   // 1.3 (3.1): optional "surface"; 1.4 (3.1): optional "sessionID"
+            "schemaVersion": "1.5",   // 1.3 (3.1): "surface"; 1.4: "sessionID"; 1.5: "exerciseID"/"exerciseName" (all optional)
             "activities": activityDicts
         ]
 

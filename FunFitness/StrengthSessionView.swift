@@ -24,6 +24,9 @@ struct StrengthSessionView: View {
     @State private var weightText = ""
     @State private var repsText = ""
     @State private var bodyweightText = ""
+    // One exercise per set type, so switching Weight ↔ Bodyweight keeps each choice. (3.1 C3)
+    @State private var weightExerciseID: String?
+    @State private var bodyweightExerciseID: String?
     @State private var showInputError = false
     @State private var showEndConfirm = false
     @FocusState private var focusedField: Field?
@@ -245,6 +248,12 @@ struct StrengthSessionView: View {
             .pickerStyle(.segmented)
             .onChange(of: setType) { showInputError = false }
 
+            ExercisePickerRow(
+                type: setType,
+                exerciseID: setType == .weight ? $weightExerciseID : $bodyweightExerciseID,
+                showError: showInputError && currentExercise == nil
+            )
+
             if setType == .weight {
                 HStack(spacing: 12) {
                     numberField("Weight (\(pref.weightUnit))", text: $weightText, field: .weight, keyboard: .decimalPad)
@@ -259,7 +268,7 @@ struct StrengthSessionView: View {
             }
 
             if showInputError {
-                Text(setType == .weight
+                Text(currentExercise == nil ? "Choose an exercise for this set" : setType == .weight
                      ? "Enter a weight above 0 and \(ActivityType.repCountRange.lowerBound)–\(ActivityType.repCountRange.upperBound) reps"
                      : "Enter \(ActivityType.repCountRange.lowerBound)–\(ActivityType.repCountRange.upperBound) reps")
                     .font(.caption)
@@ -311,7 +320,7 @@ struct StrengthSessionView: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 56, alignment: .leading)
                     Text(set.type.emoji).accessibilityHidden(true)
-                    Text(WorkoutLiveActivityContent.setText(set, pref: pref))
+                    Text(WorkoutLiveActivityContent.namedSetText(set, pref: pref))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                     Spacer()
@@ -433,13 +442,24 @@ struct StrengthSessionView: View {
         if repsText.isEmpty {
             repsText = "\(viewModel.lastReps(for: .weight) ?? 10)"
         }
+        if weightExerciseID == nil { weightExerciseID = viewModel.lastExerciseID(for: .weight) }
+        if bodyweightExerciseID == nil { bodyweightExerciseID = viewModel.lastExerciseID(for: .reps) }
         if bodyweightText.isEmpty {
             let lastBodyweight = viewModel.activities.filter { $0.activityType == .reps }.max { $0.loggedAt < $1.loggedAt }
             bodyweightText = lastBodyweight.map { UnitConverter.wholeInputString($0.value) } ?? "10"
         }
     }
 
+    /// The chosen exercise for the current set type; required to log a set. (3.1 C3)
+    private var currentExercise: Exercise? {
+        ExerciseLibrary.shared.exercise(id: setType == .weight ? weightExerciseID : bodyweightExerciseID)
+    }
+
     private func logSet() {
+        guard let exercise = currentExercise else {
+            showInputError = true
+            return
+        }
         let logged: Bool
         switch setType {
         case .weight:
@@ -448,13 +468,13 @@ struct StrengthSessionView: View {
                 showInputError = true
                 return
             }
-            logged = manager.logSet(type: .weight, valueSI: UnitConverter.toKg(weight, from: pref), reps: reps)
+            logged = manager.logSet(type: .weight, valueSI: UnitConverter.toKg(weight, from: pref), reps: reps, exerciseID: exercise.id)
         default:
             guard let count = ActivityType.parseRepCount(bodyweightText) else {
                 showInputError = true
                 return
             }
-            logged = manager.logSet(type: .reps, valueSI: Double(count), reps: nil)
+            logged = manager.logSet(type: .reps, valueSI: Double(count), reps: nil, exerciseID: exercise.id)
         }
         showInputError = !logged
         if logged { focusedField = nil }

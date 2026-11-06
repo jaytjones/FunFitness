@@ -69,6 +69,14 @@ final class AppViewModel {
             .reps
     }
 
+    // Exercise of the most recent `type` entry that named one, to prefill exercise pickers. (3.1 C3)
+    func lastExerciseID(for type: ActivityType) -> String? {
+        activities
+            .filter { $0.activityType == type && $0.exerciseID != nil }
+            .max { $0.loggedAt < $1.loggedAt }?
+            .exerciseID
+    }
+
     var isActiveThisWeek: Bool {
         let calendar = Calendar.current
         let thisWeek = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())

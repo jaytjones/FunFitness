@@ -119,7 +119,7 @@ nonisolated enum CalorieWeightSource: Equatable {
 
 // MARK: - Automatic grouping (pure)
 
-enum SessionGrouping {
+nonisolated enum SessionGrouping {
 
     /// Strength logs this close together count as one workout.
     static let autoGroupGap: TimeInterval = 30 * 60

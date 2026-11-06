@@ -21,6 +21,7 @@ struct LogActivitySheet: View {
         _selectedType = State(initialValue: type)
         _repsText = State(initialValue: Self.prefilledReps(for: type, viewModel: viewModel))
         _surface = State(initialValue: viewModel.lastSurface)
+        _exerciseID = State(initialValue: viewModel.lastExerciseID(for: type))
     }
 
     private enum Field { case value, reps }
@@ -35,6 +36,9 @@ struct LogActivitySheet: View {
     @State private var surface: DistanceSurface?
     // Identical sets to save at once, grouped as one session (3.1 C2). Weight and bodyweight reps only.
     @State private var setsCount = 1
+    // Required for Weight/Reps (3.1 C3), prefilled from the last entry of the same type.
+    @State private var exerciseID: String?
+    @State private var showExerciseError = false
     @State private var logDate: Date = Date()
     @State private var showValidationError = false
     @State private var showRepsError = false
@@ -78,6 +82,8 @@ struct LogActivitySheet: View {
                             includeReps = true
                             repsText = Self.prefilledReps(for: selectedType, viewModel: viewModel)
                             setsCount = 1
+                            exerciseID = viewModel.lastExerciseID(for: selectedType)
+                            showExerciseError = false
                             showValidationError = false
                             showRepsError = false
                         }
@@ -106,6 +112,12 @@ struct LogActivitySheet: View {
                                     .foregroundStyle(Color(hex: "#A78BFA"))
                             }
                             .accessibilityIdentifier("strengthLiveInsteadButton")
+                        }
+
+                        if SessionGrouping.isGroupable(selectedType) {
+                            ExercisePickerRow(type: selectedType, exerciseID: $exerciseID, showError: showExerciseError)
+                                .padding(.horizontal)
+                                .onChange(of: exerciseID) { showExerciseError = false }
                         }
 
                         // Value Input
@@ -300,11 +312,14 @@ struct LogActivitySheet: View {
     }
 
     private func logActivity() {
+        let needsExercise = SessionGrouping.isGroupable(selectedType) && ExerciseLibrary.shared.exercise(id: exerciseID) == nil
+        showExerciseError = needsExercise
         guard let rawValue = Double(inputValue), rawValue > 0 else {
             showValidationError = true
             return
         }
         showValidationError = false
+        guard !needsExercise else { return }
 
         var reps: Int? = nil
         if selectedType.usesReps && includeReps {
@@ -323,7 +338,7 @@ struct LogActivitySheet: View {
             // Strength: one or more sets; several are saved together as a session. (3.1 C2)
             newMilestones = ActivityWriter.logSets(
                 type: selectedType, value: siValue, reps: reps, sets: setsCount, date: logDate,
-                context: modelContext, viewModel: viewModel
+                exerciseID: exerciseID, context: modelContext, viewModel: viewModel
             )
         } else {
             newMilestones = ActivityWriter.log(

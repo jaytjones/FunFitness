@@ -104,8 +104,8 @@ struct ActivityHistorySheet: View {
                 EditActivitySheet(
                     activity: activity,
                     pref: viewModel.unitPreference
-                ) { value, reps, loggedAt, notes, surface in
-                    commitEdit(activity: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes, surface: surface)
+                ) { value, reps, loggedAt, notes, surface, exerciseID in
+                    commitEdit(activity: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes, surface: surface, exerciseID: exerciseID)
                 }
             }
         }
@@ -136,16 +136,17 @@ struct ActivityHistorySheet: View {
         ActivityWriter.delete(activity, context: modelContext, viewModel: viewModel)
     }
 
-    private func commitEdit(activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?, surface: DistanceSurface?) {
+    private func commitEdit(activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?, surface: DistanceSurface?, exerciseID: String?) {
         Self.applyEdit(
             to: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes, surface: surface,
-            achievements: achievements, context: modelContext, viewModel: viewModel
+            exerciseID: exerciseID, achievements: achievements, context: modelContext, viewModel: viewModel
         )
     }
 
     /// Saves an edit from `EditActivitySheet`. Shared with the session detail screen.
     static func applyEdit(
         to activity: ActivityLog, value: Double, reps: Int?, loggedAt: Date, notes: String?, surface: DistanceSurface?,
+        exerciseID: String? = nil,
         achievements: [UnlockedAchievement], context: ModelContext, viewModel: AppViewModel
     ) {
         activity.value    = value
@@ -153,6 +154,7 @@ struct ActivityHistorySheet: View {
         activity.loggedAt = loggedAt
         activity.notes    = notes
         activity.surface  = activity.activityType == .distance ? surface : nil
+        if SessionGrouping.isGroupable(activity.activityType) { activity.exerciseID = exerciseID }
         try? context.save()
         StrengthSessionManager.shared.syncWithStore()   // an edited live set updates there too (FB-0001)
         // An in-place edit doesn't reassign the activities array, so refresh the cached totals.
@@ -376,10 +378,10 @@ struct SessionDetailView: View {
             Text("Used only to estimate calories for timed sessions. You can change it in Profile.")
         }
         .sheet(item: $editingActivity) { activity in
-            EditActivitySheet(activity: activity, pref: pref) { value, reps, loggedAt, notes, surface in
+            EditActivitySheet(activity: activity, pref: pref) { value, reps, loggedAt, notes, surface, exerciseID in
                 ActivityHistorySheet.applyEdit(
                     to: activity, value: value, reps: reps, loggedAt: loggedAt, notes: notes, surface: surface,
-                    achievements: achievements, context: modelContext, viewModel: viewModel
+                    exerciseID: exerciseID, achievements: achievements, context: modelContext, viewModel: viewModel
                 )
             }
         }
@@ -508,6 +510,11 @@ struct ActivityRow: View {
         UnitConverter.displayString(activity.value, type: activity.activityType, reps: activity.reps, pref: pref)
     }
 
+    /// The exercise name for a named set (3.1 C3), else the type.
+    private var title: String {
+        ExerciseLibrary.shared.exercise(id: activity.exerciseID)?.name ?? activity.activityType.displayName
+    }
+
     // "Oct 16, 2026 at 8:11 PM · Trail · ♥ 132 avg" — surface and heart rate only when
     // recorded. (3.1)
     private var subtitle: String {
@@ -521,7 +528,7 @@ struct ActivityRow: View {
         let date = activity.loggedAt.formatted(date: .abbreviated, time: .shortened)
         let surface = activity.surface.map { ", on \($0.displayName.lowercased())" } ?? ""
         let heartRate = activity.avgHeartRate.map { ", average heart rate \(Int($0.rounded())) beats per minute" } ?? ""
-        return "\(activity.activityType.displayName), \(valueLabel)\(surface)\(heartRate), logged \(date)"
+        return "\(title), \(valueLabel)\(surface)\(heartRate), logged \(date)"
     }
 
     var body: some View {
@@ -531,7 +538,7 @@ struct ActivityRow: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(activity.activityType.displayName)
+                Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
@@ -559,13 +566,14 @@ struct EditActivitySheet: View {
 
     let activity: ActivityLog
     let pref: UnitPreference
-    let onSave: (Double, Int?, Date, String?, DistanceSurface?) -> Void
+    let onSave: (Double, Int?, Date, String?, DistanceSurface?, String?) -> Void
 
     @State private var inputValue = ""
     @State private var includeReps = false
     @State private var repsCount = 1
     @State private var loggedAt = Date()
     @State private var surface: DistanceSurface?
+    @State private var exerciseID: String?
     @State private var showValidationError = false
     @FocusState private var isInputFocused: Bool
 
@@ -596,6 +604,12 @@ struct EditActivitySheet: View {
                         .background(Color.appCard)
                         .clipShape(.rect(cornerRadius: 14))
                         .padding(.horizontal)
+
+                        // Older generic entries can stay generic, so the exercise is optional here.
+                        if SessionGrouping.isGroupable(kind) {
+                            ExercisePickerRow(type: kind, exerciseID: $exerciseID)
+                                .padding(.horizontal)
+                        }
 
                         // Value field
                         VStack(alignment: .leading, spacing: 8) {
@@ -740,6 +754,7 @@ struct EditActivitySheet: View {
                 }
                 loggedAt       = activity.loggedAt
                 surface        = activity.surface
+                exerciseID     = activity.exerciseID
                 isInputFocused = true
             }
         }
@@ -753,7 +768,7 @@ struct EditActivitySheet: View {
         }
         let siValue = UnitConverter.toSI(rawValue, type: kind, from: pref)
         let reps = (kind.usesReps && includeReps) ? repsCount : nil
-        onSave(siValue, reps, loggedAt, activity.notes, surface)
+        onSave(siValue, reps, loggedAt, activity.notes, surface, exerciseID)
         dismiss()
     }
 }
