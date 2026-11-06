@@ -26,47 +26,45 @@ struct MusclesWorkedCard: View {
         if !counts.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Muscles Worked This Week")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
 
                 FlowLayout(spacing: 8) {
                     ForEach(counts) { count in
                         HStack(spacing: 6) {
                             Text(count.muscle.displayName)
-                                .font(.subheadline.weight(.semibold))
+                                .ffFont(.bodyStrong)
+                                .foregroundStyle(Color.ffInk)
                             Text("\(count.sets)")
-                                .font(.caption.weight(.bold).monospacedDigit())
+                                .ffFont(.caption)
+                                .foregroundStyle(Color.ffOnAccent)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(.white.opacity(0.25))
-                                .clipShape(.capsule)
+                                .background(Color.ffAccent, in: .capsule)
                         }
-                        .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color(hex: "#7C3AED").opacity(chipOpacity(count, max: counts.first?.sets ?? 1)))
-                        .clipShape(.capsule)
+                        .background(chipFill(count, max: counts.first?.sets ?? 1), in: .capsule)
+                        .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("\(count.muscle.displayName), \(count.sets) set\(count.sets == 1 ? "" : "s")")
                     }
                 }
 
                 Text("Sets per muscle group from named exercises, since the start of the week.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard()
             .accessibilityIdentifier("musclesWorkedCard")
         }
     }
 
-    /// The most-worked muscles get the strongest color.
-    private func chipOpacity(_ count: ExerciseStats.MuscleCount, max: Int) -> Double {
-        guard max > 0 else { return 1 }
-        return 0.55 + 0.45 * Double(count.sets) / Double(max)
+    /// The most-worked muscles get the brighter chip (surface vs surface-alt keeps ink legible
+    /// in both appearances, unlike fading a colour fill).
+    private func chipFill(_ count: ExerciseStats.MuscleCount, max: Int) -> Color {
+        guard max > 0 else { return .ffSurface }
+        return Double(count.sets) / Double(max) >= 0.5 ? .ffSurface : .ffSurfaceAlt
     }
 }
 
@@ -92,8 +90,8 @@ struct ExerciseRecordsCard: View {
         if !records.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Exercise Records")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
 
                 ForEach(showAll ? records : Array(records.prefix(Self.collapsedCount)), id: \.record.id) { item in
                     let display = UnitConverter.displayString(item.record.value, type: item.record.type, reps: item.record.reps, pref: pref)
@@ -101,16 +99,16 @@ struct ExerciseRecordsCard: View {
                         Text(item.record.type.emoji).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.exercise.name)
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.body)
+                                .foregroundStyle(Color.ffInk)
                             Text(item.record.date.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .ffFont(.caption)
+                                .foregroundStyle(Color.ffInkMuted)
                         }
                         Spacer()
                         Text(display)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(item.exercise.name) record: \(display), set \(item.record.date.formatted(date: .abbreviated, time: .omitted))")
@@ -120,14 +118,11 @@ struct ExerciseRecordsCard: View {
                     Button(showAll ? "Show Fewer" : "Show All \(records.count)") {
                         withAnimation { showAll.toggle() }
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffLink)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard()
             .accessibilityIdentifier("exerciseRecordsCard")
         }
     }

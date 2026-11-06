@@ -52,114 +52,135 @@ struct FunFitnessWidgetEntryView: View {
 
 // MARK: - Small (2×2)
 
+/// Playful Bold: ink text straight on the `bg` ground (yellow in light, grape in dark).
 struct SmallWidgetView: View {
     let snapshot: WidgetSnapshot
 
-    private var streakColor: [Color] {
-        snapshot.streak == 0
-            ? [Color(red: 0.22, green: 0.25, blue: 0.32), Color(red: 0.12, green: 0.16, blue: 0.24)]
-            : [Color(red: 0.92, green: 0.35, blue: 0.07), Color(red: 0.86, green: 0.15, blue: 0.15)]
+    var body: some View {
+        VStack(alignment: .leading, spacing: FFSpace.s1) {
+            HStack {
+                StreakFlame(streak: snapshot.streak)
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                if snapshot.activeThisWeek {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.ffInk)
+                }
+            }
+            Spacer()
+            Text("\(snapshot.streak)")
+                .ffFont(.numeral)
+                .foregroundStyle(Color.ffInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text("week streak")
+                .ffFont(.label)
+                .foregroundStyle(Color.ffInkMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(FFSpace.s4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .containerBackground(Color.ffBg, for: .widget)
     }
+}
+
+/// The streak glyph: the flame (the `streak` token's one job) while a streak runs, a quiet
+/// moon while it's at zero ("gentle on misses"). SF Symbols replace the old 🔥/💤 emoji.
+private struct StreakFlame: View {
+    let streak: Int
 
     var body: some View {
-        ZStack {
-            LinearGradient(colors: streakColor, startPoint: .topLeading, endPoint: .bottomTrailing)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(snapshot.streak == 0 ? "💤" : "🔥")
-                        .font(.title3)
-                    Spacer()
-                    if snapshot.activeThisWeek {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-                }
-                Spacer()
-                Text("\(snapshot.streak)")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text("week streak")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-            .padding(12)
+        if streak == 0 {
+            Image(systemName: "moon.zzz.fill")
+                .foregroundStyle(Color.ffInkMuted)
+        } else {
+            Image(systemName: "flame.fill")
+                .foregroundStyle(Color.ffStreak)
         }
-        .containerBackground(for: .widget) { Color.clear }
     }
 }
 
 // MARK: - Medium (4×2)
 
+/// Playful Bold: the streak in an inset, outlined white tile on the left; the challenge and the
+/// Distance/Lift meters as ink on the `bg` ground on the right. In tinted/clear Home Screen
+/// modes the tile drops its fill and keeps its outline.
 struct MediumWidgetView: View {
     let snapshot: WidgetSnapshot
-
-    private var streakColor: [Color] {
-        snapshot.streak == 0
-            ? [Color(red: 0.22, green: 0.25, blue: 0.32), Color(red: 0.12, green: 0.16, blue: 0.24)]
-            : [Color(red: 0.92, green: 0.35, blue: 0.07), Color(red: 0.86, green: 0.15, blue: 0.15)]
-    }
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: FFSpace.s3) {
             // Left: streak
-            ZStack {
-                LinearGradient(colors: streakColor, startPoint: .topLeading, endPoint: .bottomTrailing)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(snapshot.streak == 0 ? "💤" : "🔥")
-                        .font(.title2)
-                    Spacer()
-                    Text("\(snapshot.streak)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text("wk streak")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: FFSpace.s1) {
+                StreakFlame(streak: snapshot.streak)
+                    .font(.title2.weight(.semibold))
+                Spacer(minLength: 0)
+                Text("\(snapshot.streak)")
+                    .ffFont(.numeral)
+                    .foregroundStyle(Color.ffInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text("wk streak")
+                    .ffFont(.label)
+                    .foregroundStyle(Color.ffInkMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            .padding(FFSpace.s3)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .background(
+                renderingMode == .fullColor ? Color.ffSurface : Color.clear,
+                in: RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                    .strokeBorder(Color.ffLine, lineWidth: FFStroke.card)
+            )
             // Right: this month's challenge (or the silly title), then run/lift totals with
             // progress to the next milestone (3.1 B3).
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: FFSpace.s1 + 2) {
                 if let challenge = snapshot.challengeTitle {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: FFSpace.s1) {
                         Text(challenge)
+                            .foregroundStyle(Color.ffInk)
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
                         Spacer(minLength: 2)
                         Text(snapshot.challengeFraction, format: .percent.precision(.fractionLength(0)))
                             .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.ffInkMuted)
                     }
-                    .font(.caption.weight(.semibold))
+                    .ffFont(.caption)
                     .accessibilityElement(children: .combine)
                 } else {
                     Text(snapshot.sillyTitle)
-                        .font(.caption.weight(.semibold))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInk)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 MediumStatRow(
                     label: "Distance", systemImage: "figure.walk",
                     total: snapshot.distanceTotal, remaining: snapshot.distanceRemaining,
-                    progress: snapshot.distanceProgress, tint: Color(red: 0.15, green: 0.39, blue: 0.92)
+                    progress: snapshot.distanceProgress, tint: .ffTypeDistance
                 )
                 MediumStatRow(
                     label: "Lift", systemImage: "dumbbell.fill",
                     total: snapshot.weightTotal, remaining: snapshot.weightRemaining,
-                    progress: snapshot.weightProgress, tint: Color(red: 0.49, green: 0.23, blue: 0.93)
+                    progress: snapshot.weightProgress, tint: .ffTypeWeight
                 )
             }
-            .padding(12)
             .frame(maxWidth: .infinity)
-            .background(Color(UIColor.secondarySystemGroupedBackground))
         }
-        .containerBackground(for: .widget) { Color.clear }
+        .padding(FFSpace.s3)
+        .containerBackground(Color.ffBg, for: .widget)
     }
 }
 
-/// "Distance  12.4 mi" over a progress bar and "1.2 mi to next milestone".
+/// "DISTANCE  12.4 mi" over a slim meter and "1.2 mi to next milestone".
 private struct MediumStatRow: View {
     let label: LocalizedStringKey
     let systemImage: String
@@ -170,25 +191,25 @@ private struct MediumStatRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: FFSpace.s1) {
                 Label(label, systemImage: systemImage)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.label)
+                    .foregroundStyle(Color.ffInkMuted)
+                    .lineLimit(1)
                 Spacer(minLength: 2)
                 Text(total)
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
             }
-            .font(.caption2)
             ProgressView(value: progress)
-                .progressViewStyle(.linear)
-                .tint(tint)
+                .progressViewStyle(FFMeterStyle(fill: tint, height: 8))
+            // The smallest text allowed in the widget (11pt, Widget.md).
             Text(remaining)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
+                .font(.system(.caption2, design: .rounded, weight: .bold))
+                .foregroundStyle(Color.ffInkMuted)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .combine)
     }
@@ -206,7 +227,7 @@ struct FunFitnessWidget: Widget {
         .configurationDisplayName("FunFitness")
         .description("Your streak and progress at a glance.")
         .supportedFamilies([.systemSmall, .systemMedium])
-        // The views pad themselves, so let the gradients reach the widget's edges.
+        // The views pad themselves (Playful Bold spacing tokens).
         .contentMarginsDisabled()
     }
 }

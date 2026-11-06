@@ -28,24 +28,23 @@ struct ExercisePickerRow: View {
             } label: {
                 HStack {
                     Text("Exercise")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Spacer()
                     Text(selected?.name ?? "Choose")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(selected == nil ? Color(hex: "#A78BFA") : .primary)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(selected == nil ? Color.ffLink : Color.ffInk)
                         .lineLimit(1)
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.ffInkMuted)
                         .accessibilityHidden(true)
                 }
                 .padding()
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 14))
+                .ffWell()
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(showError ? Color.red : Color.clear, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                        .strokeBorder(showError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
                 )
                 .contentShape(.rect)
             }
@@ -57,8 +56,8 @@ struct ExercisePickerRow: View {
 
             if showError {
                 Text("Choose an exercise")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffDanger)
             }
         }
         .sheet(isPresented: $showPicker) {
@@ -98,24 +97,28 @@ struct ExercisePickerSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(exercise.name)
-                                        .foregroundStyle(.primary)
+                                        .ffFont(.body)
+                                        .foregroundStyle(Color.ffInk)
                                     Text(exercise.muscles.map(\.displayName).joined(separator: ", "))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .ffFont(.caption)
+                                        .foregroundStyle(Color.ffInkMuted)
                                 }
                                 Spacer()
                                 if exercise.id == selection {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(Color(hex: "#A78BFA"))
+                                        .foregroundStyle(Color.ffLink)
                                         .accessibilityHidden(true)
                                 }
                             }
                         }
                         .accessibilityAddTraits(exercise.id == selection ? .isSelected : [])
+                        .listRowBackground(Color.ffSurface)
                     }
                 } footer: {
                     if matches.isEmpty {
                         Text("No exercises match “\(search)”.")
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffInkMuted)
                     }
                 }
 
@@ -124,11 +127,15 @@ struct ExercisePickerSheet: View {
                         showAddCustom = true
                     } label: {
                         Label("Add Your Own Exercise", systemImage: "plus.circle.fill")
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .ffFont(.bodyStrong)
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityIdentifier("addCustomExerciseButton")
+                    .listRowBackground(Color.ffSurface)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.ffBg)
             .searchable(text: $search, prompt: "Search exercises or muscles")
             .navigationTitle(type == .reps ? "Bodyweight Exercise" : "Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -169,29 +176,41 @@ struct AddCustomExerciseSheet: View {
             Form {
                 Section {
                     TextField("Name", text: $name)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInk)
                         .textInputAutocapitalization(.words)
                         .accessibilityIdentifier("customExerciseName")
+                        .listRowBackground(Color.ffSurface)
                 } footer: {
                     Text(type == .reps ? "A bodyweight move, logged as reps." : "A lift, logged as weight × reps.")
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
 
-                Section("Muscles worked") {
+                Section {
                     ForEach(MuscleGroup.allCases, id: \.self) { muscle in
                         Button {
                             if muscles.contains(muscle) { muscles.remove(muscle) } else { muscles.insert(muscle) }
                         } label: {
                             HStack {
-                                Text(muscle.displayName).foregroundStyle(.primary)
+                                Text(muscle.displayName).ffFont(.body).foregroundStyle(Color.ffInk)
                                 Spacer()
                                 if muscles.contains(muscle) {
-                                    Image(systemName: "checkmark").foregroundStyle(Color(hex: "#A78BFA"))
+                                    Image(systemName: "checkmark").foregroundStyle(Color.ffLink)
                                 }
                             }
                         }
                         .accessibilityAddTraits(muscles.contains(muscle) ? .isSelected : [])
+                        .listRowBackground(Color.ffSurface)
                     }
+                } header: {
+                    Text("Muscles worked")
+                        .ffFont(.label)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.ffBg)
             .navigationTitle("New Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -2,8 +2,9 @@
 //  ShareCardView.swift
 //  FunFitness
 //
-//  Screenshot-worthy share cards rendered with ImageRenderer, built from the
-//  app's existing emoji + gradient visual language (no external art assets).
+//  Screenshot-worthy share cards rendered with ImageRenderer: an outlined white card on the
+//  Sunny yellow ground (Playful Bold ShareCard), emoji art, no external assets.
+//  Always rendered in Sunny (light) colours so posts look the same everywhere.
 //  Used for milestones, streaks, and silly titles.
 //
 
@@ -16,7 +17,6 @@ struct ShareCardContent {
     let emoji: String
     let headline: String
     let subtext: String
-    let gradient: [Color]
 
     /// Stable identity for re-rendering when the underlying data changes.
     var cacheKey: String { "\(badge)|\(emoji)|\(headline)|\(subtext)" }
@@ -28,8 +28,7 @@ struct ShareCardContent {
             badge: "MILESTONE UNLOCKED",
             emoji: milestone.getEmoji(for: pack),
             headline: milestone.title(pref: pref),
-            subtext: milestone.getComparison(for: pack),
-            gradient: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
+            subtext: milestone.getComparison(for: pack)
         )
     }
 
@@ -38,8 +37,7 @@ struct ShareCardContent {
             badge: "ON FIRE",
             emoji: current >= 8 ? "🔥🔥" : "🔥",
             headline: "\(current)-Week Streak!",
-            subtext: "Personal best: \(longest) week\(longest == 1 ? "" : "s"). Still going strong.",
-            gradient: [Color(hex: "#EA580C"), Color(hex: "#DC2626")]
+            subtext: "Personal best: \(longest) week\(longest == 1 ? "" : "s"). Still going strong."
         )
     }
 
@@ -48,8 +46,7 @@ struct ShareCardContent {
             badge: "CHALLENGE COMPLETE",
             emoji: challenge.emoji,
             headline: challenge.title,
-            subtext: challenge.blurb,
-            gradient: [Color(hex: "#DB2777"), Color(hex: "#7C3AED")]
+            subtext: challenge.blurb
         )
     }
 
@@ -58,8 +55,7 @@ struct ShareCardContent {
             badge: "MY OFFICIAL TITLE",
             emoji: title.rankEmoji,
             headline: title.title,
-            subtext: "\(title.rank) Rank · \(badgeCount) badge\(badgeCount == 1 ? "" : "s") earned",
-            gradient: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")]
+            subtext: "\(title.rank) Rank · \(badgeCount) badge\(badgeCount == 1 ? "" : "s") earned"
         )
     }
 }
@@ -69,43 +65,48 @@ struct ShareCard: View {
     let content: ShareCardContent
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text(content.badge)
-                .font(.caption)
-                .fontWeight(.bold)
-                .tracking(2)
-                .foregroundStyle(.white.opacity(0.85))
+        VStack(spacing: 16) {
+            VStack(spacing: 16) {
+                Text(content.badge)
+                    .ffFont(.label)
+                    .foregroundStyle(Color.ffInkMuted)
 
-            Spacer()
+                Spacer(minLength: 0)
 
-            Text(content.emoji)
-                .font(.system(size: 96))
+                Text(content.emoji)
+                    .font(.system(size: 96))
 
-            Text(content.headline)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
+                Text(content.headline)
+                    .ffFont(.title)
+                    .foregroundStyle(Color.ffInk)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.8)
 
-            Text(content.subtext)
-                .font(.system(size: 17))
-                .foregroundStyle(.white.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+                Text(content.subtext)
+                    .ffFont(.body)
+                    .foregroundStyle(Color.ffInkMuted)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.8)
 
-            Spacer()
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ffCard(padding: FFSpace.s5, radius: FFRadius.lg, fill: .ffSurface)
 
             HStack(spacing: 6) {
                 Text("💪")
                 Text("FunFitness")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .ffFont(.headline)
             }
-            .foregroundStyle(.white.opacity(0.9))
+            .foregroundStyle(Color.ffInk)
         }
-        .padding(32)
+        .padding(EdgeInsets(top: FFSpace.s6, leading: FFSpace.s6, bottom: FFSpace.s5, trailing: FFSpace.s6))
         .frame(width: 360, height: 450)
-        .background(
-            LinearGradient(colors: content.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
+        .background(Color.ffBg)
+        // Share images look the same everywhere: Sunny colours and the base type size, whatever
+        // the device's appearance or Dynamic Type setting (the card is a fixed-size image).
+        .environment(\.colorScheme, .light)
+        .environment(\.dynamicTypeSize, .large)
     }
 }
 
@@ -114,7 +115,7 @@ struct ShareCard: View {
 struct ShareCardButton: View {
     let content: ShareCardContent
     let filename: String
-    var tint: Color = .white
+    var tint: Color = .ffLink
 
     @State private var url: URL?
 

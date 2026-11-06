@@ -28,7 +28,7 @@ struct ProgressTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -48,7 +48,8 @@ struct ProgressTabView: View {
                                 displayValue: viewModel.displayTotal(for: type),
                                 progress: viewModel.progressToNextMilestone(type: type),
                                 nextMilestoneTitle: viewModel.remainingToNextMilestone(type: type).milestone?.title(pref: viewModel.unitPreference) ?? "All Complete!",
-                                remainingDisplay: remainingLabel(for: type)
+                                remainingDisplay: remainingLabel(for: type),
+                                tint: type.ffFill
                             )
                         }
 
@@ -81,8 +82,8 @@ struct ProgressTabView: View {
                         // Labeled so the history list is discoverable, not just an icon. (2.4.4)
                         Label("History", systemImage: "clock.arrow.circlepath")
                             .labelStyle(.titleAndIcon)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityLabel("Activity history")
                     .accessibilityIdentifier("progressHistoryButton")
@@ -93,7 +94,7 @@ struct ProgressTabView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityLabel("Log activity")
                 }
@@ -124,60 +125,48 @@ struct OverallProgressCard: View {
         VStack(spacing: 16) {
             HStack {
                 Text("Overall Progress")
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
                 Spacer()
             }
 
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Total Activities")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                     Text("\(totalActivities)")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
+                        .ffFont(.numeral)
+                        .foregroundStyle(Color.ffInk)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(Color.white.opacity(0.05))
-                .clipShape(.rect(cornerRadius: 12))
+                .ffWell(radius: FFRadius.sm)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Total activities: \(totalActivities)")
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("This Week")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(isActiveThisWeek ? Color.green : Color.gray)
+                            .fill(isActiveThisWeek ? Color.ffSuccess : Color.ffInkMuted)
                             .frame(width: 8, height: 8)
                             .accessibilityHidden(true)
                         Text(isActiveThisWeek ? "Active" : "Inactive")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
+                            .ffFont(.bodyStrong)
+                            .foregroundStyle(Color.ffInk)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(Color.white.opacity(0.05))
-                .clipShape(.rect(cornerRadius: 12))
+                .ffWell(radius: FFRadius.sm)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("This week: \(isActiveThisWeek ? "Active" : "Inactive")")
             }
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
     }
 }
 
@@ -191,6 +180,8 @@ struct TrackingCard: View {
     let progress: Double
     let nextMilestoneTitle: String
     let remainingDisplay: String
+    /// Meter fill: the activity type's colour (`ActivityType.ffFill`).
+    var tint: Color = .ffAccent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -200,59 +191,57 @@ struct TrackingCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
             }
 
             Divider()
+                .overlay(Color.ffLine)
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text("Total:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.body)
+                    .foregroundStyle(Color.ffInkMuted)
                 Text(displayValue)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
+                    .ffFont(.numeral)
+                    .foregroundStyle(Color.ffInk)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 SwiftUI.ProgressView(value: progress)
-                    .progressViewStyle(FitnessProgressStyle(tint: Color(hex: "#5B21B6")))
+                    .progressViewStyle(FitnessProgressStyle(tint: tint))
                     .accessibilityLabel("\(title) progress")
                     .accessibilityValue(String(format: "%.0f percent", progress * 100))
 
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Next Milestone")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .ffFont(.label)
+                            .foregroundStyle(Color.ffInkMuted)
                         Text(nextMilestoneTitle)
-                            .font(.caption)
-                            .foregroundStyle(.primary)
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffInk)
                             .lineLimit(2)
                     }
                     Spacer()
                     if !remainingDisplay.isEmpty {
                         Text(remainingDisplay)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffInkMuted)
                     } else {
                         Text("Complete!")
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: "#059669"))
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffSuccess)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
     }
 }
 
@@ -270,13 +259,12 @@ struct WeeklyVolumeCard: View {
     }
 
     private var unitLabel: String { UnitConverter.displayUnit(for: type, pref: pref) }
-    private var barColor: Color { type.cardGradient.first ?? Color(hex: "#7C3AED") }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Weekly Volume")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if selectableTypes.count > 1 {
@@ -293,19 +281,32 @@ struct WeeklyVolumeCard: View {
                     x: .value("Week", bucket.weekStart, unit: .weekOfYear),
                     y: .value(unitLabel, UnitConverter.fromSI(bucket.total, type: type, to: pref))
                 )
-                .foregroundStyle(barColor)
+                // Zero weeks read as track, not as the type colour.
+                .foregroundStyle(bucket.total > 0 ? type.ffFill : Color.ffProgressTrack)
                 .cornerRadius(4)
+            }
+            .chartXAxis {
+                AxisMarks { _ in
+                    AxisGridLine().foregroundStyle(Color.ffProgressTrack)
+                    AxisTick().foregroundStyle(Color.ffInkMuted)
+                    AxisValueLabel().foregroundStyle(Color.ffInkMuted)
+                }
+            }
+            .chartYAxis {
+                AxisMarks { _ in
+                    AxisGridLine().foregroundStyle(Color.ffProgressTrack)
+                    AxisTick().foregroundStyle(Color.ffInkMuted)
+                    AxisValueLabel().foregroundStyle(Color.ffInkMuted)
+                }
             }
             .frame(height: 160)
             .accessibilityLabel("Weekly \(type.displayName.lowercased()) volume, last 8 weeks")
 
             Text("Last 8 weeks · \(unitLabel)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
     }
 }
 
@@ -332,29 +333,26 @@ struct PersonalRecordsCard: View {
         if !records.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Personal Records")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
 
                 ForEach(records) { pr in
                     let display = UnitConverter.displayString(pr.value, type: pr.type, pref: pref)
                     HStack {
                         Text(pr.type.emoji).accessibilityHidden(true)
                         Text(pr.type.displayName)
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
+                            .ffFont(.body)
+                            .foregroundStyle(Color.ffInk)
                         Spacer()
                         Text(display)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(pr.type.displayName) personal record: \(display)")
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard()
         }
     }
 }
@@ -375,18 +373,18 @@ struct ActivityHeatmapCard: View {
 
     private func color(_ count: Int) -> Color {
         switch count {
-        case 0:  return Color.primary.opacity(0.08)
-        case 1:  return Color(hex: "#A78BFA").opacity(0.55)
-        case 2:  return Color(hex: "#7C3AED").opacity(0.85)
-        default: return Color(hex: "#5B21B6")
+        case 0:  return .ffProgressTrack
+        case 1:  return .ffHeat1
+        case 2:  return .ffHeat2
+        default: return .ffHeat3
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Activity — Last 12 Weeks")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
 
             HStack(alignment: .top, spacing: 4) {
                 ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
@@ -394,6 +392,8 @@ struct ActivityHeatmapCard: View {
                         ForEach(week) { day in
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(color(day.count))
+                                // Outlined so steps differ by more than hue.
+                                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
                                 .frame(width: 14, height: 14)
                         }
                     }
@@ -402,17 +402,17 @@ struct ActivityHeatmapCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 6) {
-                Text("Less").font(.caption2).foregroundStyle(.secondary)
+                Text("Less").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
                 ForEach(0..<4) { i in
-                    RoundedRectangle(cornerRadius: 3).fill(color(i)).frame(width: 12, height: 12)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color(i))
+                        .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
+                        .frame(width: 12, height: 12)
                 }
-                Text("More").font(.caption2).foregroundStyle(.secondary)
+                Text("More").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Activity heatmap for the last 12 weeks")
     }
@@ -437,15 +437,12 @@ struct MotivationalCard: View {
                 .accessibilityHidden(true)
 
             Text(message)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
+                .ffFont(.bodyStrong)
+                .foregroundStyle(Color.ffInk)
 
             Spacer()
         }
-        .padding()
-        .background(Color(hex: "#059669"))
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(fill: .ffSurfaceAlt)
         .onAppear {
             if message.isEmpty {
                 message = messages.randomElement() ?? messages[0]

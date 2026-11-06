@@ -165,7 +165,7 @@ Three dependency rules drive the entire order below:
 **Theme:** One coherent visual identity: **Playful Bold** (`docs/design/playful-bold/`) becomes the app's style, replacing today's look.
 
 **Scope**
-- **Style foundation (no visible change, its own TestFlight build):** Swift tokens generated from `tokens.json`; a `Style` environment value; every hard-coded color, gradient and font replaced with tokens; slots for the parts each style restructures (tab bar, log button, Home header, badges, celebration). Called "Style" in code; `activeTheme` stays the comparison pack.
+- **Style foundation (its own TestFlight build; as built 2026-11-06 it already uses Playful Bold's colours and type, since the old look is retired, but keeps today's layout):** Swift tokens from `tokens.json` (`Shared/Style.swift`); a `Style` environment value; every hard-coded color, gradient and font replaced with tokens; slots for the parts each style restructures (tab bar, log button, Home header, badges, celebration). Called "Style" in code; `activeTheme` stays the comparison pack.
 - **Playful Bold:** Sunny (light) is primary, After Dark (dark) the variant. Floating word-only tab bar (Home · Progress · Badges · You); a 64pt log button beside the tab bar with a long-press type menu (closes TestFlight D1); Home leads with one hero stat, other types as flat tiles; card gradients become flat fills with outlines; the pack picker becomes "Compare with"; share cards always render in Sunny.
 - Everything that draws UI follows: widgets, Live Activity, the NowTrackingBar (specced in this style), share cards, the Watch app's accent.
 - **Journey checkpoint celebration**, built directly in the new style.

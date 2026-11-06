@@ -120,8 +120,8 @@ struct CloudSyncSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("iCloud Sync")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
                 .padding(.horizontal)
 
             VStack(spacing: 0) {
@@ -129,7 +129,7 @@ struct CloudSyncSection: View {
                     title: "Sync to iCloud",
                     subtitle: "Keep your history on all your devices",
                     icon: "arrow.triangle.2.circlepath",
-                    iconColor: Color(hex: "#0284C7"),
+                    iconColor: .ffLink,
                     isOn: Binding(
                         get: { syncManager.isSyncEnabledSetting },
                         set: { newValue in
@@ -141,13 +141,13 @@ struct CloudSyncSection: View {
                 Divider()
                 statusRow
             }
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: 0, radius: FFRadius.md)
+            .padding(.horizontal)
 
             if showRestartNote {
                 Text("Reopen FunFitness to apply this change.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
                     .padding(.horizontal)
             }
         }
@@ -159,16 +159,16 @@ struct CloudSyncSection: View {
     private var statusRow: some View {
         HStack {
             Image(systemName: "icloud.fill")
-                .foregroundStyle(Color(hex: "#A78BFA"))
+                .foregroundStyle(Color.ffLink)
                 .frame(width: 24)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Status")
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffInk)
                 Text(statusText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
             Spacer()
             if syncManager.syncState == .syncing {

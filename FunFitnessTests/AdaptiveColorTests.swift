@@ -36,11 +36,16 @@ struct AdaptiveColorTests {
         #expect(resolved.allSatisfy { $0[3] == 1 })
     }
 
-    @Test func darkModeUsesTheNavyPalette() {
+    /// 3.2: the grounds are the Playful Bold tokens `bg` and `surface` (docs/design/playful-bold).
+    @Test func usesThePlayfulBoldPalette() {
+        func hex(_ c: [CGFloat]) -> String {
+            String(format: "%02X%02X%02X", Int((c[0] * 255).rounded()), Int((c[1] * 255).rounded()), Int((c[2] * 255).rounded()))
+        }
         let dark = UITraitCollection(userInterfaceStyle: .dark)
-        let background = Self.components(UIColor.appBackground.resolvedColor(with: dark))
-        let card = Self.components(UIColor.appCard.resolvedColor(with: dark))
-        #expect(abs(background[0] - 13 / 255) < 0.001 && abs(background[2] - 26 / 255) < 0.001)
-        #expect(abs(card[0] - 26 / 255) < 0.001 && abs(card[2] - 46 / 255) < 0.001)
+        let light = UITraitCollection(userInterfaceStyle: .light)
+        #expect(hex(Self.components(UIColor.appBackground.resolvedColor(with: light))) == "FFD43B")
+        #expect(hex(Self.components(UIColor.appBackground.resolvedColor(with: dark))) == "17122E")
+        #expect(hex(Self.components(UIColor.appCard.resolvedColor(with: light))) == "FFFFFF")
+        #expect(hex(Self.components(UIColor.appCard.resolvedColor(with: dark))) == "262051")
     }
 }

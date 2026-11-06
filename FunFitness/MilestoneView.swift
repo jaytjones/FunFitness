@@ -22,7 +22,7 @@ struct MilestoneView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.85)
+            Color.ffBg
                 .ignoresSafeArea()
 
             ConfettiView(trigger: confettiTrigger, isActive: confettiActive)
@@ -30,32 +30,37 @@ struct MilestoneView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                Text(milestone.getEmoji(for: pack))
-                    .font(.system(size: 100))
-                    .scaleEffect(showContent ? 1.0 : 0.5)
-                    .opacity(showContent ? 1.0 : 0.0)
-                    .animation(reduceMotion ? .none : .spring(response: 0.6, dampingFraction: 0.7), value: showContent)
-                    .accessibilityHidden(true)
-
-                VStack(spacing: 12) {
-                    Text(milestone.title(pref: pref))
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
+                VStack(spacing: 24) {
+                    Text(milestone.getEmoji(for: pack))
+                        .font(.system(size: 100))
+                        .scaleEffect(showContent ? 1.0 : 0.5)
                         .opacity(showContent ? 1.0 : 0.0)
-                        .offset(y: showContent ? 0 : 20)
-                        .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.2), value: showContent)
+                        .animation(reduceMotion ? .none : .spring(response: 0.6, dampingFraction: 0.7), value: showContent)
+                        .accessibilityHidden(true)
 
-                    Text(milestone.getComparison(for: pack))
-                        .font(.title3)
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                        .opacity(showContent ? 1.0 : 0.0)
-                        .offset(y: showContent ? 0 : 20)
-                        .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.3), value: showContent)
+                    VStack(spacing: 12) {
+                        Text(milestone.title(pref: pref))
+                            .ffFont(.display)
+                            .foregroundStyle(Color.ffInk)
+                            .multilineTextAlignment(.center)
+                            .opacity(showContent ? 1.0 : 0.0)
+                            .offset(y: showContent ? 0 : 20)
+                            .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.2), value: showContent)
+
+                        Text(milestone.getComparison(for: pack))
+                            .ffFont(.body)
+                            .foregroundStyle(Color.ffInkMuted)
+                            .multilineTextAlignment(.center)
+                            .opacity(showContent ? 1.0 : 0.0)
+                            .offset(y: showContent ? 0 : 20)
+                            .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.3), value: showContent)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .ffCard()
+                .opacity(showContent ? 1.0 : 0.0)
+                .animation(reduceMotion ? .none : .easeOut(duration: 0.3), value: showContent)
+                .padding(.horizontal, 32)
 
                 Spacer()
 
@@ -64,13 +69,8 @@ struct MilestoneView: View {
                         onDismiss()
                     } label: {
                         Text("Keep Going")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(hex: "#5B21B6"))
-                            .clipShape(.rect(cornerRadius: 14))
                     }
+                    .buttonStyle(.ffPrimary)
                     .opacity(showContent ? 1.0 : 0.0)
                     .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.4), value: showContent)
                     .accessibilityIdentifier("keepGoingButton")
@@ -120,6 +120,7 @@ struct MilestoneView: View {
                 }
             }
         }
+        .buttonStyle(.ffSecondary)
         .accessibilityIdentifier("milestoneShareButton")
     }
 
@@ -128,12 +129,6 @@ struct MilestoneView: View {
             Image(systemName: "square.and.arrow.up")
             Text("Share")
         }
-        .font(.subheadline)
-        .foregroundStyle(Color(hex: "#9CA3AF"))
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.white.opacity(0.1))
-        .clipShape(.rect(cornerRadius: 14))
     }
 }
 
@@ -194,7 +189,8 @@ struct ConfettiView: View {
                 lifetime: Double.random(in: 2...4),
                 rotationSpeed: Double.random(in: -360...360),
                 wobble: Double.random(in: 2...6),
-                color: [.red, .blue, .green, .yellow, .orange, .pink, .purple].randomElement() ?? .blue,
+                // Type and accent fills (no brand yellow: it would vanish on the yellow ground).
+                color: [Color.ffTypeDistance, .ffTypeWeight, .ffTypeDuration, .ffTypeReps, .ffStreak, .ffAccent2].randomElement() ?? .ffAccent,
                 creationTime: Date().timeIntervalSinceReferenceDate
             )
         }

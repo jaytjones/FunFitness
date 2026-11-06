@@ -17,8 +17,8 @@ struct WorkoutLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
             WorkoutLockScreenView(context: context)
-                .activityBackgroundTint(WorkoutLiveActivityStyle.background)
-                .activitySystemActionForegroundColor(.white)
+                .activityBackgroundTint(Color.ffSurface)
+                .activitySystemActionForegroundColor(Color.ffInk)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -27,33 +27,36 @@ struct WorkoutLiveActivityWidget: Widget {
                     } icon: {
                         Text(context.attributes.emoji)
                     }
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                    .ffFont(.headline)
+                    .foregroundStyle(IslandStyle.ink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    // The rest countdown (orange) takes the clock's place between strength sets,
-                    // keeping the expanded island to two rows below the header.
+                    // The rest countdown (reps orange) takes the clock's place between strength
+                    // sets, keeping the expanded island to two rows below the header.
                     CompactTimer(state: context.state)
-                        .font(.title3.weight(.bold).monospacedDigit())
-                        .foregroundStyle(context.state.restEnd == nil ? WorkoutLiveActivityStyle.accent : .orange)
+                        .ffFont(.headline)
+                        .foregroundStyle(context.state.restEnd == nil ? Color.ffAccent : Color.ffTypeReps)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
-                        WorkoutStatsRow(state: context.state)
-                        WorkoutControls(isStrength: context.attributes.isStrength, state: context.state)
+                    VStack(spacing: FFSpace.s2) {
+                        WorkoutStatsRow(state: context.state, inIsland: true)
+                        WorkoutControls(isStrength: context.attributes.isStrength, state: context.state, inIsland: true)
                     }
                 }
             } compactLeading: {
-                // Walks/runs pair the emoji with distance so the compact island shows both
+                // Walks/runs pair a pink dot with distance so the compact island shows both
                 // distance (leading) and time (trailing) at a glance.
                 if context.attributes.isStrength {
                     Text(context.attributes.emoji)
                 } else {
-                    HStack(spacing: 4) {
-                        Text(context.attributes.emoji)
+                    HStack(spacing: FFSpace.s1) {
+                        Circle()
+                            .fill(Color.ffAccent)
+                            .frame(width: 8, height: 8)
+                            .accessibilityHidden(true)
                         Text(context.state.primaryValue)
-                            .font(.caption.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.white)
+                            .font(.system(.caption, design: .rounded, weight: .bold).monospacedDigit())
+                            .foregroundStyle(IslandStyle.ink)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
@@ -61,8 +64,8 @@ struct WorkoutLiveActivityWidget: Widget {
             } compactTrailing: {
                 // While resting between sets, the rest countdown matters more than the session clock.
                 CompactTimer(state: context.state)
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(context.state.restEnd == nil ? WorkoutLiveActivityStyle.accent : .orange)
+                    .font(.system(.caption, design: .rounded, weight: .bold).monospacedDigit())
+                    .foregroundStyle(context.state.restEnd == nil ? Color.ffAccent : Color.ffTypeReps)
                     .frame(maxWidth: 52)
             } minimal: {
                 // The minimal island (shown when another app's Live Activity shares the island)
@@ -71,44 +74,48 @@ struct WorkoutLiveActivityWidget: Widget {
                     Text(context.attributes.emoji)
                 } else {
                     Text(context.state.primaryValue)
-                        .font(.caption2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(WorkoutLiveActivityStyle.accent)
+                        .font(.system(.caption2, design: .rounded, weight: .bold).monospacedDigit())
+                        .foregroundStyle(Color.ffAccent)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                 }
             }
-            .keylineTint(WorkoutLiveActivityStyle.accent)
+            .keylineTint(Color.ffAccent)
         }
     }
 }
 
 // MARK: - Lock Screen
 
+/// Playful Bold Lock Screen card (LiveActivity.md): `surface` ground following the system
+/// appearance, the outlined title tag, the clock as the largest element. No offset shadows.
 private struct WorkoutLockScreenView: View {
     let context: ActivityViewContext<WorkoutActivityAttributes>
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("\(context.attributes.emoji) \(context.attributes.title)")
+        VStack(alignment: .leading, spacing: FFSpace.s2) {
+            HStack(spacing: FFSpace.s2) {
+                Text(context.attributes.emoji)
                     .font(.headline)
-                    .foregroundStyle(.white)
+                FFTag(
+                    text: context.attributes.title,
+                    fill: context.attributes.isStrength ? .ffTypeWeight : .ffTypeDistance,
+                    foreground: context.attributes.isStrength ? .ffOnTypeWeight : .ffOnTypeDistance
+                )
                 if context.state.isPaused {
-                    Text("Paused")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.orange)
+                    FFTag(text: String(localized: "Paused"), fill: .ffSurfaceAlt, foreground: .ffInk)
                 } else if context.state.isFinished {
-                    Text("Finished")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.green)
+                    FFTag(text: String(localized: "Finished"), fill: .ffSurface, foreground: .ffSuccess)
                 }
                 Spacer()
                 WorkoutClock(state: context.state)
-                    .font(.title2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(WorkoutLiveActivityStyle.accent)
+                    .ffFont(.title)
+                    .foregroundStyle(context.state.isPaused ? Color.ffInkMuted : Color.ffInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
 
-            WorkoutStatsRow(state: context.state)
+            WorkoutStatsRow(state: context.state, inIsland: false)
 
             // One line here to fit the Lock Screen's height: the rest countdown while resting
             // between strength sets, otherwise the comparison.
@@ -116,26 +123,27 @@ private struct WorkoutLockScreenView: View {
                 RestCountdown(state: context.state)
             } else if let comparison = context.state.comparison {
                 Text(comparison)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.85))
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
 
-            WorkoutControls(isStrength: context.attributes.isStrength, state: context.state)
+            WorkoutControls(isStrength: context.attributes.isStrength, state: context.state, inIsland: false)
         }
-        .padding()
-        // Painted here as well as via activityBackgroundTint so the white text always has its
-        // dark background, whatever tint treatment the system applies.
-        .background(WorkoutLiveActivityStyle.background)
+        .padding(FFSpace.s4)
+        // Painted here as well as via activityBackgroundTint so the ink text always has its
+        // surface ground, whatever tint treatment the system applies.
+        .background(Color.ffSurface)
     }
 }
 
 // MARK: - Pieces
 
-private enum WorkoutLiveActivityStyle {
-    static let background = Color(red: 0.12, green: 0.11, blue: 0.20)
-    static let accent     = Color(red: 0.65, green: 0.55, blue: 0.98)   // #A78BFA
+/// The Dynamic Island is always black (`island`, drawn by iOS); its text is `island-ink`.
+/// Style.swift has no Swift token for island-ink, so its tokens.json value (#FFFFFF) lives here.
+private enum IslandStyle {
+    static let ink = Color.white
 }
 
 /// Ticks live while moving; frozen while paused or finished.
@@ -174,13 +182,14 @@ private struct RestCountdown: View {
         if let restStart = state.restStart, let restEnd = state.restEnd {
             HStack(spacing: 6) {
                 Image(systemName: "hourglass")
+                    .foregroundStyle(Color.ffTypeReps)
                     .accessibilityHidden(true)
                 Text("Rest")
                 Text(timerInterval: restStart...restEnd, countsDown: true)
                     .monospacedDigit()
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.orange)
+            .ffFont(.caption)
+            .foregroundStyle(Color.ffInk)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -188,6 +197,7 @@ private struct RestCountdown: View {
 
 private struct WorkoutStatsRow: View {
     let state: WorkoutActivityAttributes.ContentState
+    let inIsland: Bool
 
     var body: some View {
         HStack {
@@ -200,11 +210,11 @@ private struct WorkoutStatsRow: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.title3.weight(.semibold).monospacedDigit())
-                .foregroundStyle(.white)
+                .ffFont(.headline)
+                .foregroundStyle(inIsland ? IslandStyle.ink : Color.ffInk)
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.7))
+                .ffFont(.label)
+                .foregroundStyle(inIsland ? IslandStyle.ink.opacity(0.7) : Color.ffInkMuted)
         }
         .accessibilityElement(children: .combine)
     }
@@ -213,36 +223,75 @@ private struct WorkoutStatsRow: View {
 private struct WorkoutControls: View {
     let isStrength: Bool
     let state: WorkoutActivityAttributes.ContentState
+    let inIsland: Bool
 
     var body: some View {
         if !state.isFinished {
-            HStack(spacing: 12) {
+            HStack(spacing: FFSpace.s3) {
                 if isStrength {
                     // Repeats the last set; nothing to repeat until the first set is in.
                     if state.canLogSet {
                         Button(intent: LogSetIntent()) {
                             Label("Log Set", systemImage: "plus").frame(maxWidth: .infinity)
                         }
-                        .tint(.green)
+                        .buttonStyle(LiveActivityPillStyle(kind: .secondary, inIsland: inIsland))
                     }
                 } else if state.isPaused {
                     Button(intent: ResumeWorkoutIntent()) {
                         Label("Resume", systemImage: "play.fill").frame(maxWidth: .infinity)
                     }
-                    .tint(.green)
+                    .buttonStyle(LiveActivityPillStyle(kind: .secondary, inIsland: inIsland))
                 } else {
                     Button(intent: PauseWorkoutIntent()) {
                         Label("Pause", systemImage: "pause.fill").frame(maxWidth: .infinity)
                     }
-                    .tint(.orange)
+                    .buttonStyle(LiveActivityPillStyle(kind: .secondary, inIsland: inIsland))
                 }
                 Button(intent: EndWorkoutIntent()) {
                     Label("End", systemImage: "flag.checkered").frame(maxWidth: .infinity)
                 }
-                .tint(WorkoutLiveActivityStyle.accent)
+                .buttonStyle(LiveActivityPillStyle(kind: .primary, inIsland: inIsland))
             }
-            .buttonStyle(.borderedProminent)
-            .font(.subheadline.weight(.semibold))
+        }
+    }
+}
+
+/// Playful Bold pill for Live Activity buttons: `.primary` is the pink accent (End), `.secondary`
+/// a surface pill (Pause/Resume/Log Set). Outlined on the Lock Screen; no outlines in the Dynamic
+/// Island. No offset shadow on either (iOS clips them). Sized like the old bordered buttons so
+/// the Lock Screen height is unchanged.
+private struct LiveActivityPillStyle: ButtonStyle {
+    enum Kind { case primary, secondary }
+    let kind: Kind
+    let inIsland: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(.subheadline, design: .rounded, weight: .bold))
+            .foregroundStyle(foreground)
+            .padding(.vertical, 7)
+            .padding(.horizontal, FFSpace.s3)
+            .background(background, in: .capsule)
+            .overlay {
+                if !inIsland {
+                    Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control)
+                }
+            }
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(.capsule)
+    }
+
+    private var background: Color {
+        switch kind {
+        case .primary: return .ffAccent
+        case .secondary: return inIsland ? IslandStyle.ink.opacity(0.2) : .ffSurface
+        }
+    }
+
+    private var foreground: Color {
+        switch kind {
+        case .primary: return .ffOnAccent
+        case .secondary: return inIsland ? IslandStyle.ink : .ffInk
         }
     }
 }

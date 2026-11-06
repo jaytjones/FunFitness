@@ -32,12 +32,11 @@ struct StrengthSessionView: View {
     @FocusState private var focusedField: Field?
 
     private var pref: UnitPreference { viewModel.unitPreference }
-    private let accent = Color(hex: "#A78BFA")
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground.ignoresSafeArea()
+                Color.ffBg.ignoresSafeArea()
 
                 switch manager.phase {
                 case .idle:     startScreen
@@ -58,12 +57,12 @@ struct StrengthSessionView: View {
             switch manager.phase {
             case .idle:
                 Button { dismiss() } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.ffInkMuted)
                 }
                 .accessibilityLabel("Close")
             case .active:
                 Button("Hide") { dismiss() }
-                    .foregroundStyle(accent)
+                    .foregroundStyle(Color.ffLink)
                     .accessibilityHint("Keeps the session running in the background")
                     .accessibilityIdentifier("strengthHideButton")
             case .finished:
@@ -74,14 +73,14 @@ struct StrengthSessionView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("End") { showEndConfirm = true }
                     .fontWeight(.semibold)
-                    .foregroundStyle(accent)
+                    .foregroundStyle(Color.ffDanger)
                     .accessibilityIdentifier("strengthEndButton")
             }
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
             Button("Done") { focusedField = nil }
-                .foregroundStyle(accent)
+                .foregroundStyle(Color.ffLink)
         }
     }
 
@@ -96,8 +95,8 @@ struct StrengthSessionView: View {
                 .accessibilityHidden(true)
 
             Text("Log each set as you go. A rest timer starts after every set, and your sets save as you log them.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.body)
+                .foregroundStyle(Color.ffInkMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -107,8 +106,8 @@ struct StrengthSessionView: View {
 
             if (WorkoutTracker.shared.phase != .idle) {
                 Text("Finish your walk or run before starting a strength session.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffDanger)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -118,13 +117,8 @@ struct StrengthSessionView: View {
                 manager.start(restSeconds: restSeconds, context: modelContext, viewModel: viewModel)
             } label: {
                 Text("Start Session")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(Color(hex: "#7C3AED").opacity((WorkoutTracker.shared.phase != .idle) ? 0.4 : 1))
-                    .clipShape(.capsule)
             }
+            .buttonStyle(.ffPrimary)
             .disabled((WorkoutTracker.shared.phase != .idle))
             .padding(.horizontal)
             .padding(.bottom)
@@ -135,14 +129,14 @@ struct StrengthSessionView: View {
     private var restPicker: some View {
         VStack(spacing: 8) {
             Text("Rest between sets")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
             HStack(spacing: 8) {
                 ForEach(StrengthSession.restOptions, id: \.self) { option in
                     SelectionChip(
                         title: UnitConverter.elapsedString(option),
                         isSelected: restSeconds == option,
-                        selectedBackground: accent,
+                        selectedBackground: .ffAccent,
                         action: {
                             restSeconds = option
                             manager.setRestSeconds(option)
@@ -194,9 +188,7 @@ struct StrengthSessionView: View {
             stat(session.setCount == 1 ? "Set" : "Sets", "\(session.setCount)")
             stat("Lifted", session.totalLiftedKg > 0 ? UnitConverter.weightString(session.totalLiftedKg, pref: pref) : "—")
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
     }
 
     @ViewBuilder
@@ -206,36 +198,29 @@ struct StrengthSessionView: View {
             VStack(spacing: 8) {
                 HStack {
                     Label("Rest", systemImage: "hourglass")
-                        .font(.headline)
+                        .ffFont(.headline)
                     Spacer()
                     Text(UnitConverter.elapsedString(remaining.rounded(.up)))
-                        .font(.title2.weight(.bold).monospacedDigit())
+                        .ffFont(.numeral)
                 }
                 SwiftUI.ProgressView(value: session.restSeconds > 0 ? 1 - remaining / session.restSeconds : 1)
-                    .progressViewStyle(FitnessProgressStyle(tint: .white))
+                    .progressViewStyle(FitnessProgressStyle(tint: .ffAccent2))
                     .accessibilityHidden(true)
                 Button("Skip rest") { manager.skipRest() }
-                    .font(.subheadline.weight(.semibold))
+                    .ffFont(.bodyStrong)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityIdentifier("strengthSkipRestButton")
             }
-            .foregroundStyle(.white)
-            .padding()
-            .background(
-                LinearGradient(colors: [Color(hex: "#D97706"), Color(hex: "#B45309")],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .foregroundStyle(Color.ffOnTypeDuration)
+            .ffCard(padding: FFSpace.s4, radius: FFRadius.md, fill: .ffTypeDuration)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Resting, \(Int(remaining.rounded(.up))) seconds left")
         } else if session.setCount > 0 {
             Text("Ready for your next set 💪")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 20))
+                .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
         }
     }
 
@@ -257,13 +242,13 @@ struct StrengthSessionView: View {
             if setType == .weight {
                 HStack(spacing: 12) {
                     numberField("Weight (\(pref.weightUnit))", text: $weightText, field: .weight, keyboard: .decimalPad)
-                    Text("×").font(.title2).foregroundStyle(.secondary).accessibilityHidden(true)
+                    Text("×").ffFont(.headline).foregroundStyle(Color.ffInkMuted).accessibilityHidden(true)
                     numberField("Reps", text: $repsText, field: .reps)
                 }
             } else {
                 numberField("Reps", text: $bodyweightText, field: .bodyweight)
                 if let hint = ActivityType.reps.fieldHint {
-                    Text(hint).font(.caption).foregroundStyle(.secondary)
+                    Text(hint).ffFont(.caption).foregroundStyle(Color.ffInkMuted)
                 }
             }
 
@@ -271,38 +256,31 @@ struct StrengthSessionView: View {
                 Text(currentExercise == nil ? "Choose an exercise for this set" : setType == .weight
                      ? "Enter a weight above 0 and \(ActivityType.repCountRange.lowerBound)–\(ActivityType.repCountRange.upperBound) reps"
                      : "Enter \(ActivityType.repCountRange.lowerBound)–\(ActivityType.repCountRange.upperBound) reps")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffDanger)
             }
 
             Button(action: logSet) {
                 Label("Log Set", systemImage: "plus.circle.fill")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color(hex: "#059669"))
-                    .clipShape(.capsule)
             }
+            .buttonStyle(.ffPrimary)
             .accessibilityIdentifier("strengthLogSetButton")
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
     }
 
     private func numberField(_ label: String, text: Binding<String>, field: Field, keyboard: UIKeyboardType = .numberPad) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
             TextField("0", text: text)
                 .keyboardType(keyboard)
-                .font(.system(size: 26, weight: .semibold))
+                .ffFont(.numeral)
+                .foregroundStyle(Color.ffInk)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.appBackground)
-                .clipShape(.rect(cornerRadius: 12))
+                .ffWell(radius: FFRadius.sm)
                 .focused($focusedField, equals: field)
                 .accessibilityLabel(label)
         }
@@ -311,22 +289,26 @@ struct StrengthSessionView: View {
     private func setList(_ session: StrengthSession) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("This session")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
             ForEach(Array(session.sets.enumerated().reversed()), id: \.element.id) { index, set in
                 HStack {
                     Text("Set \(index + 1)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .frame(width: 56, alignment: .leading)
-                    Text(set.type.emoji).accessibilityHidden(true)
+                    Text(set.type.emoji)
+                        .frame(width: 32, height: 32)
+                        .background(set.type.ffFill, in: .rect(cornerRadius: FFRadius.sm / 2, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: FFRadius.sm / 2, style: .continuous).strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
+                        .accessibilityHidden(true)
                     Text(WorkoutLiveActivityContent.namedSetText(set, pref: pref))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInk)
                     Spacer()
                     Text(set.loggedAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 .padding(.vertical, 4)
                 .contentShape(.rect)
@@ -352,9 +334,7 @@ struct StrengthSessionView: View {
                 }
             }
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
     }
 
     // MARK: - Summary
@@ -378,21 +358,16 @@ struct StrengthSessionView: View {
                 if session.totalLiftedKg > 0,
                    let fit = ReferenceUnitEngine.bestFit(total: session.totalLiftedKg, type: .weight, packId: viewModel.activePack.id) {
                     Text("You lifted \(fit.phrase) \(fit.unit.emoji)")
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffOnAccent2)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .clipShape(.rect(cornerRadius: 20))
+                        .ffCard(padding: FFSpace.s4, radius: FFRadius.md, fill: .ffAccent2)
                 }
 
                 Text(session.setCount == 0 ? "No sets logged this time." : "Every set is already in your log.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
 
             Spacer(minLength: 0)
@@ -402,13 +377,8 @@ struct StrengthSessionView: View {
                 dismiss()
             } label: {
                 Text("Done")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(hex: "#5B21B6"))
-                    .clipShape(.rect(cornerRadius: 14))
             }
+            .buttonStyle(.ffPrimary)
             .accessibilityIdentifier("strengthDoneButton")
         }
         .padding()
@@ -419,13 +389,13 @@ struct StrengthSessionView: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title2.weight(.bold).monospacedDigit())
-                .foregroundStyle(.primary)
+                .ffFont(.numeral)
+                .foregroundStyle(Color.ffInk)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)

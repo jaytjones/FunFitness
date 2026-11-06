@@ -29,6 +29,14 @@ struct FunFitnessApp: App {
             }
         }
         #endif
+        #if DEBUG
+        if SampleData.isRequested {
+            // Screenshots / visual checks: an in-memory store with sample data. (3.2)
+            sharedModelContainer = SampleData.makeContainer()
+            WatchConnector.shared.activate()
+            return
+        }
+        #endif
         sharedModelContainer = PersistenceController.makeSharedContainer()
         // Early, so entries logged on the Watch are received even on a background launch. (3.1)
         WatchConnector.shared.activate()

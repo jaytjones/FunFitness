@@ -29,7 +29,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -67,14 +67,13 @@ struct HomeView: View {
                         // once they have data. (v2.2)
                         ForEach(visibleTypes, id: \.self) { type in
                             StatCard(
+                                type: type,
                                 title: type.cardTitle,
                                 subtitle: type.cardSubtitle,
-                                icon: type.emoji,
                                 displayValue: viewModel.displayTotal(for: type),
                                 progress: viewModel.progressToNextMilestone(type: type),
                                 nextMilestone: viewModel.remainingToNextMilestone(type: type).milestone?.title(pref: viewModel.unitPreference) ?? "Complete!",
                                 remainingDisplay: remainingLabel(for: type),
-                                gradientColors: type.cardGradient,
                                 logHint: "Logs a \(type.displayName.lowercased()) activity",
                                 onTap: {
                                     logType = type
@@ -110,7 +109,7 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityLabel("Log activity")
                     .accessibilityIdentifier("homeLogActivityButton")
@@ -185,20 +184,20 @@ struct StreakCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Weekly Streak")
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text(viewModel.isActiveThisWeekStreak ? "Active this week ✓" : "No activity yet this week")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.75))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(viewModel.currentStreak)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .ffFont(.numeral)
+                        .foregroundStyle(Color.ffInk)
                     Text("week\(viewModel.currentStreak == 1 ? "" : "s")")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.75))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 // Reserve trailing space for the share button in the overlay below, so the
                 // streak count doesn't sit under it. (2.4.4)
@@ -209,34 +208,24 @@ struct StreakCard: View {
 
             HStack {
                 Label("Best: \(viewModel.longestStreak) wk\(viewModel.longestStreak == 1 ? "" : "s")", systemImage: "trophy.fill")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.75))
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
                 Spacer()
                 if viewModel.shieldsAvailable > 0 && !viewModel.isActiveThisWeekStreak && viewModel.currentStreak > 0 {
                     Button(action: onActivateShield) {
                         Label("Use Shield (\(viewModel.shieldsAvailable))", systemImage: "shield.fill")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffInk)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(.white.opacity(0.2))
-                            .clipShape(.capsule)
+                            .background(Color.ffSurfaceAlt, in: .capsule)
+                            .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
                     }
                     .accessibilityLabel("Use streak shield")
                 }
             }
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: viewModel.currentStreak == 0
-                    ? [Color(hex: "374151"), Color(hex: "1F2937")]
-                    : [Color(hex: "EA580C"), Color(hex: "DC2626")],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Weekly streak: \(viewModel.currentStreak) weeks. Best: \(viewModel.longestStreak).")
         .accessibilityIdentifier("streakCard")
@@ -245,7 +234,8 @@ struct StreakCard: View {
             if viewModel.currentStreak > 0 {
                 ShareCardButton(
                     content: .streak(current: viewModel.currentStreak, longest: viewModel.longestStreak),
-                    filename: "funfitness_streak.png"
+                    filename: "funfitness_streak.png",
+                    tint: Color.ffInk
                 )
                 .padding(12)
             }
@@ -266,21 +256,18 @@ struct SillyTitleBanner: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title.title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffInk)
                 Text("\(title.rank) Rank · \(viewModel.unlockedAchievementIds.count) badge\(viewModel.unlockedAchievementIds.count == 1 ? "" : "s")")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
             Spacer()
             // Reserve trailing space so the combined label doesn't overlap the
             // share button placed in the overlay below.
             Color.clear.frame(width: 24, height: 1)
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: FFSpace.s4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Title: \(title.title). \(title.rank) rank.")
         .accessibilityIdentifier("sillyTitleBanner")
@@ -289,7 +276,7 @@ struct SillyTitleBanner: View {
             ShareCardButton(
                 content: .title(title, badgeCount: viewModel.unlockedAchievementIds.count),
                 filename: "funfitness_title.png",
-                tint: Color(hex: "#A78BFA")
+                tint: Color.ffLink
             )
             .padding(.trailing, 16)
         }
@@ -318,12 +305,11 @@ struct ChallengeCard: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(completed ? "Challenge Complete! 🎉" : "\(monthName(challenge.month)) Challenge")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white.opacity(0.8))
+                            .ffFont(.label)
+                            .foregroundStyle(Color.ffOnTypeReps)
                         Text(challenge.title)
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffOnTypeReps)
                     }
                     Spacer()
                     // Reserve trailing space for the share button in the overlay below.
@@ -331,34 +317,27 @@ struct ChallengeCard: View {
                 }
 
                 Text(challenge.blurb)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.85))
+                    .ffFont(.body)
+                    .foregroundStyle(Color.ffOnTypeReps)
 
+                // Card fill is type-reps for every challenge; the meter uses the challenge's own
+                // type color (ChallengeCard.md).
                 SwiftUI.ProgressView(value: fraction)
-                    .progressViewStyle(FitnessProgressStyle(tint: .white))
+                    .progressViewStyle(FFMeterStyle(fill: challenge.type.ffFill))
                     .accessibilityLabel("Challenge progress")
                     .accessibilityValue(String(format: "%.0f percent", fraction * 100))
 
                 HStack {
                     Text(completed ? "Done — \(doneStr)" : "\(doneStr) / \(targetStr)")
-                        .font(.caption)
-                        .foregroundStyle(.white)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffOnTypeReps)
                     Spacer()
                     Text("\(Int(fraction * 100))%")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffOnTypeReps)
                 }
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#DB2777"), Color(hex: "#7C3AED")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(fill: .ffTypeReps)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
                 "\(monthName(challenge.month)) challenge: \(challenge.title). "
@@ -370,7 +349,8 @@ struct ChallengeCard: View {
                 if completed {
                     ShareCardButton(
                         content: .challenge(challenge),
-                        filename: "funfitness_challenge.png"
+                        filename: "funfitness_challenge.png",
+                        tint: Color.ffOnTypeReps
                     )
                     .padding(12)
                 }
@@ -402,25 +382,15 @@ struct SeasonalCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(season.name) Special \(season.emoji)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .ffFont(.label)
+                        .foregroundStyle(Color.ffInkMuted)
                     Text(comparison.text)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInk)
                 }
                 Spacer(minLength: 0)
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#B45309"), Color(hex: "#7C2D12")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: FFSpace.s4)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(season.name) special. \(comparison.text)")
             .accessibilityIdentifier("seasonalCard")
@@ -442,37 +412,27 @@ struct TrackWorkoutCard: View {
             HStack(spacing: 12) {
                 Image(systemName: tracker.isRecording ? "location.fill" : "figure.walk.motion")
                     .font(.title2)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.ffLink)
                     .symbolEffect(.pulse, isActive: tracker.phase == .active)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInk)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 Text(tracker.isRecording ? "Open" : "Start")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffOnAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.white.opacity(0.2))
-                    .clipShape(.capsule)
+                    .background(Color.ffAccent, in: .capsule)
+                    .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: FFSpace.s4)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title). \(subtitle)")
@@ -514,37 +474,27 @@ struct StrengthSessionCard: View {
             HStack(spacing: 12) {
                 Image(systemName: manager.isActive ? "timer" : "dumbbell.fill")
                     .font(.title2)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.ffLink)
                     .symbolEffect(.pulse, isActive: manager.isActive)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInk)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 Text(manager.phase == .idle ? "Start" : "Open")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffOnAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.white.opacity(0.2))
-                    .clipShape(.capsule)
+                    .background(Color.ffAccent, in: .capsule)
+                    .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#7C3AED"), Color(hex: "#5B21B6")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: FFSpace.s4)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title). \(subtitle)")
@@ -580,36 +530,26 @@ struct RepeatLastButton: View {
             HStack(spacing: 12) {
                 Image(systemName: "arrow.counterclockwise.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.ffLink)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Repeat Last Activity")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInk)
                     Text(label)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 Text("Log it")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffOnAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.white.opacity(0.2))
-                    .clipShape(.capsule)
+                    .background(Color.ffAccent, in: .capsule)
+                    .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#059669"), Color(hex: "#047857")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: FFSpace.s4)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Repeat last activity: \(label)")
@@ -640,13 +580,12 @@ struct RecentActivityCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Recent Activity")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Spacer()
                     Button("See all", action: onSeeAll)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffLink)
                         .accessibilityHint("Opens your full activity history")
                         .accessibilityIdentifier("recentActivitySeeAll")
                 }
@@ -668,17 +607,16 @@ struct RecentActivityCard: View {
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(.rect)
                         }
-                        .tint(Color(hex: "#A78BFA"))
+                        .tint(Color.ffLink)
                         .accessibilityLabel("Options for \(activity.activityType.displayName) entry")
                     }
                     if activity.id != recent.last?.id {
                         Divider()
+                            .overlay(Color.ffLine.opacity(0.15))
                     }
                 }
             }
-            .padding()
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard()
             .accessibilityIdentifier("recentActivityCard")
         }
     }
@@ -700,25 +638,17 @@ struct AbsurdityTicker: View {
                 HStack(spacing: 6) {
                     Text("🎯").accessibilityHidden(true)
                     Text("Right Now...")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white.opacity(0.75))
+                        .ffFont(.label)
+                        .foregroundStyle(Color.ffSurface)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(lines, id: \.self) { line in
-                        Text(line).font(.headline).foregroundStyle(.white)
+                        Text(line).ffFont(.headline).foregroundStyle(Color.ffSurface)
                     }
                 }
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            // Inverted card (ink fill, surface text) so it reads differently from stat cards. (Ticker.md)
+            .ffCard(fill: .ffInk)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(lines.joined(separator: ". "))
             .accessibilityIdentifier("absurdityTicker")
@@ -728,15 +658,19 @@ struct AbsurdityTicker: View {
 
 // MARK: - Stat Card
 
+/// Playful Bold stat card: a surface card with the type's icon chip, the total as a numeral and a
+/// meter in the type color.
 struct StatCard: View {
+    let type: ActivityType
     let title: String
     let subtitle: String
-    let icon: String
     let displayValue: String
     let progress: Double
     let nextMilestone: String
     let remainingDisplay: String
-    let gradientColors: [Color]
+
+    // 44pt chip, scaled with Dynamic Type.
+    @ScaledMetric(relativeTo: .title3) private var chipSize: CGFloat = 44
     // VoiceOver hint + tap action for logging this activity type. Optional so
     // non-interactive uses of StatCard keep working.
     var logHint: String? = nil
@@ -757,67 +691,65 @@ struct StatCard: View {
     private var cardBody: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(icon)
-                    .font(.title)
+                Image(systemName: type.symbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(type.ffOnFill)
+                    .frame(width: chipSize, height: chipSize)
+                    .background(type.ffFill, in: .rect(cornerRadius: FFRadius.sm, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: FFRadius.sm, style: .continuous)
+                            .strokeBorder(Color.ffLine, lineWidth: FFStroke.control)
+                    )
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 if onTap != nil {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(Color.ffLink)
                         .accessibilityHidden(true)
                 }
             }
 
             Text(displayValue)
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .ffFont(.numeral)
+                .foregroundStyle(Color.ffInk)
 
             SwiftUI.ProgressView(value: progress)
-                .progressViewStyle(FitnessProgressStyle(tint: .white))
+                .progressViewStyle(FFMeterStyle(fill: type.ffFill))
                 .accessibilityLabel("\(title) progress")
                 .accessibilityValue(String(format: "%.0f percent", progress * 100))
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Next Milestone")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.label)
+                        .foregroundStyle(Color.ffInkMuted)
                     Text(nextMilestone)
-                        .font(.caption)
-                        .foregroundStyle(.white)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInk)
                         .lineLimit(1)
                 }
                 Spacer()
                 if !remainingDisplay.isEmpty {
                     Text(remainingDisplay)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 } else {
                     Text("All milestones complete!")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffSuccess)
                 }
             }
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: gradientColors,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(displayValue). \(Int(progress * 100))% to next milestone.")
     }
@@ -831,8 +763,8 @@ struct ThemeSelector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Achievement Theme")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
 
             // FlowLayout wraps the chips onto multiple rows as the pack list grows (5 packs
             // as of v2.2 Segment 4).
@@ -841,15 +773,12 @@ struct ThemeSelector: View {
                     SelectionChip(
                         title: pack.displayName,
                         isSelected: selectedPack == pack,
-                        selectedBackground: Color(hex: "#D946EF"),
                         action: { selectedPack = pack }
                     )
                 }
             }
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
     }
 }
 
@@ -867,8 +796,8 @@ struct AchievementPreview: View {
                         .font(.system(size: 48))
                         .accessibilityHidden(true)
                     Text("Log your first activity to unlock achievements!")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInkMuted)
                         .multilineTextAlignment(.center)
 
                     HStack(spacing: 8) {
@@ -881,22 +810,17 @@ struct AchievementPreview: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 20))
+                .ffCard()
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Recent Achievements")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text("\(unlockedCount) of \(totalCount) unlocked")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 20))
+                .ffCard()
             }
         }
     }

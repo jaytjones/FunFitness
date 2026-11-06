@@ -63,7 +63,7 @@ struct LogActivitySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -97,8 +97,8 @@ struct LogActivitySheet: View {
                                 dismiss()
                             } label: {
                                 Label("Track a walk or run live instead", systemImage: "location.fill")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color(hex: "#A78BFA"))
+                                    .ffFont(.bodyStrong)
+                                    .foregroundStyle(Color.ffLink)
                             }
                             .accessibilityIdentifier("trackLiveInsteadButton")
                         }
@@ -108,8 +108,8 @@ struct LogActivitySheet: View {
                                 dismiss()
                             } label: {
                                 Label("Start a live strength session instead", systemImage: "timer")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color(hex: "#A78BFA"))
+                                    .ffFont(.bodyStrong)
+                                    .foregroundStyle(Color.ffLink)
                             }
                             .accessibilityIdentifier("strengthLiveInsteadButton")
                         }
@@ -123,37 +123,36 @@ struct LogActivitySheet: View {
                         // Value Input
                         VStack(alignment: .leading, spacing: 8) {
                             Text(UnitConverter.fieldLabel(for: selectedType, pref: pref))
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
 
                             TextField(
                                 selectedType.usesDecimalInput ? "0.0" : "0",
                                 text: $inputValue
                             )
                             .keyboardType(selectedType.usesDecimalInput ? .decimalPad : .numberPad)
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .ffFont(.numeral)
+                            .foregroundStyle(Color.ffInk)
                             .padding()
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 14))
+                            .ffWell()
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(showValidationError ? Color.red : Color.clear, lineWidth: 2)
+                                RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                                    .strokeBorder(showValidationError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
                             )
                             .focused($focusedField, equals: .value)
                             .accessibilityIdentifier("activityValueInput")
 
                             if let hint = selectedType.fieldHint {
                                 Text(hint)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .ffFont(.caption)
+                                    .foregroundStyle(Color.ffInkMuted)
                                     .accessibilityIdentifier("activityFieldHint")
                             }
 
                             if showValidationError {
                                 Text("Please enter a valid value greater than 0")
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
+                                    .ffFont(.caption)
+                                    .foregroundStyle(Color.ffDanger)
                             }
                         }
                         .padding(.horizontal)
@@ -163,10 +162,10 @@ struct LogActivitySheet: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Toggle(isOn: $includeReps.animation()) {
                                     Text("Include rep count")
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
+                                        .ffFont(.headline)
+                                        .foregroundStyle(Color.ffInk)
                                 }
-                                .tint(Color(hex: "#A78BFA"))
+                                .tint(Color.ffAccent)
                                 .padding(.horizontal)
 
                                 if includeReps {
@@ -177,7 +176,7 @@ struct LogActivitySheet: View {
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
                                                 .font(.title2)
-                                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                                .foregroundStyle(Color.ffLink)
                                         }
                                         .accessibilityLabel("Decrease reps")
 
@@ -185,8 +184,8 @@ struct LogActivitySheet: View {
                                             TextField("1", text: $repsText)
                                                 .keyboardType(.numberPad)
                                                 .multilineTextAlignment(.trailing)
-                                                .font(.system(size: 24, weight: .semibold))
-                                                .foregroundStyle(.primary)
+                                                .ffFont(.numeral)
+                                                .foregroundStyle(Color.ffInk)
                                                 .fixedSize()
                                                 .focused($focusedField, equals: .reps)
                                                 .accessibilityLabel("Rep count")
@@ -199,8 +198,8 @@ struct LogActivitySheet: View {
                                                     showRepsError = false
                                                 }
                                             Text("reps")
-                                                .font(.system(size: 24, weight: .semibold))
-                                                .foregroundStyle(.secondary)
+                                                .ffFont(.headline)
+                                                .foregroundStyle(Color.ffInkMuted)
                                                 .accessibilityHidden(true)
                                         }
                                         .frame(minWidth: 80)
@@ -212,25 +211,24 @@ struct LogActivitySheet: View {
                                         } label: {
                                             Image(systemName: "plus.circle.fill")
                                                 .font(.title2)
-                                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                                .foregroundStyle(Color.ffLink)
                                         }
                                         .accessibilityLabel("Increase reps")
                                     }
                                     .padding()
                                     .frame(maxWidth: .infinity)
-                                    .background(Color.appCard)
-                                    .clipShape(.rect(cornerRadius: 14))
+                                    .ffWell()
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 14)
-                                            .stroke(showRepsError ? Color.red : Color.clear, lineWidth: 2)
+                                        RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                                            .strokeBorder(showRepsError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
                                     )
                                     .padding(.horizontal)
                                     .accessibilityIdentifier("repsControl")
 
                                     if showRepsError {
                                         Text("Enter a rep count from \(ActivityType.repCountRange.lowerBound) to \(ActivityType.repCountRange.upperBound)")
-                                            .font(.caption)
-                                            .foregroundStyle(.red)
+                                            .ffFont(.caption)
+                                            .foregroundStyle(Color.ffDanger)
                                             .padding(.horizontal)
                                     }
                                 }
@@ -249,8 +247,8 @@ struct LogActivitySheet: View {
                         // Date Picker
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Date & Time")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                             DatePicker(
                                 "Activity date",
                                 selection: $logDate,
@@ -259,7 +257,7 @@ struct LogActivitySheet: View {
                             )
                             .datePickerStyle(.compact)
                             .labelsHidden()
-                            .tint(Color(hex: "#A78BFA"))
+                            .tint(Color.ffAccent)
                             .accessibilityIdentifier("activityDatePicker")
                         }
                         .padding(.horizontal)
@@ -270,16 +268,11 @@ struct LogActivitySheet: View {
                         Button { logActivity() } label: {
                             HStack {
                                 Text(setsCount > 1 ? "Log \(setsCount) Sets" : "Log \(selectedType.displayName)")
-                                    .font(.headline)
                                 Text(selectedType.emoji)
                                     .accessibilityHidden(true)
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(hex: "#5B21B6"))
-                            .clipShape(.rect(cornerRadius: 14))
                         }
+                        .buttonStyle(.ffPrimary)
                         .padding(.horizontal)
                         .padding(.bottom)
                         .accessibilityIdentifier("logActivityButton")
@@ -293,14 +286,14 @@ struct LogActivitySheet: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.ffInkMuted)
                     }
                     .accessibilityLabel("Close")
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") { focusedField = nil }
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .foregroundStyle(Color.ffLink)
                 }
             }
             .onAppear {
@@ -366,22 +359,22 @@ private extension LogActivitySheet {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 16) {
                 Text("Sets")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
                 Spacer()
                 Button {
                     setsCount = max(setsCount - 1, Self.setsRange.lowerBound)
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(Color(hex: "#A78BFA").opacity(setsCount > Self.setsRange.lowerBound ? 1 : 0.4))
+                        .foregroundStyle(Color.ffLink.opacity(setsCount > Self.setsRange.lowerBound ? 1 : 0.4))
                 }
                 .disabled(setsCount <= Self.setsRange.lowerBound)
                 .accessibilityLabel("Decrease sets")
 
                 Text("\(setsCount)")
-                    .font(.system(size: 24, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.primary)
+                    .ffFont(.numeral)
+                    .foregroundStyle(Color.ffInk)
                     .frame(minWidth: 36)
                     .accessibilityLabel("\(setsCount) set\(setsCount == 1 ? "" : "s")")
                     .accessibilityIdentifier("setsCount")
@@ -391,19 +384,18 @@ private extension LogActivitySheet {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(Color(hex: "#A78BFA").opacity(setsCount < Self.setsRange.upperBound ? 1 : 0.4))
+                        .foregroundStyle(Color.ffLink.opacity(setsCount < Self.setsRange.upperBound ? 1 : 0.4))
                 }
                 .disabled(setsCount >= Self.setsRange.upperBound)
                 .accessibilityLabel("Increase sets")
             }
             .padding()
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 14))
+            .ffWell()
 
             if setsCount > 1 {
                 Text("Saves \(setsCount) identical sets as one session in History.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
         }
         .padding(.horizontal)

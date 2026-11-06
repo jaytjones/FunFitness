@@ -44,12 +44,11 @@ struct EffortPointsCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary.isComplete ? "Weekly Goal Reached! 🎉" : "Effort Points This Week")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .ffFont(.label)
+                        .foregroundStyle(summary.isComplete ? Color.ffSuccess : Color.ffInkMuted)
                     Text("\(summary.pointsText) / \(summary.targetText) pts")
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                 }
                 Spacer()
                 // Reserve trailing space for the info button in the overlay below.
@@ -57,24 +56,16 @@ struct EffortPointsCard: View {
             }
 
             SwiftUI.ProgressView(value: summary.fraction)
-                .progressViewStyle(FitnessProgressStyle(tint: .white))
+                .progressViewStyle(FFMeterStyle(fill: .ffAccent))
                 .accessibilityHidden(true)
 
             Text(summary.includesEstimates
                  ? "Minutes × effort. Some entries had no time, so they're estimated."
                  : "Minutes × effort, from every kind of workout.")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.85))
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(
-                colors: [Color(hex: "#0EA5E9"), Color(hex: "#4F46E5")],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "Effort Points this week: \(summary.pointsText) of \(summary.targetText)."
@@ -88,13 +79,13 @@ struct EffortPointsCard: View {
             } label: {
                 Image(systemName: "info.circle")
                     .font(.title3)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.ffInk)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(.rect)
             }
             .accessibilityLabel("How your score works")
             .accessibilityIdentifier("effortPointsInfo")
-            .padding(2)
+            .padding(FFSpace.s2)
         }
         .sheet(isPresented: $showExplainer) {
             EffortPointsExplainer()
@@ -111,22 +102,22 @@ struct EffortPointsExplainer: View {
             List {
                 Section {
                     Text("Effort Points = minutes of activity × how hard you worked.")
-                        .font(.headline)
+                        .ffFont(.headline)
                     Text("Aim for \(Int(EffortEngine.weeklyTarget)) points a week, a nod to the World Health Organization's 150 active minutes. That's about 85 minutes of walking or 30 minutes of running.")
                 }
 
                 Section("How hard you worked") {
                     LabeledContent("Heart-rate zone 1–5", value: "1–5 pts/min")
                     Text("When Apple Health has heart rate for a walk or run (from an Apple Watch or other sensor) and your profile has your date of birth, your zone sets the points. Zones are a share of your max heart rate (220 − your age): under 60% is zone 1, then every 10% is one more zone, up to zone 5 at 90%.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                     LabeledContent("Walk", value: "1.75 pts/min")
                     LabeledContent("Run", value: "4.9 pts/min")
                     LabeledContent("Strength", value: "1.75 pts/min")
                     LabeledContent("Duration entries", value: "2 pts/min")
                     Text("Without heart rate, each activity uses half its MET value (a standard measure of effort from the Compendium of Physical Activities).")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
 
                 Section("Where the minutes come from") {
@@ -138,8 +129,8 @@ struct EffortPointsExplainer: View {
 
                 Section {
                     Text("Effort Points aren't calories, and they don't count toward badges. They're a simple way to see how active your week was.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
             }
             .navigationTitle("How Your Score Works")

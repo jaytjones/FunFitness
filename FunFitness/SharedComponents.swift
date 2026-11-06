@@ -41,29 +41,21 @@ extension Color {
 // including SwiftUI's background render thread. With the target's default MainActor isolation,
 // a plain closure here was inferred @MainActor and trapped when resolved off the main thread
 // (TestFlight FB-0002, crash in 3.1 (9)).
+// 3.2: these are the Style tokens `bg` and `surface` (Shared/Style.swift); the names stay so
+// older call sites and AdaptiveColorTests keep working. Prefer `Color.ffBg` / `.ffSurface`.
 extension UIColor {
-    /// Primary screen background — dark navy in dark mode, system grouped background in light mode.
-    nonisolated static let appBackground = UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 13/255, green: 13/255, blue: 26/255, alpha: 1)
-            : UIColor.systemGroupedBackground
-    }
+    /// Screen ground (`bg`): Sunny yellow / After Dark grape.
+    nonisolated static let appBackground = FFColor.uiColor(0xFFD43B, 0x17122E)
 
-    /// Card / secondary surface — dark navy in dark mode. In light mode a soft
-    /// light gray that sits distinctly darker than `appBackground` (~#F2F2F7),
-    /// so neutral cards read with clear contrast instead of near-white on near-white.
-    nonisolated static let appCard = UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 26/255, green: 26/255, blue: 46/255, alpha: 1)
-            : UIColor(red: 228/255, green: 228/255, blue: 238/255, alpha: 1)
-    }
+    /// Card face (`surface`): white / lifted grape.
+    nonisolated static let appCard = FFColor.uiColor(0xFFFFFF, 0x262051)
 }
 
 extension Color {
-    /// Primary screen background. See `UIColor.appBackground`.
+    /// Screen ground. Same as `Color.ffBg`.
     static var appBackground: Color { Color(UIColor.appBackground) }
 
-    /// Card / secondary surface. See `UIColor.appCard`.
+    /// Card face. Same as `Color.ffSurface`.
     static var appCard: Color { Color(UIColor.appCard) }
 }
 
@@ -92,58 +84,79 @@ extension ActivityType {
         }
     }
 
-    /// Two-stop gradient for the Home StatCard background.
-    var cardGradient: [Color] {
+    /// The type's identity fill (tag, meter, tile, chart bars). Style token `type-*`. (3.2)
+    var ffFill: Color {
         switch self {
-        case .distance: return [Color(hex: "#2563EB"), Color(hex: "#1E40AF")]
-        case .weight:   return [Color(hex: "#7C3AED"), Color(hex: "#4C1D95")]
-        case .duration: return [Color(hex: "#0D9488"), Color(hex: "#0F766E")]
-        case .reps:     return [Color(hex: "#DB2777"), Color(hex: "#9D174D")]
+        case .distance: return .ffTypeDistance
+        case .weight:   return .ffTypeWeight
+        case .duration: return .ffTypeDuration
+        case .reps:     return .ffTypeReps
+        }
+    }
+
+    /// Text and glyphs on `ffFill`. Style token `on-type-*`.
+    var ffOnFill: Color {
+        switch self {
+        case .distance: return .ffOnTypeDistance
+        case .weight:   return .ffOnTypeWeight
+        case .duration: return .ffOnTypeDuration
+        case .reps:     return .ffOnTypeReps
+        }
+    }
+
+    /// SF Symbol for the type's icon chip (Playful Bold iconography).
+    var symbolName: String {
+        switch self {
+        case .distance: return "figure.run"
+        case .weight:   return "dumbbell"
+        case .duration: return "timer"
+        case .reps:     return "arrow.triangle.2.circlepath"
+        }
+    }
+
+    /// Uppercase tag text ("DISTANCE", "WEIGHT LIFTED").
+    var tagText: String {
+        switch self {
+        case .distance: return "Distance"
+        case .weight:   return "Weight lifted"
+        case .duration: return "Duration"
+        case .reps:     return "Reps"
         }
     }
 }
 
 // MARK: - Progress bar style used on tracking cards
 
+/// Kept for existing call sites; draws the Playful Bold ProgressMeter (`FFMeterStyle`).
 struct FitnessProgressStyle: ProgressViewStyle {
-    var tint: Color = Color(hex: "#5B21B6")
+    var tint: Color = .ffAccent
 
     func makeBody(configuration: Configuration) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(height: 8)
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(tint)
-                    .frame(width: geometry.size.width * (configuration.fractionCompleted ?? 0), height: 8)
-                    .animation(.easeInOut(duration: 0.6), value: configuration.fractionCompleted)
-            }
-        }
-        .frame(height: 8)
+        FFMeterStyle(fill: tint).makeBody(configuration: configuration)
     }
 }
 
 // MARK: - Unified selection chip (replaces GoalChip / ThemeChip)
 
+/// Playful Bold chip: the selection is brand yellow (text on-accent); others sit on surface-alt.
 struct SelectionChip: View {
     let title: String
     let isSelected: Bool
-    var selectedBackground: Color = Color(hex: "#5B21B6")
+    var selectedBackground: Color = .ffBrandYellow
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundStyle(isSelected ? .white : .secondary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? selectedBackground : Color.primary.opacity(0.08))
-                .clipShape(.rect(cornerRadius: 14))
+                .ffFont(isSelected ? .bodyStrong : .body)
+                .foregroundStyle(isSelected ? Color.ffOnAccent : Color.ffInkMuted)
+                .padding(.horizontal, FFSpace.s4)
+                .padding(.vertical, FFSpace.s2)
+                .background(isSelected ? selectedBackground : Color.ffSurfaceAlt, in: .capsule)
+                .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -202,14 +215,13 @@ struct SurfacePicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Surface (optional)")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
             FlowLayout(spacing: 8) {
                 ForEach(options, id: \.self) { surface in
                     SelectionChip(
                         title: surface.displayName,
                         isSelected: selection == surface,
-                        selectedBackground: Color(hex: "#A78BFA"),
                         action: { selection = selection == surface ? nil : surface }
                     )
                 }

@@ -141,23 +141,23 @@ struct NowTrackingRow: View {
         HStack(spacing: 10) {
             Image(systemName: content.systemImage)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Color(hex: "#A78BFA"))
+                .foregroundStyle(Color.ffLink)
                 .symbolEffect(.pulse, isActive: content.isLive)
                 .accessibilityHidden(true)
             if showsTitle {
                 Text(content.title)
-                    .font(.subheadline.weight(.semibold))
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffInk)
                     .lineLimit(1)
             }
             Text(content.detail)
-                .font(.subheadline)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .ffFont(.body)
+                .foregroundStyle(Color.ffInkMuted)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Image(systemName: "chevron.up")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.ffInkMuted)
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 16)
@@ -166,8 +166,9 @@ struct NowTrackingRow: View {
         .background {
             // The tab bar accessory brings its own glass; the fallback needs a background.
             if style == .inset {
-                Capsule().fill(.regularMaterial)
-                    .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                Capsule().fill(Color.ffSurface)
+                    .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
+                    .background(Capsule().fill(Color.ffShadowInk).offset(x: FFShadow.press, y: FFShadow.press))
             }
         }
         .contentShape(.rect)
@@ -237,12 +238,12 @@ private struct NowTrackingAccessoryPreview: View {
 
     var body: some View {
         TabView {
-            Tab("Home", systemImage: "house") { Color.appBackground.ignoresSafeArea() }
-            Tab("Progress", systemImage: "chart.line.uptrend.xyaxis") { Color.appBackground.ignoresSafeArea() }
-            Tab("Achievements", systemImage: "trophy") { Color.appBackground.ignoresSafeArea() }
-            Tab("Profile", systemImage: "person.circle") { Color.appBackground.ignoresSafeArea() }
+            Tab("Home", systemImage: "house") { Color.ffBg.ignoresSafeArea() }
+            Tab("Progress", systemImage: "chart.line.uptrend.xyaxis") { Color.ffBg.ignoresSafeArea() }
+            Tab("Achievements", systemImage: "trophy") { Color.ffBg.ignoresSafeArea() }
+            Tab("Profile", systemImage: "person.circle") { Color.ffBg.ignoresSafeArea() }
         }
-        .tint(Color(hex: "#A78BFA"))
+        .tint(Color.ffLink)
         .tabViewBottomAccessory(isEnabled: true) {
             NowTrackingRow(content: content, style: .accessory)
         }
@@ -259,7 +260,7 @@ private struct NowTrackingAccessoryPreview: View {
 
 #Preview("Inset fallback") {
     ZStack(alignment: .bottom) {
-        Color.appBackground.ignoresSafeArea()
+        Color.ffBg.ignoresSafeArea()
         NowTrackingRow(content: previewStrength, style: .inset)
             .padding(.horizontal)
             .padding(.bottom, 8)

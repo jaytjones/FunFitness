@@ -52,7 +52,7 @@ struct ContentView: View {
                         .tabItem { Label("Profile", systemImage: "person.circle") }
                         .tag(3)
                 }
-                .tint(Color(hex: "#A78BFA"))
+                .tint(.ffInk)
                 // Pinned "now tracking" bar on every tab while a walk/run or strength session runs. (FB-0003)
                 .nowTrackingAccessory(viewModel: viewModel, isShowing: showsNowTracking)
                 .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {

@@ -57,7 +57,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -80,17 +80,18 @@ struct ProfileView: View {
                                     } else {
                                         ZStack {
                                             Circle()
-                                                .fill(Color(hex: "#5B21B6"))
+                                                .fill(Color.ffAccent2)
+                                                .strokeBorder(Color.ffLine, lineWidth: FFStroke.card)
                                                 .frame(width: 80, height: 80)
+                                            // `.ffFont` is main-actor; this label closure isn't. Same as .ffFont(.title)'s fallback.
                                             Text(initials)
-                                                .font(.title)
-                                                .fontWeight(.bold)
-                                                .foregroundStyle(.white)
+                                                .font(.system(.title, design: .rounded, weight: .semibold))
+                                                .foregroundStyle(Color.ffOnAccent2)
                                         }
                                     }
                                     Image(systemName: "camera.circle.fill")
                                         .font(.title3)
-                                        .foregroundStyle(.white, Color(hex: "#5B21B6"))
+                                        .foregroundStyle(Color.ffOnAccent2, Color.ffAccent2)
                                         .offset(x: 4, y: 4)
                                 }
                             }
@@ -108,24 +109,23 @@ struct ProfileView: View {
 
                             VStack(spacing: 4) {
                                 Text(profile?.name ?? "User")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.primary)
+                                    .ffFont(.title)
+                                    .foregroundStyle(Color.ffInk)
                                 Text(profile?.fitnessGoal ?? "Stay Active")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .ffFont(.body)
+                                    .foregroundStyle(Color.ffInkMuted)
                             }
 
                             // Profile completeness meter
                             if profileCompleteness < 1.0 {
                                 VStack(spacing: 6) {
                                     SwiftUI.ProgressView(value: profileCompleteness)
-                                        .progressViewStyle(FitnessProgressStyle(tint: Color(hex: "#A78BFA")))
+                                        .progressViewStyle(FitnessProgressStyle(tint: .ffAccent))
                                         .accessibilityLabel("Profile completeness")
                                         .accessibilityValue(profileCompletenessLabel)
                                     Text(profileCompletenessLabel)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .ffFont(.caption)
+                                        .foregroundStyle(Color.ffInkMuted)
                                 }
                                 .padding(.horizontal, 32)
                             }
@@ -146,8 +146,8 @@ struct ProfileView: View {
                         // Personal Information
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Personal Information")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
@@ -213,15 +213,15 @@ struct ProfileView: View {
                                     unit: pref.weightUnit
                                 )
                             }
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 20))
+                            .ffCard(padding: 0, radius: FFRadius.md)
+                            .padding(.horizontal)
                         }
 
                         // Units
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Units")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                                 .padding(.horizontal)
 
                             FlowLayout(spacing: 8) {
@@ -242,8 +242,8 @@ struct ProfileView: View {
                         // Fitness Goal
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Fitness Goal")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                                 .padding(.horizontal)
 
                             FlowLayout(spacing: 8) {
@@ -261,8 +261,8 @@ struct ProfileView: View {
                         // Weekly Goals
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Weekly Goals")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
@@ -302,8 +302,8 @@ struct ProfileView: View {
                                     unit: "\(pref.weightUnit)/wk"
                                 )
                             }
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 20))
+                            .ffCard(padding: 0, radius: FFRadius.md)
+                            .padding(.horizontal)
                         }
 
                         // Notifications
@@ -318,34 +318,36 @@ struct ProfileView: View {
                         // Settings
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Settings")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
                                 SettingsActionRow(
                                     title: "Export Data (CSV)",
                                     icon: "square.and.arrow.up",
-                                    iconColor: Color(hex: "#0284C7"),
+                                    iconColor: .ffLink,
                                     action: { prepareAndShowExport() }
                                 )
                                 Divider()
                                 SettingsActionRow(
                                     title: "Clear Activity Data",
                                     icon: "trash.fill",
-                                    iconColor: Color(hex: "#EA580C"),
+                                    iconColor: .ffDanger,
+                                    isDestructive: true,
                                     action: { showingClearActivityAlert = true }
                                 )
                                 Divider()
                                 SettingsActionRow(
                                     title: "Clear All Data",
                                     icon: "exclamationmark.triangle.fill",
-                                    iconColor: Color(hex: "#E11D48"),
+                                    iconColor: .ffDanger,
+                                    isDestructive: true,
                                     action: { showingClearAllDataAlert = true }
                                 )
                             }
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 20))
+                            .ffCard(padding: 0, radius: FFRadius.md)
+                            .padding(.horizontal)
                         }
                         .padding(.bottom)
                     }
@@ -360,7 +362,7 @@ struct ProfileView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityLabel("Log activity")
                 }
@@ -439,8 +441,8 @@ struct DateOfBirthRow: View {
     var body: some View {
         HStack {
             Text("Birthday")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
                 .frame(width: 80, alignment: .leading)
 
             if isEditing {
@@ -455,11 +457,12 @@ struct DateOfBirthRow: View {
                 )
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .tint(Color(hex: "#A78BFA"))
+                .tint(Color.ffLink)
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Text(displayText)
-                    .foregroundStyle(dateOfBirth == nil ? .secondary : .primary)
+                    .ffFont(.body)
+                    .foregroundStyle(dateOfBirth == nil ? Color.ffInkMuted : Color.ffInk)
                 Spacer()
             }
 
@@ -467,7 +470,7 @@ struct DateOfBirthRow: View {
                 isEditing.toggle()
             } label: {
                 Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
-                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .foregroundStyle(Color.ffLink)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -486,19 +489,16 @@ struct StatBox: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .ffFont(.title)
+                .foregroundStyle(Color.ffInk)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
             Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 12))
+        .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
@@ -517,20 +517,22 @@ struct EditableProfileRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
                 .frame(width: 80, alignment: .leading)
 
             if isEditing {
                 TextField(placeholder, text: $value)
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.primary)
+                    .ffFont(.body)
+                    .foregroundStyle(Color.ffInk)
                     .keyboardType(keyboardType)
                     .focused($isFocused)
                     .onSubmit { isEditing = false }
             } else {
                 Text(value.isEmpty ? placeholder : value)
-                    .foregroundStyle(value.isEmpty ? .secondary : .primary)
+                    .ffFont(.body)
+                    .foregroundStyle(value.isEmpty ? Color.ffInkMuted : Color.ffInk)
                 Spacer()
             }
 
@@ -539,7 +541,7 @@ struct EditableProfileRow: View {
                 if isEditing { isFocused = true }
             } label: {
                 Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
-                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .foregroundStyle(Color.ffLink)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -563,14 +565,15 @@ struct EditableEmailRow: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
                     .frame(width: 80, alignment: .leading)
 
                 if isEditing {
                     TextField("email@example.com", text: $editValue)
                         .textFieldStyle(.plain)
-                        .foregroundStyle(.primary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInk)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.emailAddress)
@@ -578,7 +581,8 @@ struct EditableEmailRow: View {
                         .onSubmit { saveValue() }
                 } else {
                     Text(value.isEmpty ? "Not set" : value)
-                        .foregroundStyle(value.isEmpty ? .secondary : .primary)
+                        .ffFont(.body)
+                        .foregroundStyle(value.isEmpty ? Color.ffInkMuted : Color.ffInk)
                     Spacer()
                 }
 
@@ -592,7 +596,7 @@ struct EditableEmailRow: View {
                     }
                 } label: {
                     Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .foregroundStyle(Color.ffLink)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -602,8 +606,8 @@ struct EditableEmailRow: View {
 
             if showValidationError {
                 Text("Please enter a valid email address (e.g., name@example.com)")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffDanger)
                     .padding(.horizontal)
                     .padding(.bottom, 8)
             }
@@ -641,29 +645,32 @@ struct EditableNumberRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
                 .frame(width: 80, alignment: .leading)
 
             if isEditing {
                 HStack(spacing: 4) {
                     TextField("0", text: $editValue)
                         .textFieldStyle(.plain)
-                        .foregroundStyle(.primary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInk)
                         .keyboardType(.decimalPad)
                         .focused($isFocused)
                         .onSubmit { saveValue() }
                     Text(unit)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
             } else {
                 if value > 0 {
                     Text(String(format: "%.1f %@", value, unit))
-                        .foregroundStyle(.primary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInk)
                 } else {
                     Text("Not set")
-                        .foregroundStyle(.secondary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
             }
@@ -677,7 +684,7 @@ struct EditableNumberRow: View {
                 }
             } label: {
                 Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
-                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .foregroundStyle(Color.ffLink)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -703,8 +710,8 @@ struct NotificationSettingsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Notifications")
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
                 .padding(.horizontal)
 
             VStack(spacing: 0) {
@@ -717,13 +724,14 @@ struct NotificationSettingsSection: View {
                     } label: {
                         HStack {
                             Image(systemName: "bell.badge.fill")
-                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                .foregroundStyle(Color.ffLink)
                                 .frame(width: 24)
                             Text("Enable Notifications")
-                                .foregroundStyle(.primary)
+                                .ffFont(.bodyStrong)
+                                .foregroundStyle(Color.ffInk)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.ffInkMuted)
                                 .font(.caption)
                         }
                         .padding()
@@ -734,7 +742,7 @@ struct NotificationSettingsSection: View {
                         title: "Streak At Risk",
                         subtitle: "Thursday nudge if you haven't logged yet",
                         icon: "flame.fill",
-                        iconColor: Color(hex: "#EA580C"),
+                        iconColor: .ffStreak,
                         isOn: Binding(
                             get: { profile?.notifyStreakAtRisk ?? false },
                             set: { profile?.notifyStreakAtRisk = $0 }
@@ -745,7 +753,7 @@ struct NotificationSettingsSection: View {
                         title: "Milestone Nudge",
                         subtitle: "Alert when you're close to your next badge",
                         icon: "trophy.fill",
-                        iconColor: Color(hex: "#D97706"),
+                        iconColor: .ffLink,
                         isOn: Binding(
                             get: { profile?.notifyMilestoneNudge ?? false },
                             set: { profile?.notifyMilestoneNudge = $0 }
@@ -756,7 +764,7 @@ struct NotificationSettingsSection: View {
                         title: "Weekly Recap",
                         subtitle: "Sunday summary of your week",
                         icon: "calendar.badge.checkmark",
-                        iconColor: Color(hex: "#0284C7"),
+                        iconColor: .ffLink,
                         isOn: Binding(
                             get: { profile?.notifyWeeklyRecap ?? false },
                             set: { profile?.notifyWeeklyRecap = $0 }
@@ -767,7 +775,7 @@ struct NotificationSettingsSection: View {
                         title: "Comparison of the Day",
                         subtitle: "Daily motivational fact (may be funny)",
                         icon: "lightbulb.fill",
-                        iconColor: Color(hex: "#7C3AED"),
+                        iconColor: .ffLink,
                         isOn: Binding(
                             get: { profile?.notifyComparisonOfDay ?? false },
                             set: { profile?.notifyComparisonOfDay = $0 }
@@ -775,8 +783,8 @@ struct NotificationSettingsSection: View {
                     )
                 }
             }
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: 0, radius: FFRadius.md)
+            .padding(.horizontal)
         }
         .task {
             isAuthorized = await NotificationManager.shared.isAuthorized()
@@ -799,16 +807,16 @@ struct NotificationToggleRow: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffInk)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .tint(Color(hex: "#A78BFA"))
+                .tint(Color.ffAccent)
         }
         .padding()
     }
@@ -832,8 +840,8 @@ struct HealthKitSettingsSection: View {
         if isAvailable {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Apple Health")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
                     .padding(.horizontal)
 
                 VStack(spacing: 0) {
@@ -841,7 +849,7 @@ struct HealthKitSettingsSection: View {
                         title: "Sync from Apple Health",
                         subtitle: "Auto-import your walks, runs, hikes, and rides",
                         icon: "heart.fill",
-                        iconColor: Color(hex: "#E11D48"),
+                        iconColor: .ffLink,
                         isOn: Binding(
                             get: { profile?.healthKitImportEnabled ?? false },
                             set: { newValue in
@@ -855,7 +863,7 @@ struct HealthKitSettingsSection: View {
                         title: "Save logs to Apple Health",
                         subtitle: "Write the distance activities you log back to Health",
                         icon: "square.and.arrow.up.fill",
-                        iconColor: Color(hex: "#0284C7"),
+                        iconColor: .ffLink,
                         isOn: Binding(
                             get: { profile?.healthKitWriteBackEnabled ?? false },
                             set: { newValue in
@@ -871,18 +879,18 @@ struct HealthKitSettingsSection: View {
                         SettingsActionRow(
                             title: isImporting ? "Importing…" : "Re-import from Health",
                             icon: "arrow.clockwise",
-                            iconColor: Color(hex: "#7C3AED"),
+                            iconColor: .ffLink,
                             action: { Task { await runImport() } }
                         )
                     }
                 }
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 20))
+                .ffCard(padding: 0, radius: FFRadius.md)
+                .padding(.horizontal)
 
                 if let lastImportMessage {
                     Text(lastImportMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .padding(.horizontal)
                 }
             }
@@ -925,6 +933,8 @@ struct SettingsActionRow: View {
     let title: String
     let icon: String
     let iconColor: Color
+    /// Destructive rows (Clear data) show their title in `danger`.
+    var isDestructive = false
     let action: () -> Void
 
     var body: some View {
@@ -935,7 +945,8 @@ struct SettingsActionRow: View {
                     .frame(width: 24)
                     .accessibilityHidden(true)
                 Text(title)
-                    .foregroundStyle(.primary)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(isDestructive ? Color.ffDanger : Color.ffInk)
                 Spacer()
             }
             .padding()

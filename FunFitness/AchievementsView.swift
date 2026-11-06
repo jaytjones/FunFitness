@@ -37,7 +37,7 @@ struct AchievementsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -54,8 +54,8 @@ struct AchievementsView: View {
                         } else {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Unlocked")
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
+                                    .ffFont(.headline)
+                                    .foregroundStyle(Color.ffInk)
                                     .padding(.horizontal)
 
                                 ForEach(unlockedMilestones, id: \.milestone.id) { item in
@@ -72,8 +72,8 @@ struct AchievementsView: View {
                             if !lockedMilestones.isEmpty {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Locked")
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
+                                        .ffFont(.headline)
+                                        .foregroundStyle(Color.ffInkMuted)
                                         .padding(.horizontal)
 
                                     ForEach(lockedMilestones) { milestone in
@@ -101,7 +101,7 @@ struct AchievementsView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .foregroundStyle(Color.ffLink)
                     }
                     .accessibilityLabel("Log activity")
                 }
@@ -128,33 +128,24 @@ struct ProgressBanner: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Your Progress")
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text("\(unlockedCount) of \(totalCount) unlocked")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
                 Spacer()
                 Text("\(percentage)%")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
+                    .ffFont(.numeral)
+                    .foregroundStyle(Color.ffInk)
             }
 
             SwiftUI.ProgressView(value: Double(percentage), total: 100)
-                .progressViewStyle(FitnessProgressStyle(tint: .white))
+                .progressViewStyle(FitnessProgressStyle(tint: .ffStreak))
                 .accessibilityLabel("Overall achievement progress")
                 .accessibilityValue("\(percentage) percent")
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [Color(hex: "#EA580C"), Color(hex: "#C2410C")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Achievement progress: \(unlockedCount) of \(totalCount) unlocked, \(percentage) percent")
     }
@@ -173,13 +164,12 @@ struct EmptyAchievementsState: View {
                 .accessibilityHidden(true)
 
             Text("No Achievements Yet")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .ffFont(.title)
+                .foregroundStyle(Color.ffInk)
 
             Text("Start logging your activities to unlock fun achievements and comparisons!")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.body)
+                .foregroundStyle(Color.ffInkMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -195,8 +185,7 @@ struct EmptyAchievementsState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: 0)
     }
 }
 
@@ -229,25 +218,24 @@ struct AchievementCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(milestone.title(pref: pref))
-                    .font(.headline)
-                    .foregroundStyle(isLocked ? .secondary : .primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(isLocked ? Color.ffInkMuted : Color.ffInk)
 
                 if !isLocked {
                     Text(milestone.getComparison(for: pack))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .lineLimit(2)
 
                     if let date = unlockedAt {
                         Text("Unlocked \(date.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.caption2)
-                            // #A78BFA passes 4.5:1 on #1A1A2E (was #5B21B6 = 1.90:1 — failed)
-                            .foregroundStyle(Color(hex: "#A78BFA"))
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffLink)
                     }
                 } else {
                     Text("Reach \(thresholdDisplay) to unlock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
             }
 
@@ -255,24 +243,41 @@ struct AchievementCard: View {
 
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .foregroundStyle(.secondary)
-                    .opacity(0.5)
+                    .foregroundStyle(Color.ffInkMuted)
                     .accessibilityHidden(true)
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color(hex: "#059669"))
+                    .foregroundStyle(Color.ffSuccess)
                     .accessibilityHidden(true)
             }
         }
-        .padding()
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
-        .opacity(isLocked ? 0.6 : 1.0)
+        .badgeFace(isLocked: isLocked)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isLocked
             ? "\(milestone.title(pref: pref)) — locked. Reach \(thresholdDisplay) to unlock."
             : "\(milestone.title(pref: pref)) — unlocked. \(milestone.getComparison(for: pack))"
         )
+    }
+}
+
+// MARK: - Badge face
+
+private extension View {
+    /// BadgeTile faces: unlocked is a surface card with outline and hard shadow; locked is a
+    /// dashed outline only (no fill, no shadow) so the ground shows through.
+    @ViewBuilder
+    func badgeFace(isLocked: Bool) -> some View {
+        if isLocked {
+            self
+                .padding(FFSpace.s4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(
+                    RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                        .strokeBorder(Color.ffLine, style: StrokeStyle(lineWidth: FFStroke.control, dash: [6, 4]))
+                )
+        } else {
+            self.ffCard(padding: FFSpace.s4, radius: FFRadius.md)
+        }
     }
 }
 

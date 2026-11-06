@@ -71,40 +71,34 @@ struct JourneyCard: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Journey · \(progress.journey.name)")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white.opacity(0.8))
+                            .ffFont(.label)
+                            .foregroundStyle(Color.ffInkMuted)
                         Text(progress.latest.map { progress.isComplete ? "Finished at \($0.name)" : "Passed \($0.name)" } ?? progress.journey.name)
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
                             .multilineTextAlignment(.leading)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(Color.ffInkMuted)
                 }
 
+                // Journeys only count distance, so the meter uses the distance type color.
                 SwiftUI.ProgressView(value: progress.fraction)
-                    .progressViewStyle(FitnessProgressStyle(tint: .white))
+                    .progressViewStyle(FFMeterStyle(fill: ActivityType.distance.ffFill))
 
                 HStack {
                     Text(nextText)
-                        .font(.caption)
-                        .foregroundStyle(.white)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInk)
                     Spacer()
                     Text("\(covered) / \(total)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInk)
                 }
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(colors: [Color(hex: "#15803D"), Color(hex: "#0F766E")],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            )
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard()
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -123,22 +117,19 @@ struct JourneyCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Start a Journey")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInk)
                     Text("Walk the Texas Triangle or the Appalachian Trail, one logged mile at a time.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .multilineTextAlignment(.leading)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.ffInkMuted)
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.appCard)
-            .clipShape(.rect(cornerRadius: 20))
+            .ffCard(padding: FFSpace.s4)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("startJourneyCard")
@@ -166,7 +157,7 @@ struct JourneyDetailView: View {
                     ContentUnavailableView("No Journey", systemImage: "map", description: Text("Pick a journey to start."))
                 }
             }
-            .background(Color.appBackground)
+            .background(Color.ffBg)
             .navigationTitle(JourneyState.active(profile)?.name ?? "Journey")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -212,21 +203,22 @@ struct JourneyDetailView: View {
                     let reached = progress.reached.contains(checkpoint)
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: reached ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(reached ? Color(hex: "#15803D") : .secondary)
+                            .foregroundStyle(reached ? Color.ffSuccess : Color.ffInkMuted)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(checkpoint.name)
-                                    .font(.subheadline.weight(.semibold))
+                                    .ffFont(.bodyStrong)
+                                    .foregroundStyle(Color.ffInk)
                                 Spacer()
                                 Text(UnitConverter.displayString(checkpoint.cumulativeKm, type: .distance, pref: pref))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .ffFont(.caption)
+                                    .foregroundStyle(Color.ffInkMuted)
                             }
                             // Facts unlock as you reach each stop.
                             Text(reached ? checkpoint.fact : "Reach this stop to unlock a fun fact.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .ffFont(.caption)
+                                .foregroundStyle(Color.ffInkMuted)
                         }
                     }
                     .accessibilityElement(children: .combine)
@@ -248,20 +240,20 @@ struct JourneyMap: View {
     var body: some View {
         Map(initialPosition: .automatic, interactionModes: [.pan, .zoom]) {
             MapPolyline(coordinates: coordinates)
-                .stroke(Color(hex: "#15803D"), lineWidth: 4)
+                .stroke(Color.ffAccent2, lineWidth: 4)
             ForEach(progress.journey.checkpoints) { checkpoint in
                 let reached = progress.reached.contains(checkpoint)
                 Annotation(checkpoint.name, coordinate: CLLocationCoordinate2D(latitude: checkpoint.latitude, longitude: checkpoint.longitude)) {
                     Circle()
-                        .fill(reached ? Color(hex: "#15803D") : Color.gray)
+                        .fill(reached ? Color.ffAccent : Color.ffSurface)
                         .frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                        .overlay(Circle().stroke(Color.ffLine, lineWidth: 2))
                 }
                 .annotationTitles(.hidden)
             }
             if let here = progress.position {
                 Marker("You", systemImage: "figure.walk", coordinate: CLLocationCoordinate2D(latitude: here.latitude, longitude: here.longitude))
-                    .tint(Color(hex: "#7C3AED"))
+                    .tint(Color.ffAccent2)
             }
         }
         .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
@@ -291,15 +283,15 @@ struct JourneyPickerSheet: View {
                             HStack(spacing: 12) {
                                 Text(journey.emoji).font(.title2).accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(journey.name).font(.headline).foregroundStyle(.primary)
-                                    Text(journey.blurb).font(.caption).foregroundStyle(.secondary)
+                                    Text(journey.name).ffFont(.headline).foregroundStyle(Color.ffInk)
+                                    Text(journey.blurb).ffFont(.caption).foregroundStyle(Color.ffInkMuted)
                                     Text("\(Int((journey.totalKm / JourneyCatalog.kmPerMile).rounded())) mi · \(journey.checkpoints.count) stops")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
+                                        .ffFont(.caption)
+                                        .foregroundStyle(Color.ffInkMuted)
                                 }
                                 Spacer()
                                 if journey.id == activeID {
-                                    Image(systemName: "checkmark").foregroundStyle(Color(hex: "#15803D"))
+                                    Image(systemName: "checkmark").foregroundStyle(Color.ffSuccess)
                                 }
                             }
                         }

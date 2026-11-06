@@ -23,7 +23,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground
+            Color.ffBg
                 .ignoresSafeArea()
 
             VStack(spacing: 32) {
@@ -35,13 +35,12 @@ struct OnboardingView: View {
                         .accessibilityHidden(true)
 
                     Text("FunFitness")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.primary)
+                        .ffFont(.display)
+                        .foregroundStyle(Color.ffInk)
 
                     Text("Turn your progress into fun comparisons")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInkMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                 }
@@ -51,31 +50,30 @@ struct OnboardingView: View {
                 VStack(spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What's your name?")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
 
                         TextField("Enter your name", text: $name)
-                            .font(.body)
-                            .foregroundStyle(.primary)
+                            .ffFont(.body)
+                            .foregroundStyle(Color.ffInk)
                             .padding()
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 14))
+                            .ffWell()
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(showValidationError ? Color.red : Color.clear, lineWidth: 2)
+                                RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                                    .strokeBorder(showValidationError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
                             )
 
                         if showValidationError {
                             Text("Please enter your name")
-                                .font(.caption)
-                                .foregroundStyle(.red)
+                                .ffFont(.caption)
+                                .foregroundStyle(Color.ffDanger)
                         }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What's your fitness goal?")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
 
                         FlowLayout(spacing: 8) {
                             ForEach(fitnessGoals, id: \.self) { goal in
@@ -96,13 +94,8 @@ struct OnboardingView: View {
                     completeOnboarding()
                 } label: {
                     Text("Get Started")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(hex: "#5B21B6"))
-                        .clipShape(.rect(cornerRadius: 14))
                 }
+                .buttonStyle(.ffPrimary)
                 .padding(.horizontal, 32)
                 .padding(.bottom, 40)
             }

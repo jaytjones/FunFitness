@@ -24,7 +24,7 @@ struct ActivityHistorySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 Group {
@@ -34,12 +34,11 @@ struct ActivityHistorySheet: View {
                                 .font(.system(size: 60))
                                 .accessibilityHidden(true)
                             Text("No Activities Logged")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.primary)
+                                .ffFont(.title)
+                                .foregroundStyle(Color.ffInk)
                             Text("Log your first workout to see it here.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .ffFont(.body)
+                                .foregroundStyle(Color.ffInkMuted)
                                 .multilineTextAlignment(.center)
                         }
                         .padding()
@@ -60,8 +59,8 @@ struct ActivityHistorySheet: View {
                                             pref: viewModel.unitPreference
                                         )
                                     }
-                                    .listRowBackground(Color.appCard)
-                                    .listRowSeparatorTint(Color.primary.opacity(0.1))
+                                    .listRowBackground(Color.ffSurface)
+                                    .listRowSeparatorTint(Color.ffProgressTrack)
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             sessionPendingDelete = SessionRoute(id: id)
@@ -97,7 +96,7 @@ struct ActivityHistorySheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .foregroundStyle(Color.ffLink)
                 }
             }
             .sheet(item: $editingActivity) { activity in
@@ -113,8 +112,8 @@ struct ActivityHistorySheet: View {
 
     private func activityRow(_ activity: ActivityLog) -> some View {
         ActivityRow(activity: activity, pref: viewModel.unitPreference)
-            .listRowBackground(Color.appCard)
-            .listRowSeparatorTint(Color.primary.opacity(0.1))
+            .listRowBackground(Color.ffSurface)
+            .listRowSeparatorTint(Color.ffProgressTrack)
             .swipeActions(edge: .trailing) {
                 Button(role: .destructive) {
                     deleteActivity(activity)
@@ -128,7 +127,7 @@ struct ActivityHistorySheet: View {
                 } label: {
                     Label("Edit", systemImage: "pencil")
                 }
-                .tint(Color(hex: "#5B21B6"))
+                .tint(Color.ffAccent2)
             }
     }
 
@@ -180,28 +179,33 @@ struct SessionRow: View {
     var durationSeconds: TimeInterval? = nil
     let pref: UnitPreference
 
+    /// The type whose colour fills the row's chip (weight unless the session is bodyweight reps).
+    private var chipType: ActivityType { logs.first?.activityType ?? .weight }
+
     var body: some View {
         if let summary = SessionSummary(logs: logs) {
             HStack {
                 Text(WorkoutSessionKind.strength.emoji)
                     .font(.title2)
+                    .frame(width: 44, height: 44)
+                    .background(chipType.ffFill, in: .rect(cornerRadius: FFRadius.sm, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: FFRadius.sm, style: .continuous).strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(WorkoutSessionKind.strength.displayName) · \(summary.setsText)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInk)
                     Text(subtitle(summary))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
 
                 Spacer()
 
                 Text(summary.totalText(pref: pref))
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -271,7 +275,7 @@ struct SessionDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.ffBg.ignoresSafeArea()
 
             List {
                 if let summary = SessionSummary(logs: logs) {
@@ -279,7 +283,7 @@ struct SessionDetailView: View {
                         LabeledContent("Sets", value: "\(summary.setCount)")
                         LabeledContent("Total", value: summary.totalText(pref: pref))
                     }
-                    .listRowBackground(Color.appCard)
+                    .listRowBackground(Color.ffSurface)
                 }
 
                 if let record {
@@ -294,13 +298,13 @@ struct SessionDetailView: View {
                     ForEach(Array(logs.enumerated()), id: \.element.id) { index, log in
                         HStack(spacing: 12) {
                             Text("\(index + 1)")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .ffFont(.bodyStrong)
+                                .foregroundStyle(Color.ffInkMuted)
                                 .frame(minWidth: 20)
                                 .accessibilityLabel("Set \(index + 1)")
                             ActivityRow(activity: log, pref: pref)
                         }
-                        .listRowBackground(Color.appCard)
+                        .listRowBackground(Color.ffSurface)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 ActivityWriter.delete(log, context: modelContext, viewModel: viewModel)
@@ -312,7 +316,7 @@ struct SessionDetailView: View {
                             } label: {
                                 Label("Remove from Session", systemImage: "rectangle.badge.minus")
                             }
-                            .tint(.orange)
+                            .tint(Color.ffStreak)
                         }
                         .swipeActions(edge: .leading) {
                             Button {
@@ -320,7 +324,7 @@ struct SessionDetailView: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
-                            .tint(Color(hex: "#5B21B6"))
+                            .tint(Color.ffAccent2)
                         }
                     }
                 }
@@ -448,7 +452,7 @@ private struct SessionInfoSections: View {
                 Text("Estimated from the session's length and your body weight (strength training ≈ \(CalorieEstimator.strengthMET.formatted()) MET).")
             }
         }
-        .listRowBackground(Color.appCard)
+        .listRowBackground(Color.ffSurface)
 
         Section("Details") {
             Picker("Location", selection: location) {
@@ -464,13 +468,13 @@ private struct SessionInfoSections: View {
             .lineLimit(1...5)
             .accessibilityIdentifier("sessionNotes")
         }
-        .listRowBackground(Color.appCard)
+        .listRowBackground(Color.ffSurface)
 
         if savesToHealth {
             Section {
                 if session.healthKitWorkoutUUID != nil {
                     Label("Saved to Apple Health", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.ffSuccess)
                 } else {
                     Button {
                         Task {
@@ -495,7 +499,7 @@ private struct SessionInfoSections: View {
                     Text("Saves a Strength Training workout with its time and estimated calories.")
                 }
             }
-            .listRowBackground(Color.appCard)
+            .listRowBackground(Color.ffSurface)
         }
     }
 }
@@ -535,23 +539,25 @@ struct ActivityRow: View {
         HStack {
             Text(activity.activityType.emoji)
                 .font(.title2)
+                .frame(width: 44, height: 44)
+                .background(activity.activityType.ffFill, in: .rect(cornerRadius: FFRadius.sm, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: FFRadius.sm, style: .continuous).strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffInk)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
 
             Spacer()
 
             Text(valueLabel)
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
@@ -582,7 +588,7 @@ struct EditActivitySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground
+                Color.ffBg
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -593,16 +599,14 @@ struct EditActivitySheet: View {
                                 .font(.title2)
                                 .accessibilityHidden(true)
                             Text(kind.displayName)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(kind.ffOnFill)
                             Spacer()
                             Text(UnitConverter.displayUnit(for: kind, pref: pref))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .ffFont(.body)
+                                .foregroundStyle(kind.ffOnFill)
                         }
-                        .padding()
-                        .background(Color.appCard)
-                        .clipShape(.rect(cornerRadius: 14))
+                        .ffCard(padding: FFSpace.s4, radius: FFRadius.md, fill: kind.ffFill)
                         .padding(.horizontal)
 
                         // Older generic entries can stay generic, so the exercise is optional here.
@@ -614,30 +618,29 @@ struct EditActivitySheet: View {
                         // Value field
                         VStack(alignment: .leading, spacing: 8) {
                             Text(UnitConverter.fieldLabel(for: kind, pref: pref))
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
 
                             TextField(
                                 kind.usesDecimalInput ? "0.0" : "0",
                                 text: $inputValue
                             )
                             .keyboardType(kind.usesDecimalInput ? .decimalPad : .numberPad)
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .ffFont(.numeral)
+                            .foregroundStyle(Color.ffInk)
                             .padding()
-                            .background(Color.appCard)
-                            .clipShape(.rect(cornerRadius: 14))
+                            .ffWell()
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(showValidationError ? Color.red : Color.clear, lineWidth: 2)
+                                RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                                    .strokeBorder(showValidationError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
                             )
                             .focused($isInputFocused)
                             .accessibilityIdentifier("editActivityValueInput")
 
                             if showValidationError {
                                 Text("Please enter a valid value greater than 0")
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
+                                    .ffFont(.caption)
+                                    .foregroundStyle(Color.ffDanger)
                             }
                         }
                         .padding(.horizontal)
@@ -647,10 +650,10 @@ struct EditActivitySheet: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Toggle(isOn: $includeReps.animation()) {
                                     Text("Include rep count")
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
+                                        .ffFont(.headline)
+                                        .foregroundStyle(Color.ffInk)
                                 }
-                                .tint(Color(hex: "#A78BFA"))
+                                .tint(Color.ffAccent)
                                 .padding(.horizontal)
 
                                 if includeReps {
@@ -660,13 +663,13 @@ struct EditActivitySheet: View {
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
                                                 .font(.title2)
-                                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                                .foregroundStyle(Color.ffLink)
                                         }
                                         .accessibilityLabel("Decrease reps")
 
                                         Text("\(repsCount) reps")
-                                            .font(.system(size: 24, weight: .semibold))
-                                            .foregroundStyle(.primary)
+                                            .ffFont(.numeral)
+                                            .foregroundStyle(Color.ffInk)
                                             .frame(minWidth: 80)
 
                                         Button {
@@ -674,14 +677,13 @@ struct EditActivitySheet: View {
                                         } label: {
                                             Image(systemName: "plus.circle.fill")
                                                 .font(.title2)
-                                                .foregroundStyle(Color(hex: "#A78BFA"))
+                                                .foregroundStyle(Color.ffLink)
                                         }
                                         .accessibilityLabel("Increase reps")
                                     }
                                     .padding()
                                     .frame(maxWidth: .infinity)
-                                    .background(Color.appCard)
-                                    .clipShape(.rect(cornerRadius: 14))
+                                    .ffWell()
                                     .padding(.horizontal)
                                 }
                             }
@@ -699,8 +701,8 @@ struct EditActivitySheet: View {
                         // Date picker
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Date & Time")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .ffFont(.headline)
+                                .foregroundStyle(Color.ffInk)
                             DatePicker(
                                 "Activity date",
                                 selection: $loggedAt,
@@ -709,7 +711,7 @@ struct EditActivitySheet: View {
                             )
                             .datePickerStyle(.compact)
                             .labelsHidden()
-                            .tint(Color(hex: "#A78BFA"))
+                            .tint(Color.ffAccent)
                             .accessibilityIdentifier("editActivityDatePicker")
                         }
                         .padding(.horizontal)
@@ -718,13 +720,8 @@ struct EditActivitySheet: View {
 
                         Button { saveChanges() } label: {
                             Text("Save Changes")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(hex: "#5B21B6"))
-                                .clipShape(.rect(cornerRadius: 14))
                         }
+                        .buttonStyle(.ffPrimary)
                         .padding(.horizontal)
                         .padding(.bottom)
                         .accessibilityIdentifier("saveEditButton")
@@ -737,12 +734,12 @@ struct EditActivitySheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .foregroundStyle(Color.ffLink)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") { isInputFocused = false }
-                        .foregroundStyle(Color(hex: "#A78BFA"))
+                        .foregroundStyle(Color.ffLink)
                 }
             }
             .onAppear {

@@ -39,7 +39,7 @@ struct TrackWorkoutView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground.ignoresSafeArea()
+                Color.ffBg.ignoresSafeArea()
 
                 switch tracker.phase {
                 case .idle:
@@ -72,13 +72,13 @@ struct TrackWorkoutView: View {
             switch tracker.phase {
             case .idle:
                 Button { dismiss() } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.ffInkMuted)
                 }
                 .accessibilityLabel("Close")
             case .active, .paused:
                 // Tracking keeps going; Home's tracking card reopens this screen.
                 Button("Hide") { dismiss() }
-                    .foregroundStyle(Color(hex: "#A78BFA"))
+                    .foregroundStyle(Color.ffLink)
                     .accessibilityHint("Keeps tracking in the background")
                     .accessibilityIdentifier("trackerHideButton")
             case .finished:
@@ -107,8 +107,8 @@ struct TrackWorkoutView: View {
             .accessibilityIdentifier("trackerKindPicker")
 
             Text("Uses GPS to measure your route. Tracking continues with the screen locked.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .ffFont(.body)
+                .foregroundStyle(Color.ffInkMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -118,8 +118,8 @@ struct TrackWorkoutView: View {
             let strengthRunning = StrengthSessionManager.shared.phase != .idle
             if strengthRunning {
                 Text("End your strength session before starting a walk or run.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffDanger)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -129,13 +129,8 @@ struct TrackWorkoutView: View {
                 tracker.start(kind: selectedKind)
             } label: {
                 Text("Start \(selectedKind.displayName)")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(Color(hex: "#059669").opacity(strengthRunning ? 0.4 : 1))
-                    .clipShape(.capsule)
             }
+            .buttonStyle(.ffPrimary)
             .disabled(strengthRunning)
             .padding(.horizontal)
             .padding(.bottom)
@@ -153,13 +148,13 @@ struct TrackWorkoutView: View {
             VStack(spacing: 16) {
                 if let issue = tracker.locationIssue {
                     Label(issue, systemImage: "location.slash")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffDanger)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else if !tracker.hasLocationFix {
                     Label("Finding GPS…", systemImage: "location.magnifyingglass")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
@@ -178,8 +173,8 @@ struct TrackWorkoutView: View {
 
                 if tracker.phase == .paused {
                     Text("Paused")
-                        .font(.headline)
-                        .foregroundStyle(.orange)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInkMuted)
                 }
 
                 HStack(spacing: 16) {
@@ -188,31 +183,24 @@ struct TrackWorkoutView: View {
                     } label: {
                         Label(tracker.phase == .paused ? "Resume" : "Pause",
                               systemImage: tracker.phase == .paused ? "play.fill" : "pause.fill")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(hex: tracker.phase == .paused ? "#059669" : "#D97706"))
-                            .clipShape(.capsule)
                     }
+                    .buttonStyle(.ffSecondary)
                     .accessibilityIdentifier("trackerPauseButton")
 
                     Button {
                         showFinishConfirm = true
                     } label: {
                         Label("Finish", systemImage: "flag.checkered")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(hex: "#5B21B6"))
-                            .clipShape(.capsule)
                     }
+                    .buttonStyle(.ffPrimary)
                     .accessibilityIdentifier("trackerFinishButton")
                 }
             }
             .padding()
-            .background(Color.appCard)
+            .background(Color.ffSurface)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color.ffLine).frame(height: FFStroke.card)
+            }
         }
         .confirmationDialog("Finish this \(tracker.kind.displayName.lowercased())?",
                             isPresented: $showFinishConfirm, titleVisibility: .visible) {
@@ -229,7 +217,11 @@ struct TrackWorkoutView: View {
             VStack(spacing: 20) {
                 RouteMapView(points: result.points.map { ($0.latitude, $0.longitude) }, followsUser: false)
                     .frame(height: 280)
-                    .clipShape(.rect(cornerRadius: 20))
+                    .clipShape(.rect(cornerRadius: FFRadius.md, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                            .strokeBorder(Color.ffLine, lineWidth: FFStroke.card)
+                    )
 
                 LiveStatsGrid(
                     elapsed: UnitConverter.elapsedString(result.movingSeconds),
@@ -239,9 +231,7 @@ struct TrackWorkoutView: View {
                         pref: pref
                     )
                 )
-                .padding()
-                .background(Color.appCard)
-                .clipShape(.rect(cornerRadius: 20))
+                .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
 
                 if let heartRate {
                     HeartRateCard(summary: heartRate)
@@ -249,23 +239,15 @@ struct TrackWorkoutView: View {
 
                 if let phrase = viewModel.comparisonPhrase(distanceKm: distanceKm) {
                     Text(phrase)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffOnAccent2)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#D946EF")],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .clipShape(.rect(cornerRadius: 20))
+                        .ffCard(padding: FFSpace.s4, radius: FFRadius.md, fill: .ffAccent2)
                 }
 
                 SurfacePicker(selection: $surface, options: DistanceSurface.outdoor)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.appCard)
-                    .clipShape(.rect(cornerRadius: 20))
+                    .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
                     .onAppear {
                         if surface == nil, let last = viewModel.lastSurface, DistanceSurface.outdoor.contains(last) {
                             surface = last
@@ -274,24 +256,21 @@ struct TrackWorkoutView: View {
 
                 if !result.isSavable {
                     Text("That's too short to save — GPS may not have found you. You can discard it and try again outdoors.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
                         .multilineTextAlignment(.center)
                 }
 
                 Button { save(result) } label: {
                     Text("Save \(result.kind.displayName)")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(hex: "#5B21B6").opacity(result.isSavable ? 1 : 0.4))
-                        .clipShape(.rect(cornerRadius: 14))
                 }
+                .buttonStyle(.ffPrimary)
                 .disabled(!result.isSavable)
                 .accessibilityIdentifier("trackerSaveButton")
 
                 Button("Discard", role: .destructive) { showDiscardConfirm = true }
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(Color.ffDanger)
                     .accessibilityIdentifier("trackerDiscardButton")
             }
             .padding()
@@ -344,13 +323,13 @@ private struct LiveStatsGrid: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title2.weight(.bold).monospacedDigit())
-                .foregroundStyle(.primary)
+                .ffFont(.numeral)
+                .foregroundStyle(Color.ffInk)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
@@ -366,30 +345,28 @@ private struct HeartRateCard: View {
         HStack(spacing: 12) {
             Image(systemName: "heart.fill")
                 .font(.title2)
-                .foregroundStyle(Color(hex: "#E11D48"))
+                .foregroundStyle(Color.ffDanger)
                 .accessibilityHidden(true)
             stat("Avg Heart Rate", summary.averageText)
             stat("Max Heart Rate", summary.maximumText)
         }
-        .padding()
         .frame(maxWidth: .infinity)
-        .background(Color.appCard)
-        .clipShape(.rect(cornerRadius: 20))
+        .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
     }
 
     private func stat(_ label: String, _ bpm: String) -> some View {
         VStack(spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(bpm)
-                    .font(.title2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.primary)
+                    .ffFont(.title)
+                    .foregroundStyle(Color.ffInk)
                 Text("bpm")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
             }
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -414,16 +391,16 @@ struct RouteMapView: View {
         Map(position: $position) {
             if coordinates.count > 1 {
                 MapPolyline(coordinates: coordinates)
-                    .stroke(Color(hex: "#A78BFA"), style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                    .stroke(Color.ffAccent2, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
             }
             if followsUser {
                 UserAnnotation()
             } else if let first = coordinates.first, let last = coordinates.last {
                 Annotation("Start", coordinate: first) {
-                    Circle().fill(.green).frame(width: 12, height: 12).overlay(Circle().stroke(.white, lineWidth: 2))
+                    Circle().fill(Color.ffSuccess).frame(width: 12, height: 12).overlay(Circle().stroke(.white, lineWidth: 2))
                 }
                 Annotation("Finish", coordinate: last) {
-                    Circle().fill(.red).frame(width: 12, height: 12).overlay(Circle().stroke(.white, lineWidth: 2))
+                    Circle().fill(Color.ffDanger).frame(width: 12, height: 12).overlay(Circle().stroke(.white, lineWidth: 2))
                 }
             }
         }
