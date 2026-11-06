@@ -81,4 +81,14 @@ struct JourneyTests {
         #expect(JourneyEngine.newlyReached(journey: sample, previousKm: 5, newKm: 31).map(\.name) == ["B", "C"])
         #expect(JourneyEngine.newlyReached(journey: sample, previousKm: 11, newKm: 12).isEmpty)
     }
+
+    @Test func celebratesEachNewCheckpointOnceAndNeverTheStart() {
+        // At the start: nothing to celebrate.
+        #expect(JourneyEngine.checkpointsToCelebrate(journey: sample, distanceKm: 0, alreadyCelebrated: 0).isEmpty)
+        // Past B, nothing celebrated yet (count 1 = only the start).
+        #expect(JourneyEngine.checkpointsToCelebrate(journey: sample, distanceKm: 12, alreadyCelebrated: 1).map(\.name) == ["B"])
+        // B already celebrated (A + B = 2): nothing new until C.
+        #expect(JourneyEngine.checkpointsToCelebrate(journey: sample, distanceKm: 20, alreadyCelebrated: 2).isEmpty)
+        #expect(JourneyEngine.checkpointsToCelebrate(journey: sample, distanceKm: 30, alreadyCelebrated: 2).map(\.name) == ["C"])
+    }
 }

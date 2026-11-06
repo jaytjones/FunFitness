@@ -19,7 +19,6 @@ struct ProfileView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showingClearActivityAlert = false
     @State private var showingClearAllDataAlert  = false
-    @State private var showLogSheet  = false
     @State private var showExportSheet = false
     @State private var exportURL: URL? = nil
 
@@ -355,18 +354,6 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showLogSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color.ffLink)
-                    }
-                    .accessibilityLabel("Log activity")
-                }
-            }
             .alert("Clear Activity Data", isPresented: $showingClearActivityAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Clear", role: .destructive) { clearActivityData() }
@@ -378,9 +365,6 @@ struct ProfileView: View {
                 Button("Clear Everything", role: .destructive) { clearAllData() }
             } message: {
                 Text("This will delete your profile, all activities, and all achievements — on this device and from iCloud on any device signed into your account. You'll need to set up again. This action cannot be undone.")
-            }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
-                LogActivitySheet(viewModel: viewModel)
             }
             .sheet(isPresented: $showExportSheet, onDismiss: { exportURL = nil }) {
                 if let url = exportURL {

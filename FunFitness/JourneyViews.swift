@@ -344,6 +344,106 @@ struct JourneyPickerSheet: View {
     }
 }
 
+// MARK: - Checkpoint celebration (3.2)
+
+/// One "you reached…" moment. Identifiable so it can drive a full-screen cover.
+struct CheckpointMoment: Identifiable, Equatable {
+    let journeyName: String
+    let checkpoint: Checkpoint
+    let isFinish: Bool
+    /// "1 of 2" when several were passed at once.
+    let position: Int
+    let count: Int
+
+    var id: String { "\(journeyName)#\(checkpoint.id)" }
+}
+
+/// The Celebration look on the yellow ground: badge pop, the stop, its fun fact. (Celebration.md)
+struct JourneyCheckpointView: View {
+    let moment: CheckpointMoment
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
+    var body: some View {
+        ZStack {
+            Color.ffBg.ignoresSafeArea()
+
+            VStack(spacing: FFSpace.s6) {
+                Spacer(minLength: 0)
+
+                if moment.count > 1 {
+                    Text("\(moment.position) of \(moment.count)")
+                        .ffFont(.label)
+                        .foregroundStyle(Color.ffInkMuted)
+                }
+
+                VStack(spacing: FFSpace.s4) {
+                    FFTag(text: "Journey · \(moment.journeyName)", fill: .ffTypeDistance, foreground: .ffOnTypeDistance)
+
+                    Text(moment.isFinish ? "🏁" : "📍")
+                        .font(.system(size: 56))
+                        .frame(width: 96, height: 96)
+                        .background(Color.ffSurfaceAlt, in: .circle)
+                        .overlay(Circle().strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
+                        .scaleEffect(appeared || reduceMotion ? 1 : 0.6)
+                        .accessibilityHidden(true)
+
+                    Text(moment.isFinish ? "Journey complete!" : "You reached \(moment.checkpoint.name)!")
+                        .ffFont(.display)
+                        .foregroundStyle(Color.ffInk)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+
+                    if moment.isFinish {
+                        Text(moment.checkpoint.name)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
+                    }
+
+                    Text(moment.checkpoint.fact)
+                        .ffFont(.body)
+                        .foregroundStyle(Color.ffInkMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .ffCard()
+                .opacity(appeared || reduceMotion ? 1 : 0)
+
+                Spacer(minLength: 0)
+
+                Button("Keep Going", action: onContinue)
+                    .buttonStyle(.ffPrimary)
+                    .accessibilityIdentifier("checkpointKeepGoing")
+            }
+            .padding(.horizontal, FFSpace.s5)
+            .padding(.bottom, FFSpace.s6)
+        }
+        .sensoryFeedback(.success, trigger: appeared)
+        .onAppear {
+            if reduceMotion {
+                appeared = true
+            } else {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { appeared = true }
+            }
+        }
+    }
+}
+
+#Preview("Checkpoint") {
+    JourneyCheckpointView(
+        moment: CheckpointMoment(
+            journeyName: "Texas Triangle",
+            checkpoint: Checkpoint(name: "San Antonio, TX", cumulativeKm: 128, latitude: 29.4, longitude: -98.5,
+                                   fact: "Remember the Alamo! It stands a few blocks from the River Walk."),
+            isFinish: false, position: 1, count: 1
+        ),
+        onContinue: {}
+    )
+}
+
 #Preview("Picker") {
     JourneyPickerSheet()
         .modelContainer(for: [UserProfile.self], inMemory: true)

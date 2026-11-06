@@ -135,6 +135,8 @@ nonisolated enum FFShadow {
 nonisolated enum FFTextStyle: Sendable {
     case displayHero, display, numeral, title, headline
     case body, bodyStrong, caption, label
+    /// Tab labels: `headline` at 16pt (TabBar.md).
+    case tab
 
     var size: CGFloat {
         switch self {
@@ -142,6 +144,7 @@ nonisolated enum FFTextStyle: Sendable {
         case .display, .numeral: return 40
         case .title: return 28
         case .headline: return 20
+        case .tab: return 16
         case .body, .bodyStrong: return 17
         case .caption: return 14
         case .label: return 13
@@ -151,7 +154,7 @@ nonisolated enum FFTextStyle: Sendable {
     var weight: Font.Weight {
         switch self {
         case .displayHero, .display, .numeral: return .bold
-        case .title, .headline, .body: return .semibold
+        case .title, .headline, .body, .tab: return .semibold
         case .bodyStrong, .label: return .heavy
         case .caption: return .bold
         }
@@ -163,6 +166,7 @@ nonisolated enum FFTextStyle: Sendable {
         case .displayHero, .display, .numeral: return .largeTitle
         case .title: return .title
         case .headline: return .title3
+        case .tab: return .callout
         case .body, .bodyStrong: return .body
         case .caption: return .footnote
         case .label: return .caption
@@ -171,7 +175,7 @@ nonisolated enum FFTextStyle: Sendable {
 
     var isDisplay: Bool {
         switch self {
-        case .displayHero, .display, .numeral, .title, .headline: return true
+        case .displayHero, .display, .numeral, .title, .headline, .tab: return true
         default: return false
         }
     }

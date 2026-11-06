@@ -18,12 +18,173 @@ struct ContentView: View {
     @Query private var customExercises: [CustomExercise]
 
     @State private var viewModel = AppViewModel()
-    @State private var selectedTab = 0
+    @State private var selectedTab: AppTab = .home
     @State private var currentMilestoneIndex = 0
+    // The LogButton's sheet (3.2). nil type = open on the last-used type.
+    @State private var showLogSheet = false
+    @State private var logType: ActivityType?
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Playful Bold's floating word tabs; at accessibility text sizes the system tab bar is used
+    /// instead so labels never shrink (TabBar.md).
+    private var usesFloatingTabBar: Bool { !dynamicTypeSize.isAccessibilitySize }
 
     private var hasProfile: Bool { !profiles.isEmpty }
+
+    /// The tabs and what they present (log sheet, milestone and checkpoint covers). Split out of
+    /// `body` so the compiler can type-check it.
+    private var tabs: some View {
+        TabView(selection: $selectedTab) {
+            tabContent(HomeView(viewModel: viewModel), tab: .home)
+            tabContent(ProgressTabView(viewModel: viewModel), tab: .progress)
+            tabContent(AchievementsView(viewModel: viewModel), tab: .badges)
+            tabContent(ProfileView(viewModel: viewModel), tab: .you)
+        }
+        .tint(.ffInk)
+        // Pinned "now tracking" bar on every tab while a walk/run or strength session runs
+        // (FB-0003). With the floating tab bar it sits in the bottom bar instead.
+        .nowTrackingAccessory(viewModel: viewModel, isShowing: showsNowTracking && !usesFloatingTabBar)
+        .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
+            LogActivitySheet(viewModel: viewModel, initialType: logType)
+        }
+        .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
+            if currentMilestoneIndex < viewModel.pendingMilestones.count {
+                let milestone = viewModel.pendingMilestones[currentMilestoneIndex]
+                MilestoneView(milestone: milestone, pack: viewModel.activePack, pref: viewModel.unitPreference) {
+                    currentMilestoneIndex += 1
+                    if currentMilestoneIndex >= viewModel.pendingMilestones.count {
+                        viewModel.showMilestoneModal = false
+                        currentMilestoneIndex = 0
+                        viewModel.pendingMilestones = []
+                    }
+                }
+                .id(milestone.id)
+            }
+        }
+        // A journey checkpoint, once no other celebration or live session is on screen. (3.2)
+        .fullScreenCover(item: checkpointBinding) { moment in
+            JourneyCheckpointView(moment: moment) { showNextCheckpoint() }
+        }
+    }
+
+    // MARK: - Tabs and bottom bar (3.2)
+
+    /// One tab: its content with the system tab bar hidden (floating bar shown) or shown (large
+    /// text), and the bottom bar inset so content scrolls under it.
+    private func tabContent(_ content: some View, tab: AppTab) -> some View {
+        content
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
+            .toolbar(usesFloatingTabBar ? .hidden : .automatic, for: .tabBar)
+            .tabItem { Label(tab.label, systemImage: tab.symbol) }
+            .tag(tab)
+    }
+
+    /// Now-tracking row (when a session runs), then the word tabs and the LogButton.
+    private var bottomBar: some View {
+        VStack(spacing: FFSpace.s3) {
+            if usesFloatingTabBar && showsNowTracking {
+                NowTrackingBar(viewModel: viewModel, style: .inset)
+            }
+            HStack(spacing: FFSpace.s3) {
+                if usesFloatingTabBar {
+                    FFTabBar(selection: $selectedTab)
+                } else {
+                    Spacer()
+                }
+                LogButton(
+                    onLog: { type in
+                        logType = type
+                        showLogSheet = true
+                    },
+                    repeatLastLabel: viewModel.lastActivity.map(repeatLabel),
+                    onRepeatLast: repeatLast
+                )
+            }
+        }
+        .padding(.horizontal, FFSpace.s5)
+        .padding(.top, FFSpace.s2)
+        .padding(.bottom, FFSpace.s3)
+    }
+
+    // MARK: - Journey checkpoints (3.2)
+
+    /// Checkpoints waiting after the one on screen.
+    @State private var queuedCheckpoints: [CheckpointMoment] = []
+
+    /// Only shows the cover when nothing else is presenting (milestones, live sessions).
+    private var checkpointBinding: Binding<CheckpointMoment?> {
+        Binding(
+            get: {
+                let busy = viewModel.showMilestoneModal || viewModel.showTracker || viewModel.showStrengthSession
+                return busy ? nil : viewModel.checkpointMoment
+            },
+            set: { if $0 == nil { viewModel.checkpointMoment = nil } }
+        )
+    }
+
+    private func showNextCheckpoint() {
+        viewModel.checkpointMoment = queuedCheckpoints.isEmpty ? nil : queuedCheckpoints.removeFirst()
+    }
+
+    /// Celebrates checkpoints reached since last time, once each per journey run. The count is
+    /// kept per device (a celebration is a local moment); `silently` just records progress, e.g.
+    /// at launch, so history doesn't replay.
+    private func checkJourneyCheckpoints(silently: Bool) {
+        guard let profile = profiles.first,
+              let journey = JourneyCatalog.journey(id: profile.activeJourneyID),
+              let start = profile.journeyStartedAt else { return }
+        let key = "journeyCelebrated.\(journey.id).\(Int(start.timeIntervalSince1970))"
+        let entries = viewModel.activities
+            .filter { $0.activityType == .distance }
+            .map { (date: $0.loggedAt, km: $0.value) }
+        let distance = JourneyEngine.distanceSince(start, entries: entries)
+        let reachedCount = JourneyEngine.progress(journey: journey, distanceKm: distance).reached.count
+        let celebrated = UserDefaults.standard.object(forKey: key) as? Int
+
+        defer { UserDefaults.standard.set(reachedCount, forKey: key) }
+        // First look at this journey run, or a quiet check: record without celebrating.
+        guard !silently, let celebrated else { return }
+
+        let fresh = JourneyEngine.checkpointsToCelebrate(journey: journey, distanceKm: distance, alreadyCelebrated: celebrated)
+        guard !fresh.isEmpty else { return }
+        let moments = fresh.enumerated().map { index, checkpoint in
+            CheckpointMoment(
+                journeyName: journey.name,
+                checkpoint: checkpoint,
+                isFinish: checkpoint == journey.checkpoints.last,
+                position: index + 1,
+                count: fresh.count
+            )
+        }
+        queuedCheckpoints += moments.dropFirst()
+        if viewModel.checkpointMoment == nil {
+            viewModel.checkpointMoment = moments.first
+        } else {
+            queuedCheckpoints.insert(moments[0], at: 0)
+        }
+    }
+
+    private func repeatLabel(for activity: ActivityLog) -> String {
+        UnitConverter.displayString(activity.value, type: activity.activityType, reps: activity.reps, pref: viewModel.unitPreference)
+    }
+
+    private func repeatLast() {
+        guard let last = viewModel.lastActivity else { return }
+        let milestones = ActivityWriter.log(
+            type: last.activityType,
+            value: last.value,
+            reps: last.reps,
+            date: Date(),
+            surface: last.surface,
+            exerciseID: last.exerciseID,
+            context: modelContext,
+            viewModel: viewModel,
+            writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
+        )
+        viewModel.celebrate(milestones)
+    }
     private var showsNowTracking: Bool { NowTrackingContent.isShowing }
 
     var body: some View {
@@ -31,44 +192,7 @@ struct ContentView: View {
             if !hasProfile {
                 OnboardingView { }
             } else {
-                TabView(selection: $selectedTab) {
-                    HomeView(viewModel: viewModel)
-                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
-                        .tabItem { Label("Home", systemImage: "house") }
-                        .tag(0)
-
-                    ProgressTabView(viewModel: viewModel)
-                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
-                        .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
-                        .tag(1)
-
-                    AchievementsView(viewModel: viewModel)
-                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
-                        .tabItem { Label("Achievements", systemImage: "trophy") }
-                        .tag(2)
-
-                    ProfileView(viewModel: viewModel)
-                        .nowTrackingInset(viewModel: viewModel, isShowing: showsNowTracking)
-                        .tabItem { Label("Profile", systemImage: "person.circle") }
-                        .tag(3)
-                }
-                .tint(.ffInk)
-                // Pinned "now tracking" bar on every tab while a walk/run or strength session runs. (FB-0003)
-                .nowTrackingAccessory(viewModel: viewModel, isShowing: showsNowTracking)
-                .fullScreenCover(isPresented: $viewModel.showMilestoneModal) {
-                    if currentMilestoneIndex < viewModel.pendingMilestones.count {
-                        let milestone = viewModel.pendingMilestones[currentMilestoneIndex]
-                        MilestoneView(milestone: milestone, pack: viewModel.activePack, pref: viewModel.unitPreference) {
-                            currentMilestoneIndex += 1
-                            if currentMilestoneIndex >= viewModel.pendingMilestones.count {
-                                viewModel.showMilestoneModal = false
-                                currentMilestoneIndex = 0
-                                viewModel.pendingMilestones = []
-                            }
-                        }
-                        .id(milestone.id)
-                    }
-                }
+                tabs
                 .onAppear {
                     if let profile = profiles.first {
                         viewModel.activePack     = ThemePackCatalog.pack(id: profile.activeTheme)
@@ -83,6 +207,7 @@ struct ContentView: View {
                     reconcileChallenges()
                     updateStreak()
                     writeWidgetData()
+                    checkJourneyCheckpoints(silently: true)
                 }
                 .task(id: hasProfile) {
                     await syncHealthKitIfEnabled()
@@ -116,8 +241,14 @@ struct ContentView: View {
                     updateStreak()
                     scheduleNotificationsIfNeeded()
                     writeWidgetData()
+                    checkJourneyCheckpoints(silently: false)
                     // After the streak update, so the Watch gets the new streak too.
                     WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
+                }
+                .onChange(of: profiles.first?.journeyStartedAt) {
+                    // A journey just started (here or on another device): record its starting
+                    // point so the first checkpoint reached after this is celebrated.
+                    checkJourneyCheckpoints(silently: true)
                 }
                 .onChange(of: achievements) {
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))

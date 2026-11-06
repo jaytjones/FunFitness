@@ -53,6 +53,13 @@ final class UserProfile {
     var activeJourneyID: String = ""
     var journeyStartedAt: Date?
 
+    // MARK: - Style (3.2)
+    // The app's visual Style (`StyleID.rawValue`), synced so every device looks the same. Only
+    // Playful Bold exists in 3.2; 3.3 adds unlockable Styles and a picker.
+    var activeStyleID: String = StyleID.default.rawValue
+
+    var style: StyleID { StyleID(rawValue: activeStyleID) ?? .default }
+
     init(
         id: UUID = UUID(),
         name: String = "",

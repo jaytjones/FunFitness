@@ -12,7 +12,6 @@ struct AchievementsView: View {
     @Query private var achievements: [UnlockedAchievement]
     @Bindable var viewModel: AppViewModel
 
-    @State private var showLogSheet = false
 
     // O(n log n): sort achievements by date first, then map to milestones
     private var unlockedMilestones: [(milestone: Milestone, unlockedAt: Date)] {
@@ -94,21 +93,6 @@ struct AchievementsView: View {
             }
             .navigationTitle("Achievements")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showLogSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color.ffLink)
-                    }
-                    .accessibilityLabel("Log activity")
-                }
-            }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
-                LogActivitySheet(viewModel: viewModel)
-            }
         }
     }
 }

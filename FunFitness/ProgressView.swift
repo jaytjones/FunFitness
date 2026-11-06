@@ -14,7 +14,6 @@ struct ProgressTabView: View {
     @Query private var activities: [ActivityLog]
     @Bindable var viewModel: AppViewModel
 
-    @State private var showLogSheet = false
     @State private var showHistory = false
     @State private var analyticsType: ActivityType = .distance
 
@@ -88,19 +87,6 @@ struct ProgressTabView: View {
                     .accessibilityLabel("Activity history")
                     .accessibilityIdentifier("progressHistoryButton")
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showLogSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color.ffLink)
-                    }
-                    .accessibilityLabel("Log activity")
-                }
-            }
-            .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
-                LogActivitySheet(viewModel: viewModel)
             }
             .sheet(isPresented: $showHistory) {
                 ActivityHistorySheet(viewModel: viewModel)

@@ -12,8 +12,14 @@ The links are private to April's account until shared.
 
 ## Status
 
-- **No default style chosen yet.** Don't build any style until one is picked.
-- Still deciding between one style, or switchable styles shipped one at a time.
+- **Playful Bold is the app's style (Jay, 2026-11-06), built in 3.2 "New Look".** Today's old look
+  is retired, not kept as a style. Tokens live in `Shared/Style.swift` (from `playful-bold/tokens.json`);
+  structural pieces (floating word TabBar + LogButton, HeroStat, StatTile, "Compare with") in
+  `FunFitness/PlayfulChrome.swift` and `HomeView.swift`.
+- **Arcade, then Field Guide** become unlockable styles in 3.3 (earned + purchased; rules TBD). The
+  chosen style syncs (`UserProfile.activeStyleID`).
+- Fonts: Fredoka/Nunito aren't bundled yet; SF Pro Rounded is used (the README's fallback).
+  Bundling them is one change in `FFFontFamily`.
 
 ## Changes since build 9
 

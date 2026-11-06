@@ -101,6 +101,8 @@ final class AppViewModel {
     var unitPreference: UnitPreference = .imperial
     var pendingMilestones: [Milestone] = []
     var showMilestoneModal: Bool = false
+    /// A journey checkpoint waiting to be celebrated (3.2). Shown after milestone celebrations.
+    var checkpointMoment: CheckpointMoment?
     // Live session screens (3.1): GPS walk/run tracking and the strength session. Milestones
     // crossed while one is up wait in `deferredMilestones` until its full-screen cover closes,
     // since only one cover can show at a time.

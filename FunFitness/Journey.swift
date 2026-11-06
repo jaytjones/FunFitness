@@ -131,6 +131,13 @@ nonisolated enum JourneyEngine {
         entries.filter { $0.date >= start }.reduce(0) { $0 + max(0, $1.km) }
     }
 
+    /// Checkpoints reached but not celebrated yet, given how many (including the start) already
+    /// were. The start is never celebrated. Used for the "you reached…" moment (3.2).
+    static func checkpointsToCelebrate(journey: Journey, distanceKm: Double, alreadyCelebrated: Int) -> [Checkpoint] {
+        let reached = progress(journey: journey, distanceKm: distanceKm).reached
+        return Array(reached.dropFirst(max(1, alreadyCelebrated)))
+    }
+
     /// Checkpoints newly passed going from `previousKm` to `newKm` (for a "you reached…" moment).
     static func newlyReached(journey: Journey, previousKm: Double, newKm: Double) -> [Checkpoint] {
         let before = Set(progress(journey: journey, distanceKm: previousKm).reached.map(\.id))

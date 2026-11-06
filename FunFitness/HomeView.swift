@@ -21,9 +21,19 @@ struct HomeView: View {
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
-    // Core types (distance, weight) always show; new types surface once they have data.
-    private var visibleTypes: [ActivityType] {
-        ActivityType.allCases.filter { $0.alwaysShowsCard || viewModel.total(for: $0) > 0 }
+    /// Secondary types with data get a StatTile; a zero total is hidden, not shown as 0 (StatTile.md).
+    private var tileTypes: [ActivityType] {
+        ActivityType.allCases.filter { $0 != .distance && viewModel.total(for: $0) > 0 }
+    }
+
+    private var greeting: String {
+        let name = profiles.first?.name.trimmingCharacters(in: .whitespaces) ?? ""
+        return name.isEmpty ? "Hey, champ!" : "Hey, \(name)!"
+    }
+
+    private func openLog(_ type: ActivityType) {
+        logType = type
+        showLogSheet = true
     }
 
     var body: some View {
@@ -33,7 +43,27 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    // Playful Bold Home order (README): greeting → HeroStat → StatTiles → streak
+                    // and rank → challenge → the rest; Ticker, Recent Activity and "Compare with"
+                    // lower down. (3.2)
+                    VStack(spacing: FFSpace.s4) {
+                        Text(greeting)
+                            .ffFont(.display)
+                            .foregroundStyle(Color.ffInk)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityAddTraits(.isHeader)
+                            .padding(.bottom, FFSpace.s1)
+
+                        HeroStat(viewModel: viewModel, type: .distance) {
+                            openLog(.distance)
+                        }
+
+                        ForEach(tileTypes, id: \.self) { type in
+                            StatTile(viewModel: viewModel, type: type) {
+                                openLog(type)
+                            }
+                        }
+
                         StreakCard(viewModel: viewModel, onActivateShield: {
                             showShieldConfirm = true
                         })
@@ -63,31 +93,11 @@ struct HomeView: View {
                             }
                         }
 
-                        // One card per visible type: the two core types always, duration/reps
-                        // once they have data. (v2.2)
-                        ForEach(visibleTypes, id: \.self) { type in
-                            StatCard(
-                                type: type,
-                                title: type.cardTitle,
-                                subtitle: type.cardSubtitle,
-                                displayValue: viewModel.displayTotal(for: type),
-                                progress: viewModel.progressToNextMilestone(type: type),
-                                nextMilestone: viewModel.remainingToNextMilestone(type: type).milestone?.title(pref: viewModel.unitPreference) ?? "Complete!",
-                                remainingDisplay: remainingLabel(for: type),
-                                logHint: "Logs a \(type.displayName.lowercased()) activity",
-                                onTap: {
-                                    logType = type
-                                    showLogSheet = true
-                                }
-                            )
-                            .accessibilityIdentifier("\(type.rawValue)StatCard")
-                        }
+                        AbsurdityTicker(viewModel: viewModel)
 
                         RecentActivityCard(viewModel: viewModel) {
                             showHistory = true
                         }
-
-                        AbsurdityTicker(viewModel: viewModel)
 
                         ThemeSelector(selectedPack: $viewModel.activePack)
 
@@ -96,25 +106,12 @@ struct HomeView: View {
                             totalCount: ComparisonEngine.allMilestones.count
                         )
                     }
-                    .padding()
+                    .padding(.horizontal, FFSpace.s5)
+                    .padding(.vertical, FFSpace.s4)
                 }
             }
             .navigationTitle("FunFitness")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        logType = nil
-                        showLogSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color.ffLink)
-                    }
-                    .accessibilityLabel("Log activity")
-                    .accessibilityIdentifier("homeLogActivityButton")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
                 LogActivitySheet(viewModel: viewModel, initialType: logType)
             }
@@ -154,12 +151,6 @@ struct HomeView: View {
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
         )
         viewModel.celebrate(newMilestones)
-    }
-
-    private func remainingLabel(for type: ActivityType) -> String {
-        let remaining = viewModel.remainingToNextMilestone(type: type).remaining
-        guard remaining > 0 else { return "" }
-        return "\(UnitConverter.displayString(remaining, type: type, pref: pref)) to go"
     }
 }
 
@@ -656,129 +647,36 @@ struct AbsurdityTicker: View {
     }
 }
 
-// MARK: - Stat Card
-
-/// Playful Bold stat card: a surface card with the type's icon chip, the total as a numeral and a
-/// meter in the type color.
-struct StatCard: View {
-    let type: ActivityType
-    let title: String
-    let subtitle: String
-    let displayValue: String
-    let progress: Double
-    let nextMilestone: String
-    let remainingDisplay: String
-
-    // 44pt chip, scaled with Dynamic Type.
-    @ScaledMetric(relativeTo: .title3) private var chipSize: CGFloat = 44
-    // VoiceOver hint + tap action for logging this activity type. Optional so
-    // non-interactive uses of StatCard keep working.
-    var logHint: String? = nil
-    var onTap: (() -> Void)? = nil
-
-    var body: some View {
-        let card = cardBody
-        if let onTap {
-            Button(action: onTap) { card }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(.isButton)
-                .accessibilityHint(logHint ?? "")
-        } else {
-            card
-        }
-    }
-
-    private var cardBody: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: type.symbolName)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(type.ffOnFill)
-                    .frame(width: chipSize, height: chipSize)
-                    .background(type.ffFill, in: .rect(cornerRadius: FFRadius.sm, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: FFRadius.sm, style: .continuous)
-                            .strokeBorder(Color.ffLine, lineWidth: FFStroke.control)
-                    )
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .ffFont(.headline)
-                        .foregroundStyle(Color.ffInk)
-                    Text(subtitle)
-                        .ffFont(.caption)
-                        .foregroundStyle(Color.ffInkMuted)
-                }
-                Spacer()
-                if onTap != nil {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(Color.ffLink)
-                        .accessibilityHidden(true)
-                }
-            }
-
-            Text(displayValue)
-                .ffFont(.numeral)
-                .foregroundStyle(Color.ffInk)
-
-            SwiftUI.ProgressView(value: progress)
-                .progressViewStyle(FFMeterStyle(fill: type.ffFill))
-                .accessibilityLabel("\(title) progress")
-                .accessibilityValue(String(format: "%.0f percent", progress * 100))
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Next Milestone")
-                        .ffFont(.label)
-                        .foregroundStyle(Color.ffInkMuted)
-                    Text(nextMilestone)
-                        .ffFont(.caption)
-                        .foregroundStyle(Color.ffInk)
-                        .lineLimit(1)
-                }
-                Spacer()
-                if !remainingDisplay.isEmpty {
-                    Text(remainingDisplay)
-                        .ffFont(.caption)
-                        .foregroundStyle(Color.ffInkMuted)
-                } else {
-                    Text("All milestones complete!")
-                        .ffFont(.caption)
-                        .foregroundStyle(Color.ffSuccess)
-                }
-            }
-        }
-        .ffCard()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(displayValue). \(Int(progress * 100))% to next milestone.")
-    }
-}
-
 // MARK: - Theme Selector
 
+/// PackPicker (3.2): "Compare with", so the comparison pack isn't confused with light/dark
+/// appearance. One row that scrolls sideways on Home.
 struct ThemeSelector: View {
     @Binding var selectedPack: ThemePack
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Achievement Theme")
+        VStack(alignment: .leading, spacing: FFSpace.s3) {
+            Text("Compare with")
                 .ffFont(.headline)
                 .foregroundStyle(Color.ffInk)
+                .accessibilityAddTraits(.isHeader)
 
-            // FlowLayout wraps the chips onto multiple rows as the pack list grows (5 packs
-            // as of v2.2 Segment 4).
-            FlowLayout(spacing: 12) {
-                ForEach(ThemePackCatalog.all) { pack in
-                    SelectionChip(
-                        title: pack.displayName,
-                        isSelected: selectedPack == pack,
-                        action: { selectedPack = pack }
-                    )
+            ScrollView(.horizontal) {
+                HStack(spacing: FFSpace.s3) {
+                    ForEach(ThemePackCatalog.all) { pack in
+                        SelectionChip(
+                            title: pack.displayName,
+                            isSelected: selectedPack == pack,
+                            action: { selectedPack = pack }
+                        )
+                    }
                 }
+                .padding(.vertical, FFSpace.s1)
             }
+            .scrollIndicators(.hidden)
         }
         .ffCard()
+        .accessibilityIdentifier("packPicker")
     }
 }
 
