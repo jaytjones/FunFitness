@@ -30,6 +30,8 @@ struct FunFitnessApp: App {
         }
         #endif
         sharedModelContainer = PersistenceController.makeSharedContainer()
+        // Early, so entries logged on the Watch are received even on a background launch. (3.1)
+        WatchConnector.shared.activate()
     }
 
     var body: some Scene {

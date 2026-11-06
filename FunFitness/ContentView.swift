@@ -76,6 +76,8 @@ struct ContentView: View {
                     }
                     viewModel.activities = activities
                     ExerciseLibrary.shared.setCustom(customExercises)
+                    WatchConnector.shared.configure(context: modelContext, viewModel: viewModel)
+                    WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
                     reconcileAchievements()
                     reconcileChallenges()
@@ -105,9 +107,11 @@ struct ContentView: View {
                 }
                 .onChange(of: customExercises) {
                     ExerciseLibrary.shared.setCustom(customExercises)
+                    WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
                 }
                 .onChange(of: activities) {
                     viewModel.activities = activities
+                    WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
                     reconcileAchievements()
                     reconcileChallenges()
                     updateStreak()
