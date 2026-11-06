@@ -111,12 +111,13 @@ struct ContentView: View {
                 }
                 .onChange(of: activities) {
                     viewModel.activities = activities
-                    WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
                     reconcileAchievements()
                     reconcileChallenges()
                     updateStreak()
                     scheduleNotificationsIfNeeded()
                     writeWidgetData()
+                    // After the streak update, so the Watch gets the new streak too.
+                    WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
                 }
                 .onChange(of: achievements) {
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))

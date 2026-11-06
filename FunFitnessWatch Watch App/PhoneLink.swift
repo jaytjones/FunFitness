@@ -10,6 +10,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import WidgetKit
 
 @MainActor
 @Observable
@@ -25,7 +26,9 @@ final class PhoneLink: NSObject {
 
     private override init() {
         super.init()
-        if let data = UserDefaults.standard.data(forKey: Self.contextKey) {
+        context = WatchStatsStore.load()
+        // Builds before 12 cached the context in standard defaults.
+        if context == nil, let data = UserDefaults.standard.data(forKey: Self.contextKey) {
             context = try? JSONDecoder().decode(WatchContext.self, from: data)
         }
     }
@@ -50,9 +53,9 @@ final class PhoneLink: NSObject {
 
     fileprivate func store(_ context: WatchContext) {
         self.context = context
-        if let data = try? JSONEncoder().encode(context) {
-            UserDefaults.standard.set(data, forKey: Self.contextKey)
-        }
+        // App Group storage, so the complication shows the same stats.
+        WatchStatsStore.save(context)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     fileprivate func refreshQueue() {

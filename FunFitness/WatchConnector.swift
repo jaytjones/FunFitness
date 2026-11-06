@@ -59,20 +59,43 @@ final class WatchConnector: NSObject {
         if let id = viewModel.lastExerciseID(for: .weight) { lastIDs[WatchQuickLog.Kind.lift.rawValue] = id }
         if let id = viewModel.lastExerciseID(for: .reps) { lastIDs[WatchQuickLog.Kind.bodyweight.rawValue] = id }
         let lastLift = viewModel.activities.filter { $0.activityType == .weight }.max { $0.loggedAt < $1.loggedAt }
-        let context = WatchContext(
+        var context = WatchContext(
             usesMetric: pref == .metric,
             exercises: exercises,
             lastExerciseIDs: lastIDs,
             lastLiftKg: lastLift?.value,
             lastLiftReps: lastLift?.reps
         )
+        context.currentStreakWeeks = viewModel.currentStreak
+        context.effortPoints = weeklyEffortPoints(viewModel: viewModel)
+        context.effortTarget = EffortEngine.weeklyTarget
+        context.totalDistanceKm = viewModel.totalDistance
+        context.totalLiftedKg = viewModel.totalWeight
+        // Compared without the timestamp, so an unchanged context isn't re-sent.
         guard context != lastSentContext else { return }
+        let comparable = context
+        context.updatedAt = Date()
         do {
             try WCSession.default.updateApplicationContext(context.encoded())
-            lastSentContext = context
+            lastSentContext = comparable
         } catch {
             // Not reachable yet; the next change or launch tries again.
         }
+    }
+
+    /// This week's Effort Points, the same number as the Home card.
+    private func weeklyEffortPoints(viewModel: AppViewModel) -> Double {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? .distantPast
+        let logs = viewModel.activities.filter { $0.loggedAt >= cutoff }
+        let routes = (try? context?.fetch(FetchDescriptor<RouteSummary>(predicate: #Predicate { $0.startedAt >= cutoff }))) ?? []
+        let sessions = (try? context?.fetch(FetchDescriptor<WorkoutSession>(predicate: #Predicate { $0.startedAt >= cutoff }))) ?? []
+        let age = (try? context?.fetch(FetchDescriptor<UserProfile>()))?.first?.computedAge
+        let entries = EffortEngine.entries(
+            logs: logs.map(EffortEngine.LogFacts.init),
+            routes: routes.map(EffortEngine.RouteFacts.init),
+            sessions: sessions.map(EffortEngine.SessionFacts.init)
+        )
+        return EffortEngine.weeklySummary(entries: entries, age: age, now: Date()).points
     }
 
     // MARK: - Watch → phone

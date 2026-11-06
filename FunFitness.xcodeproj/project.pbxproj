@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		8613A49C309E7D3F00D31D8C /* FunFitnessWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8613A49B309E7D3F00D31D8C /* FunFitnessWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8613A8CD309E8FA500D31D8C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00ED307AF83700DCE148 /* WidgetKit.framework */; };
+		8613A8CE309E8FA500D31D8C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00EF307AF83700DCE148 /* SwiftUI.framework */; };
+		8613A8D9309E8FA600D31D8C /* FunFitnessWatchWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8613A8CC309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		869F00EE307AF83700DCE148 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00ED307AF83700DCE148 /* WidgetKit.framework */; };
 		869F00F0307AF83700DCE148 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 869F00EF307AF83700DCE148 /* SwiftUI.framework */; };
 		869F00FB307AF83800DCE148 /* FunFitnessWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -20,6 +23,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 8613A49A309E7D3F00D31D8C;
 			remoteInfo = "FunFitnessWatch Watch App";
+		};
+		8613A8D7309E8FA600D31D8C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 86EEF7DC2F79F3E00076F515 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8613A8CB309E8FA500D31D8C;
+			remoteInfo = FunFitnessWatchWidgetsExtension;
 		};
 		869F00F9307AF83800DCE148 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -56,6 +66,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8613A8DA309E8FA600D31D8C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8613A8D9309E8FA600D31D8C /* FunFitnessWatchWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		869F0100307AF83800DCE148 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -71,6 +92,7 @@
 
 /* Begin PBXFileReference section */
 		8613A49B309E7D3F00D31D8C /* FunFitnessWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FunFitnessWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8613A8CC309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunFitnessWatchWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		863D79AA3026250000670EDD /* 20260807_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260807_session_summary.md; sourceTree = "<group>"; };
 		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		868A21C03085407C00735005 /* ActivityRow.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ActivityRow.md; sourceTree = "<group>"; };
@@ -168,6 +190,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8613A8DE309E8FA600D31D8C /* Exceptions for "FunFitnessWatchWidgets" folder in "FunFitnessWatchWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8613A8CB309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension */;
+		};
 		869F00FF307AF83800DCE148 /* Exceptions for "FunFitnessWidgets" folder in "FunFitnessWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -188,6 +217,14 @@
 		8613A49F309E7D3F00D31D8C /* FunFitnessWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "FunFitnessWatch Watch App";
+			sourceTree = "<group>";
+		};
+		8613A8CF309E8FA500D31D8C /* FunFitnessWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8613A8DE309E8FA600D31D8C /* Exceptions for "FunFitnessWatchWidgets" folder in "FunFitnessWatchWidgetsExtension" target */,
+			);
+			path = FunFitnessWatchWidgets;
 			sourceTree = "<group>";
 		};
 		869F00F1307AF83700DCE148 /* FunFitnessWidgets */ = {
@@ -233,6 +270,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8613A8C9309E8FA500D31D8C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8613A8CE309E8FA500D31D8C /* SwiftUI.framework in Frameworks */,
+				8613A8CD309E8FA500D31D8C /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,6 +486,7 @@
 				86B1B0A13090000000ABCDEF /* Shared */,
 				86C2C0A13090000000FEDCBA /* WatchShared */,
 				8613A49F309E7D3F00D31D8C /* FunFitnessWatch Watch App */,
+				8613A8CF309E8FA500D31D8C /* FunFitnessWatchWidgets */,
 				869F00EC307AF83700DCE148 /* Frameworks */,
 				86EEF7E52F79F3E00076F515 /* Products */,
 			);
@@ -453,6 +500,7 @@
 				86EEF7FF2F79F3E10076F515 /* FunFitnessUITests.xctest */,
 				869F00EB307AF83700DCE148 /* FunFitnessWidgetsExtension.appex */,
 				8613A49B309E7D3F00D31D8C /* FunFitnessWatch Watch App.app */,
+				8613A8CC309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -467,10 +515,12 @@
 				8613A497309E7D3F00D31D8C /* Sources */,
 				8613A498309E7D3F00D31D8C /* Frameworks */,
 				8613A499309E7D3F00D31D8C /* Resources */,
+				8613A8DA309E8FA600D31D8C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8613A8D8309E8FA600D31D8C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8613A49F309E7D3F00D31D8C /* FunFitnessWatch Watch App */,
@@ -482,6 +532,29 @@
 			productName = "FunFitnessWatch Watch App";
 			productReference = 8613A49B309E7D3F00D31D8C /* FunFitnessWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		8613A8CB309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8613A8DD309E8FA600D31D8C /* Build configuration list for PBXNativeTarget "FunFitnessWatchWidgetsExtension" */;
+			buildPhases = (
+				8613A8C8309E8FA500D31D8C /* Sources */,
+				8613A8C9309E8FA500D31D8C /* Frameworks */,
+				8613A8CA309E8FA500D31D8C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8613A8CF309E8FA500D31D8C /* FunFitnessWatchWidgets */,
+				86C2C0A13090000000FEDCBA /* WatchShared */,
+			);
+			name = FunFitnessWatchWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = FunFitnessWatchWidgetsExtension;
+			productReference = 8613A8CC309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */ = {
 			isa = PBXNativeTarget;
@@ -593,6 +666,9 @@
 					8613A49A309E7D3F00D31D8C = {
 						CreatedOnToolsVersion = 27.2;
 					};
+					8613A8CB309E8FA500D31D8C = {
+						CreatedOnToolsVersion = 27.2;
+					};
 					869F00EA307AF83700DCE148 = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -628,12 +704,20 @@
 				86EEF7FE2F79F3E10076F515 /* FunFitnessUITests */,
 				869F00EA307AF83700DCE148 /* FunFitnessWidgetsExtension */,
 				8613A49A309E7D3F00D31D8C /* FunFitnessWatch Watch App */,
+				8613A8CB309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		8613A499309E7D3F00D31D8C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8613A8CA309E8FA500D31D8C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -678,6 +762,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8613A8C8309E8FA500D31D8C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		869F00E7307AF83700DCE148 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -713,6 +804,11 @@
 			isa = PBXTargetDependency;
 			target = 8613A49A309E7D3F00D31D8C /* FunFitnessWatch Watch App */;
 			targetProxy = 8613A49D309E7D3F00D31D8C /* PBXContainerItemProxy */;
+		};
+		8613A8D8309E8FA600D31D8C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8613A8CB309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension */;
+			targetProxy = 8613A8D7309E8FA600D31D8C /* PBXContainerItemProxy */;
 		};
 		869F00FA307AF83800DCE148 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -796,6 +892,70 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		8613A8DB309E8FA600D31D8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FunFitnessWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2XT4CUP82M;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FunFitnessWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FunFitness;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaytjones.FunFitness.watchkitapp.FunFitnessWatchWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		8613A8DC309E8FA600D31D8C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FunFitnessWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2XT4CUP82M;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FunFitnessWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FunFitness;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaytjones.FunFitness.watchkitapp.FunFitnessWatchWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
@@ -1189,6 +1349,15 @@
 			buildConfigurations = (
 				8613A4AA309E7D4000D31D8C /* Debug */,
 				8613A4AB309E7D4000D31D8C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8613A8DD309E8FA600D31D8C /* Build configuration list for PBXNativeTarget "FunFitnessWatchWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8613A8DB309E8FA600D31D8C /* Debug */,
+				8613A8DC309E8FA600D31D8C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

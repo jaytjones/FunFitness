@@ -23,6 +23,29 @@ struct ContentView: View {
 
     private var home: some View {
         List {
+            if let context = link.context {
+                Section("This Week") {
+                    TimelineView(.everyMinute) { timeline in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("⚡️ \(Int(context.effortPoints(asOf: timeline.date).rounded())) / \(Int(context.target)) pts")
+                                .font(.headline)
+                            Gauge(value: context.effortFraction(asOf: timeline.date)) { EmptyView() }
+                                .gaugeStyle(.linearCapacity)
+                                .tint(.yellow)
+                                .accessibilityLabel("Effort Points progress")
+                            if let streak = context.currentStreakWeeks {
+                                Text("🔥 \(streak)-week streak")
+                            }
+                            if let km = context.totalDistanceKm, km > 0 {
+                                Text("\(distanceText(km)) all-time")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
             Section("Track") {
                 ForEach(WorkoutManager.Kind.allCases) { kind in
                     Button {
@@ -62,6 +85,12 @@ struct ContentView: View {
             }
         }
         .navigationTitle("FunFitness")
+    }
+
+    private func distanceText(_ km: Double) -> String {
+        link.usesMetric
+            ? "\(km.formatted(.number.precision(.fractionLength(0...1)))) km"
+            : "\((km / 1.60934).formatted(.number.precision(.fractionLength(0...1)))) mi"
     }
 }
 

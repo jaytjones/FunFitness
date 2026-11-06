@@ -92,4 +92,17 @@ struct WatchConnectorTests {
         #expect(route.movingSeconds == 600)
         #expect(route.coordinates.count == 2)
     }
+
+    @Test func watchEffortPointsResetInANewWeek() {
+        let cal = Calendar.current
+        let now = Date()
+        var context = WatchContext(usesMetric: false, exercises: [])
+        context.effortPoints = 90
+        context.effortTarget = 150
+        context.updatedAt = now
+        #expect(context.effortPoints(asOf: now) == 90)
+        #expect(abs(context.effortFraction(asOf: now) - 0.6) < 1e-9)
+        let nextWeek = cal.date(byAdding: .weekOfYear, value: 1, to: now)!
+        #expect(context.effortPoints(asOf: nextWeek) == 0)
+    }
 }

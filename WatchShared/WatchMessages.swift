@@ -77,6 +77,15 @@ nonisolated struct WatchContext: Codable, Equatable, Sendable {
     /// Last lift weight in kg and rep count, for prefilling.
     var lastLiftKg: Double? = nil
     var lastLiftReps: Int? = nil
+    // Stats for the Watch's glance and complication (3.1 build 12).
+    var currentStreakWeeks: Int? = nil
+    var effortPoints: Double? = nil
+    var effortTarget: Double? = nil
+    /// Lifetime totals: km and kg.
+    var totalDistanceKm: Double? = nil
+    var totalLiftedKg: Double? = nil
+    /// When the phone computed these; a week-old Effort Points value is stale.
+    var updatedAt: Date? = nil
 
     func encoded() -> [String: Any] {
         guard let data = try? JSONEncoder().encode(self) else { return [:] }

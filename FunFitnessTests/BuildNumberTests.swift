@@ -40,6 +40,12 @@ struct BuildNumberTests {
 
         #expect(watch.version == app.version)
         #expect(watch.build == app.build)
+
+        // …and so must the Watch complications embedded in the Watch app (build 12).
+        let complicationsURL = watchURL.appendingPathComponent("PlugIns/FunFitnessWatchWidgetsExtension.appex")
+        let complications = versions(of: try #require(Bundle(url: complicationsURL)))
+        #expect(complications.version == app.version)
+        #expect(complications.build == app.build)
     }
 
     @Test func buildNumberIsAWholeNumber() throws {
