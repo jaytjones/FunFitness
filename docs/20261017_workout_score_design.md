@@ -1,6 +1,13 @@
 # Workout Score — Design Draft (C7, 2026-10-17)
 
-**Status:** draft for discussion; nothing is built. Feedback (2026-10-12): a workout "score" that
+**Status (2026-11-06): built for 3.1 (11)** as `EffortEngine` + a Home `EffortPointsCard` with a
+"How your score works" sheet. Jay's answers: (1) weekly target of 150 points; (2) Home card only;
+(3) separate stat, not tied to badges; (4) no reference-unit framing for now. No schema change:
+heart-rate intensity uses the stored average HR's zone (not per-sample zone minutes), and
+minutes come from route moving time, timed sessions, and Duration logs, with estimates otherwise
+(12 min/km as a walk; 2 min per untimed strength set). Duration logs count 2 pts/min (4 MET).
+
+**Original status:** draft for discussion; nothing is built. Feedback (2026-10-12): a workout "score" that
 isn't just calories, and the formula must be written down for users.
 
 ## Goals
