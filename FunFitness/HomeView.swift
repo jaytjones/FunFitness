@@ -44,6 +44,8 @@ struct HomeView: View {
 
                         EffortPointsCard()
 
+                        JourneyCard(viewModel: viewModel)
+
                         SeasonalCard(viewModel: viewModel)
 
                         // While one is running, the pinned "now tracking" bar shows it instead. (FB-0003)

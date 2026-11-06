@@ -47,6 +47,12 @@ final class UserProfile {
     // so strength sessions show duration only. (3.1 C4)
     var calorieWeightPromptDeclined: Bool = false
 
+    // MARK: - Journey Mode (3.1)
+    // The journey being walked (`Journey.id`); "" = none. Progress counts distance logged since
+    // `journeyStartedAt`, so switching journeys starts fresh.
+    var activeJourneyID: String = ""
+    var journeyStartedAt: Date?
+
     init(
         id: UUID = UUID(),
         name: String = "",

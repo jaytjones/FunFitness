@@ -1,0 +1,47 @@
+[
+  {
+    "id": "texas-triangle",
+    "name": "Texas Triangle",
+    "emoji": "🤠",
+    "blurb": "Austin → San Antonio → Houston → Dallas → back to Austin, by road.",
+    "checkpoints": [
+      { "name": "Austin, TX", "miles": 0, "latitude": 30.2672, "longitude": -97.7431, "fact": "The Texas Capitol is taller than the U.S. Capitol in Washington, D.C." },
+      { "name": "San Marcos, TX", "miles": 30, "latitude": 29.8833, "longitude": -97.9414, "fact": "Spring Lake here is fed by the San Marcos Springs, home to species found nowhere else on Earth." },
+      { "name": "New Braunfels, TX", "miles": 48, "latitude": 29.7030, "longitude": -98.1245, "fact": "German settlers founded New Braunfels in 1845." },
+      { "name": "San Antonio, TX", "miles": 80, "latitude": 29.4241, "longitude": -98.4936, "fact": "Remember the Alamo! It stands a few blocks from the River Walk." },
+      { "name": "Seguin, TX", "miles": 116, "latitude": 29.5688, "longitude": -97.9647, "fact": "Seguin's courthouse lawn has a giant pecan statue, billed as the world's largest." },
+      { "name": "Columbus, TX", "miles": 206, "latitude": 29.7066, "longitude": -96.5397, "fact": "Columbus sits on the Colorado River: the Texas one, not the Grand Canyon one." },
+      { "name": "Houston, TX", "miles": 277, "latitude": 29.7604, "longitude": -95.3698, "fact": "Mission Control at Johnson Space Center guided the Apollo Moon landings." },
+      { "name": "Huntsville, TX", "miles": 347, "latitude": 30.7235, "longitude": -95.5508, "fact": "A 67-foot statue of Sam Houston watches over I-45 here." },
+      { "name": "Corsicana, TX", "miles": 459, "latitude": 32.0954, "longitude": -96.4689, "fact": "Collin Street Bakery has shipped fruitcakes around the world from Corsicana since 1896." },
+      { "name": "Dallas, TX", "miles": 517, "latitude": 32.7767, "longitude": -96.7970, "fact": "The frozen margarita machine was invented in Dallas in 1971." },
+      { "name": "Waco, TX", "miles": 612, "latitude": 31.5493, "longitude": -97.1467, "fact": "Dr Pepper was created at a Waco drugstore in 1885." },
+      { "name": "Back in Austin!", "miles": 714, "latitude": 30.2672, "longitude": -97.7431, "fact": "Celebrate under the Congress Avenue Bridge, home to North America's largest urban bat colony." }
+    ]
+  },
+  {
+    "id": "appalachian-trail",
+    "name": "Appalachian Trail",
+    "emoji": "🥾",
+    "blurb": "Springer Mountain, Georgia → Mount Katahdin, Maine, through 14 states.",
+    "checkpoints": [
+      { "name": "Springer Mountain, GA", "miles": 0, "latitude": 34.6266, "longitude": -84.1939, "fact": "The southern end of the trail. Look for the first white blaze painted on the rock." },
+      { "name": "Neels Gap, GA", "miles": 31.7, "latitude": 34.7354, "longitude": -83.9182, "fact": "The trail passes right through a building here: the stone Walasi-Yi Center, built in the 1930s." },
+      { "name": "Fontana Dam, NC", "miles": 165.7, "latitude": 35.4510, "longitude": -83.8060, "fact": "At 480 feet, Fontana is the tallest dam east of the Rocky Mountains." },
+      { "name": "Clingmans Dome, TN", "miles": 199.6, "latitude": 35.5628, "longitude": -83.4985, "fact": "The highest point on the whole trail: 6,643 feet." },
+      { "name": "Hot Springs, NC", "miles": 274.9, "latitude": 35.8929, "longitude": -82.8279, "fact": "The trail runs right down Main Street, past natural hot springs." },
+      { "name": "Damascus, VA", "miles": 470.4, "latitude": 36.6334, "longitude": -81.7837, "fact": "\"Trail Town USA\" throws a hiker festival, Trail Days, every May." },
+      { "name": "McAfee Knob, VA", "miles": 713.9, "latitude": 37.3925, "longitude": -80.0363, "fact": "This rock ledge is said to be the most photographed spot on the trail." },
+      { "name": "Harpers Ferry, WV", "miles": 1025.6, "latitude": 39.3254, "longitude": -77.7389, "fact": "The \"psychological halfway point,\" home of the Appalachian Trail Conservancy." },
+      { "name": "Pine Grove Furnace, PA", "miles": 1105.5, "latitude": 40.0335, "longitude": -77.3058, "fact": "Past the halfway mark, hikers try the Half Gallon Challenge: half a gallon of ice cream in one sitting." },
+      { "name": "Delaware Water Gap", "miles": 1295.5, "latitude": 40.9787, "longitude": -75.1407, "fact": "The trail crosses the Delaware River from Pennsylvania into New Jersey." },
+      { "name": "Bear Mountain, NY", "miles": 1400.6, "latitude": 41.3115, "longitude": -73.9887, "fact": "The very first section of the trail opened here in 1923." },
+      { "name": "Mount Greylock, MA", "miles": 1589.3, "latitude": 42.6376, "longitude": -73.1662, "fact": "The highest point in Massachusetts: 3,491 feet." },
+      { "name": "Hanover, NH", "miles": 1752.5, "latitude": 43.7022, "longitude": -72.2896, "fact": "The trail walks straight through Dartmouth College's hometown." },
+      { "name": "Mount Washington, NH", "miles": 1866.1, "latitude": 44.2706, "longitude": -71.3033, "fact": "A 231 mph gust was recorded on the summit in 1934." },
+      { "name": "Mahoosuc Notch, ME", "miles": 1913.0, "latitude": 44.5300, "longitude": -70.9780, "fact": "A boulder scramble often called the hardest (or most fun) mile of the trail." },
+      { "name": "Monson, ME", "miles": 2077.0, "latitude": 45.2867, "longitude": -69.5014, "fact": "The last town before the 100-Mile Wilderness." },
+      { "name": "Mount Katahdin, ME", "miles": 2197.4, "latitude": 45.9044, "longitude": -68.9213, "fact": "The northern end of the trail: Baxter Peak, 5,267 feet. You did it!" }
+    ]
+  }
+]
