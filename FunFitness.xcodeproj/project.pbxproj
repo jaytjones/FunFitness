@@ -93,6 +93,9 @@
 /* Begin PBXFileReference section */
 		8613A49B309E7D3F00D31D8C /* FunFitnessWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FunFitnessWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8613A8CC309E8FA500D31D8C /* FunFitnessWatchWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunFitnessWatchWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8613AA3F309EBFA200D31D8C /* 20261106_session_summary_2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20261106_session_summary_2.md; sourceTree = "<group>"; };
+		8613AA41309EC01000D31D8C /* FunFitness_Sequenced_Development_Plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FunFitness_Sequenced_Development_Plan.md; sourceTree = "<group>"; };
+		8613AA42309EC11000D31D8C /* 20261106_session_summary_1.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20261106_session_summary_1.md; sourceTree = "<group>"; };
 		863D79AA3026250000670EDD /* 20260807_session_summary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 20260807_session_summary.md; sourceTree = "<group>"; };
 		86687D553015A7B700E05A84 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		868A21C03085407C00735005 /* ActivityRow.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ActivityRow.md; sourceTree = "<group>"; };
@@ -329,9 +332,12 @@
 				86B3D070301C676500E76696 /* 20260724 CC Refactor Results.md */,
 				86B3D071301C676500E76696 /* FunFitness_Action_Plan.md */,
 				86B3D072301C676500E76696 /* FunFitness_Sequenced_Development_Plan.md */,
+				8613AA41309EC01000D31D8C /* FunFitness_Sequenced_Development_Plan.md */,
 				86B3D077301C78A600E76696 /* 20260731_session_summary.md */,
 				86B3565E301D4695008993F2 /* 20260731_session_summary_2.md */,
 				86AD592A3082FE7500A4C6FE /* 20261013_testflight_feedback_build3.md */,
+				8613AA42309EC11000D31D8C /* 20261106_session_summary_1.md */,
+				8613AA3F309EBFA200D31D8C /* 20261106_session_summary_2.md */,
 				86AD592C3082FE8100A4C6FE /* 20261010_session_summary.md */,
 				863D79AA3026250000670EDD /* 20260807_session_summary.md */,
 				86916D7230302095007F843A /* 20260814_session_summary.md */,
