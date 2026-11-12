@@ -858,6 +858,11 @@ struct HealthKitSettingsSection: View {
                             }
                         )
                     )
+                    // On here but declined in Health: saves would silently fail. (FB-0020)
+                    if profile?.healthKitWriteBackEnabled == true, HealthKitManager.shared.writeAccessOff {
+                        HealthAccessNotice(kind: .accessOff)
+                            .padding(FFSpace.s2)
+                    }
                     if profile?.healthKitImportEnabled == true {
                         Divider()
                         SettingsActionRow(

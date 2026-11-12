@@ -22,9 +22,11 @@ struct LogActivitySheet: View {
         _repsText = State(initialValue: Self.prefilledReps(for: type, viewModel: viewModel))
         _surface = State(initialValue: viewModel.lastSurface)
         _exerciseID = State(initialValue: viewModel.lastExerciseID(for: type))
+        let lastDistance = viewModel.activities.filter { $0.activityType == .distance }.max { $0.loggedAt < $1.loggedAt }
+        _distanceKind = State(initialValue: lastDistance?.distanceKind ?? .walk)
     }
 
-    private enum Field { case value, reps }
+    private enum Field { case value, reps, duration }
 
     @State private var selectedType: ActivityType
     @State private var inputValue: String = ""
@@ -40,6 +42,12 @@ struct LogActivitySheet: View {
     @State private var exerciseID: String?
     @State private var showExerciseError = false
     @State private var logDate: Date = Date()
+    // Distance only (FB-0020): walk or run, and an optional duration in minutes. With a duration the
+    // date is the start; until the person picks a date, the start follows "now minus the duration".
+    @State private var distanceKind: TrackedWorkoutKind
+    @State private var durationText = ""
+    @State private var dateEdited = false
+    @State private var showDurationError = false
     @State private var showValidationError = false
     @State private var showRepsError = false
     @FocusState private var focusedField: Field?
@@ -86,6 +94,8 @@ struct LogActivitySheet: View {
                             showExerciseError = false
                             showValidationError = false
                             showRepsError = false
+                            durationText = ""
+                            showDurationError = false
                         }
 
                         // Live sessions are the other way to log (3.1): GPS for distance, a
@@ -242,17 +252,22 @@ struct LogActivitySheet: View {
                         if selectedType == .distance {
                             SurfacePicker(selection: $surface)
                                 .padding(.horizontal)
+                            distanceTiming
                         }
 
                         // Date Picker
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Date & Time")
+                            Text(selectedType == .distance ? "Start Time" : "Date & Time")
                                 .ffFont(.headline)
                                 .foregroundStyle(Color.ffInk)
                             DatePicker(
-                                "Activity date",
-                                selection: $logDate,
-                                in: ...Date(),
+                                selectedType == .distance ? "Start time" : "Activity date",
+                                selection: Binding(
+                                    get: { logDate },
+                                    set: { logDate = $0; dateEdited = true }
+                                ),
+                                // A walk can't end in the future.
+                                in: ...Date().addingTimeInterval(-(enteredDurationSeconds ?? 0)),
                                 displayedComponents: [.date, .hourAndMinute]
                             )
                             .datePickerStyle(.compact)
@@ -261,6 +276,13 @@ struct LogActivitySheet: View {
                             .accessibilityIdentifier("activityDatePicker")
                         }
                         .padding(.horizontal)
+
+                        // Health saving is on but permission was declined. (FB-0020)
+                        if selectedType == .distance, profiles.first?.healthKitWriteBackEnabled == true,
+                           HealthKitManager.shared.writeAccessOff {
+                            HealthAccessNotice(kind: .accessOff)
+                                .padding(.horizontal)
+                        }
 
                         Spacer(minLength: 0)
 
@@ -299,6 +321,7 @@ struct LogActivitySheet: View {
             .onAppear {
                 focusedField = .value
                 logDate = Date()
+                HealthKitManager.shared.refreshWriteAccess()
             }
         }
         .presentationDetents([.medium, .large])
@@ -313,6 +336,24 @@ struct LogActivitySheet: View {
         }
         showValidationError = false
         guard !needsExercise else { return }
+
+        // Distance: optional duration; with one, the date is the start. (FB-0020)
+        var durationSeconds: Double?
+        var startDate = logDate
+        if selectedType == .distance {
+            switch ManualDistanceTiming.parseMinutes(durationText) {
+            case .invalid:
+                showDurationError = true
+                return
+            case .none:
+                durationSeconds = nil
+            case .minutes(let minutes):
+                durationSeconds = Double(minutes) * 60
+            }
+            startDate = ManualDistanceTiming.start(
+                entered: logDate, dateEdited: dateEdited, durationSeconds: durationSeconds, now: Date()
+            )
+        }
 
         var reps: Int? = nil
         if selectedType.usesReps && includeReps {
@@ -338,8 +379,10 @@ struct LogActivitySheet: View {
                 type: selectedType,
                 value: siValue,
                 reps: reps,
-                date: logDate,
+                date: startDate,
                 surface: surface,
+                durationSeconds: durationSeconds,
+                distanceKind: selectedType == .distance ? distanceKind : nil,
                 context: modelContext,
                 viewModel: viewModel,
                 writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
@@ -348,6 +391,99 @@ struct LogActivitySheet: View {
         viewModel.celebrate(newMilestones)
 
         dismiss()
+    }
+}
+
+// MARK: - Distance timing
+
+private extension LogActivitySheet {
+    /// The typed duration in seconds, when it's valid.
+    var enteredDurationSeconds: Double? {
+        if case .minutes(let minutes) = ManualDistanceTiming.parseMinutes(durationText) { return Double(minutes) * 60 }
+        return nil
+    }
+
+    /// Walk / Run and an optional duration for a distance entry. (FB-0020)
+    var distanceTiming: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("Walk or run", selection: $distanceKind) {
+                ForEach(TrackedWorkoutKind.allCases, id: \.self) { kind in
+                    Text(kind.displayName).tag(kind)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("distanceKindPicker")
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Duration (optional)")
+                    .ffFont(.headline)
+                    .foregroundStyle(Color.ffInk)
+                HStack(spacing: 6) {
+                    TextField("0", text: $durationText)
+                        .keyboardType(.numberPad)
+                        .ffFont(.numeral)
+                        .foregroundStyle(Color.ffInk)
+                        .focused($focusedField, equals: .duration)
+                        .accessibilityLabel("Duration in minutes")
+                        .accessibilityIdentifier("durationInput")
+                        .onChange(of: durationText) {
+                            let maxDigits = String(ManualDistanceTiming.maxMinutes).count
+                            let digits = String(durationText.filter(\.isNumber).prefix(maxDigits))
+                            if digits != durationText { durationText = digits }
+                            showDurationError = false
+                            // Until a start is picked, a just-finished walk started "duration ago".
+                            if !dateEdited { logDate = Date().addingTimeInterval(-(enteredDurationSeconds ?? 0)) }
+                        }
+                    Text("min")
+                        .ffFont(.headline)
+                        .foregroundStyle(Color.ffInkMuted)
+                        .accessibilityHidden(true)
+                }
+                .padding()
+                .ffWell()
+                .overlay(
+                    RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                        .strokeBorder(showDurationError ? Color.ffDanger : Color.clear, lineWidth: FFStroke.card)
+                )
+
+                if showDurationError {
+                    Text("Enter a duration from 1 to \(ManualDistanceTiming.maxMinutes) minutes, or leave it empty")
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffDanger)
+                } else {
+                    Text("With a duration, Apple Health gets a \(distanceKind.displayName.lowercased()) workout of that length.")
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+/// Timing rules for a manual distance entry (FB-0020), kept pure for tests.
+nonisolated enum ManualDistanceTiming {
+    static let maxMinutes = 24 * 60
+
+    enum Input: Equatable {
+        case none
+        case minutes(Int)
+        case invalid
+    }
+
+    /// Empty → none; 1…24 h of whole minutes → minutes; anything else → invalid.
+    static func parseMinutes(_ text: String) -> Input {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return .none }
+        guard let minutes = Int(trimmed), (1...maxMinutes).contains(minutes) else { return .invalid }
+        return .minutes(minutes)
+    }
+
+    /// The entry's start. An untouched date means "just finished", so it starts `duration` before
+    /// now. A picked date is the start, moved earlier if needed so the walk doesn't end in the future.
+    static func start(entered: Date, dateEdited: Bool, durationSeconds: Double?, now: Date) -> Date {
+        let latestStart = now.addingTimeInterval(-(durationSeconds ?? 0))
+        return dateEdited ? min(entered, latestStart) : latestStart
     }
 }
 

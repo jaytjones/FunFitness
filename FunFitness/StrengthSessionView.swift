@@ -368,6 +368,8 @@ struct StrengthSessionView: View {
                 Text(session.setCount == 0 ? "No sets logged this time." : "Every set is already in your log.")
                     .ffFont(.caption)
                     .foregroundStyle(Color.ffInkMuted)
+
+                healthSaveRow
             }
 
             Spacer(minLength: 0)
@@ -382,6 +384,31 @@ struct StrengthSessionView: View {
             .accessibilityIdentifier("strengthDoneButton")
         }
         .padding()
+    }
+
+    /// How the session's save to Apple Health went (FB-0020). Empty when it isn't being saved.
+    @ViewBuilder
+    private var healthSaveRow: some View {
+        switch manager.healthSaveStatus {
+        case .saving:
+            Label("Saving to Apple Health…", systemImage: "heart.fill")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+        case .done(.saved):
+            Label("Saved to Apple Health", systemImage: "checkmark.circle.fill")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffSuccess)
+                .accessibilityIdentifier("strengthHealthSaved")
+        case .done(.accessOff):
+            HealthAccessNotice(kind: .saveFailed(.accessOff))
+        case .done(.failed):
+            Text("Couldn't save to Apple Health. You can try again from this session in History.")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffDanger)
+                .multilineTextAlignment(.center)
+        case nil:
+            EmptyView()
+        }
     }
 
     // MARK: - Helpers

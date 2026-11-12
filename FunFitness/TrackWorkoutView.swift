@@ -254,6 +254,11 @@ struct TrackWorkoutView: View {
                         }
                     }
 
+                // Health saving is on but permission was declined: say so before Save. (FB-0020)
+                if profiles.first?.healthKitWriteBackEnabled == true, HealthKitManager.shared.writeAccessOff {
+                    HealthAccessNotice(kind: .accessOff)
+                }
+
                 if !result.isSavable {
                     Text("That's too short to save — GPS may not have found you. You can discard it and try again outdoors.")
                         .ffFont(.caption)
@@ -276,6 +281,7 @@ struct TrackWorkoutView: View {
             .padding()
         }
         .task(id: result.startedAt) {
+            HealthKitManager.shared.refreshWriteAccess()
             guard readsHeartRate else { return }
             heartRate = await HealthKitManager.shared.heartRateSummary(for: result)
         }

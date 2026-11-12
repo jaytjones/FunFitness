@@ -176,9 +176,11 @@ struct ContentView: View {
             type: last.activityType,
             value: last.value,
             reps: last.reps,
-            date: Date(),
+            date: ActivityWriter.repeatStart(for: last),
             surface: last.surface,
             exerciseID: last.exerciseID,
+            durationSeconds: last.durationSeconds,
+            distanceKind: last.distanceKind,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false
@@ -213,6 +215,7 @@ struct ContentView: View {
                     await syncHealthKitIfEnabled()
                 }
                 .task {
+                    HealthKitManager.shared.refreshWriteAccess()
                     // A Live Activity left from a previous launch has no workout behind it now.
                     WorkoutLiveActivityController.shared.endOrphanedActivities(
                         tracker: WorkoutTracker.shared, strength: StrengthSessionManager.shared)
@@ -224,6 +227,8 @@ struct ContentView: View {
                         if StrengthSessionManager.shared.phase == .finished { viewModel.showStrengthSession = true }
                         // Catch in-place edits that synced from another device while away.
                         viewModel.refreshTotals()
+                        // Health permission may have been changed in Settings. (FB-0020)
+                        HealthKitManager.shared.refreshWriteAccess()
                         Task { await syncHealthKitIfEnabled() }
                     }
                 }

@@ -30,6 +30,14 @@ final class StrengthSessionManager {
     private(set) var session: StrengthSession?
     private(set) var endedAt: Date?
 
+    /// The Health save for the ended session, for the summary screen (FB-0020). nil when nothing is
+    /// being saved (Health saving off, untimed, or no session yet).
+    enum HealthSaveStatus: Equatable {
+        case saving
+        case done(HealthSaveResult)
+    }
+    private(set) var healthSaveStatus: HealthSaveStatus?
+
     // Where sets are saved. Set at `start` from the presenting view's environment.
     @ObservationIgnored private var context: ModelContext?
     @ObservationIgnored private weak var viewModel: AppViewModel?
@@ -158,10 +166,13 @@ final class StrengthSessionManager {
             let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
             if profile?.healthKitWriteBackEnabled == true, record.isTimed {
                 let profileWeight = profile?.weightKg
+                healthSaveStatus = .saving
                 Task { @MainActor in
                     var weight = profileWeight
                     if weight == nil { weight = await HealthKitManager.shared.latestBodyMassKg(requestingAccess: false) }
-                    await ActivityWriter.saveSessionToHealth(record, weightKg: weight, context: context)
+                    let result = await ActivityWriter.saveSessionToHealth(record, weightKg: weight, context: context)
+                    // Only if the summary for this session is still showing.
+                    if self.record === record { self.healthSaveStatus = result.map { .done($0) } }
                 }
             }
         }
@@ -176,6 +187,11 @@ final class StrengthSessionManager {
         session = nil
         record = nil
         endedAt = nil
+        // The summary already showed a failed save, so Home doesn't need to repeat it.
+        if case .done(let result) = healthSaveStatus, result.uuid == nil {
+            HealthKitManager.shared.dismissFailedSave()
+        }
+        healthSaveStatus = nil
         context = nil
         viewModel = nil
         phase = .idle

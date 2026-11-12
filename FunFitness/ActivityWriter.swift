@@ -76,6 +76,9 @@ struct ActivityWriter {
     /// Main-app convenience: logs via `context`, then keeps `viewModel` in sync
     /// (appends the activity, records unlocked ids) and returns the new
     /// milestones so the caller can drive the celebration modal.
+    ///
+    /// For distance, `durationSeconds` and `distanceKind` are optional (FB-0020): with a duration,
+    /// `date` is the start and Health gets a Walking/Running workout of that length.
     @discardableResult
     @MainActor
     static func log(
@@ -85,6 +88,8 @@ struct ActivityWriter {
         date: Date,
         surface: DistanceSurface? = nil,
         exerciseID: String? = nil,
+        durationSeconds: Double? = nil,
+        distanceKind: TrackedWorkoutKind? = nil,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool = false
@@ -93,20 +98,37 @@ struct ActivityWriter {
             type: type, value: value, reps: reps, date: date, source: .manual, surface: surface,
             exerciseID: exerciseID, context: context, viewModel: viewModel
         )
+        let activity = result.activity
+        if type == .distance {
+            activity.durationSeconds = durationSeconds.flatMap { $0 > 0 ? $0 : nil }
+            activity.distanceKind = distanceKind
+            try? context.save()
+        }
 
         // Write-back (distance only — HealthKit has no "weight lifted" metric). Fire-and-forget:
-        // the log already exists; once Health returns the new workout's UUID we tag the entry so
-        // our own write-back isn't re-imported later (echo prevention).
+        // the log already exists; once Health returns the new record's UUID we tag the entry so
+        // our own write-back isn't re-imported later (echo prevention). A failure shows Home's banner.
         if writeBackToHealth, type == .distance {
-            let activity = result.activity
+            let duration = activity.durationSeconds
+            let kind = distanceKind ?? .walk
             Task { @MainActor in
-                if let uuid = await HealthKitManager.shared.saveDistanceWorkout(distanceKm: value, date: date) {
+                let saved = await HealthKitManager.shared.saveManualDistance(
+                    distanceKm: value, start: date, durationSeconds: duration, kind: kind
+                )
+                if let uuid = saved.uuid {
                     activity.healthKitUUID = uuid
                     try? context.save()
                 }
             }
         }
         return result.newMilestones
+    }
+
+    /// When a repeated entry should start: now minus its duration, so a repeated 30-minute walk
+    /// is one that just finished. Entries without a duration are dated now. (FB-0020)
+    static func repeatStart(for activity: ActivityLog, now: Date = Date()) -> Date {
+        guard activity.activityType == .distance, let duration = activity.durationSeconds, duration > 0 else { return now }
+        return now.addingTimeInterval(-duration)
     }
 
     /// Logs a GPS-tracked walk/run (3.1 B1a): a `.tracked` distance entry dated at the finish,
@@ -160,7 +182,7 @@ struct ActivityWriter {
         if writeBackToHealth {
             let activity = result.activity
             Task { @MainActor in
-                if let uuid = await HealthKitManager.shared.saveTrackedWorkout(workout) {
+                if let uuid = await HealthKitManager.shared.saveTrackedWorkout(workout).uuid {
                     activity.healthKitUUID = uuid
                     route.healthKitWorkoutUUID = uuid
                     try? context.save()
@@ -356,19 +378,21 @@ struct ActivityWriter {
     }
 
     /// Saves a timed session to Health as a strength workout with its estimated calories (C4/C5)
-    /// and remembers the workout's id. Returns false when untimed or the save fails. Later edits
-    /// aren't sent to Health.
+    /// and remembers the workout's id. Returns nil when there's nothing to save (untimed, or already
+    /// saved), else how the save went (FB-0020). Later edits aren't sent to Health.
     @discardableResult
     @MainActor
-    static func saveSessionToHealth(_ session: WorkoutSession, weightKg: Double?, context: ModelContext) async -> Bool {
-        guard session.isTimed, session.healthKitWorkoutUUID == nil else { return false }
+    static func saveSessionToHealth(_ session: WorkoutSession, weightKg: Double?, context: ModelContext) async -> HealthSaveResult? {
+        guard session.isTimed, session.healthKitWorkoutUUID == nil else { return nil }
         let kcal = CalorieEstimator.kcal(seconds: session.durationSeconds, weightKg: weightKg)
-        guard let uuid = await HealthKitManager.shared.saveStrengthSession(
+        let result = await HealthKitManager.shared.saveStrengthSession(
             start: session.startedAt, end: session.endedAt, kcal: kcal, isIndoor: session.isIndoor
-        ) else { return false }
-        session.healthKitWorkoutUUID = uuid
-        try? context.save()
-        return true
+        )
+        if let uuid = result.uuid {
+            session.healthKitWorkoutUUID = uuid
+            try? context.save()
+        }
+        return result
     }
 
     private static func logs(inSession sessionID: UUID, context: ModelContext) -> [ActivityLog] {

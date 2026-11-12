@@ -78,6 +78,11 @@ final class ActivityLog {
     // The named exercise for a Weight/Reps entry (3.1 C3): a bundled id ("bench-press") or
     // "custom-<uuid>". nil = generic, as every entry before 3.1 (11) is.
     var exerciseID: String?
+    // How long a manual distance entry took, in seconds, and whether it was a walk or run (FB-0020).
+    // When set, `loggedAt` is the start and the Health workout covers start…start + duration.
+    // nil on every other entry; tracked walks/runs keep theirs in RouteSummary.
+    var durationSeconds: Double?
+    var distanceKindRaw: String?
 
     init(
         id: UUID = UUID(),
@@ -112,6 +117,11 @@ final class ActivityLog {
     var surface: DistanceSurface? {
         get { surfaceRaw.flatMap(DistanceSurface.init(rawValue:)) }
         set { surfaceRaw = newValue?.rawValue }
+    }
+
+    var distanceKind: TrackedWorkoutKind? {
+        get { distanceKindRaw.flatMap(TrackedWorkoutKind.init(rawValue:)) }
+        set { distanceKindRaw = newValue?.rawValue }
     }
 
     // Value counted toward totals. Types that use reps (weight) multiply value × reps;

@@ -479,7 +479,7 @@ private struct SessionInfoSections: View {
                     Button {
                         Task {
                             isSavingToHealth = true
-                            healthSaveFailed = !(await ActivityWriter.saveSessionToHealth(session, weightKg: calorieWeightKg, context: modelContext))
+                            healthSaveFailed = await ActivityWriter.saveSessionToHealth(session, weightKg: calorieWeightKg, context: modelContext)?.uuid == nil
                             isSavingToHealth = false
                         }
                     } label: {

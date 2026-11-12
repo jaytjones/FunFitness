@@ -54,6 +54,13 @@ struct HomeView: View {
                             .accessibilityAddTraits(.isHeader)
                             .padding(.bottom, FFSpace.s1)
 
+                        // A save to Health that didn't make it (FB-0020); the save ran after its sheet closed.
+                        if let failed = HealthKitManager.shared.lastFailedSave {
+                            HealthAccessNotice(kind: .saveFailed(failed)) {
+                                HealthKitManager.shared.dismissFailedSave()
+                            }
+                        }
+
                         HeroStat(viewModel: viewModel, type: .distance) {
                             openLog(.distance)
                         }
@@ -143,9 +150,11 @@ struct HomeView: View {
             type: activity.activityType,
             value: activity.value,
             reps: activity.reps,
-            date: Date(),
+            date: ActivityWriter.repeatStart(for: activity),
             surface: activity.surface,
             exerciseID: activity.exerciseID,
+            durationSeconds: activity.durationSeconds,
+            distanceKind: activity.distanceKind,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false

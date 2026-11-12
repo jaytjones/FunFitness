@@ -1,9 +1,10 @@
 # FunFitness — TestFlight Feedback Review (2026-10-31)
 
-All 19 TestFlight submissions to date, pulled with `scripts/feedback` (raw report:
-`docs/feedback/20261031_feedback.md`, screenshots and crash log in `docs/feedback/assets/`; these are
+All 20 TestFlight submissions to date, pulled with `scripts/feedback` (raw reports:
+`docs/feedback/20261031_feedback.md` and `20261112_feedback.md`, screenshots and crash log in `docs/feedback/assets/`; these are
 gitignored and stay on Jay's Mac, since they hold tester details). All from JT Jones.
 
+- **New 2026-11-12 (1 item):** FB-0020, against 3.1 (12).
 - **New since the build 3 review (4 items):** FB-0001 to FB-0004, against 3.1 (6) and 3.1 (9).
   Each one below has the issue, its cause in the code, a fix, and a size estimate.
 - **Already reviewed (15 items):** FB-0005 to FB-0019 are the 2026-10-10 to 10-13 feedback covered in
@@ -23,6 +24,7 @@ Estimates include tests.
 | FB-0001 | Deleted set still shows in the live session; removing a set is hard | 3.1 (9) | Bug + UX | M | **P1** | ✅ Fixed for build 10 |
 | FB-0004 | Milestone says "You've run" even for walks | 3.1 (6) | Copy | S | P2 | ✅ Fixed for build 10 |
 | FB-0003 | Live walk banner looks like every other card; should be pinned | 3.1 (6) | UX | M | P2 | ✅ Built for build 10, needs on-device check |
+| FB-0020 | FunFitness workouts don't show in the Fitness / Activity app | 3.1 (12) | Bug + UX | S–M | **P1** | Items 1–2 built (local); on-device check next |
 
 **Also for build 10 (not tester feedback):** the build was broken by `docs/design/` being added to the app
 target in `1c07e66` (duplicate `.md` names in the bundle). All docs were removed from the app's Copy Bundle
@@ -175,6 +177,94 @@ distinct "live" style (pulsing dot, accent border). That makes it stand out but 
 
 ---
 
+## FB-0020 · Workouts don't show in the Fitness / Activity app — P1 · S–M
+
+> **Status (2026-11-12): cause found (cause 2).** "Save logs to Apple Health" was on, but in Settings →
+> Health → FunFitness, write access was off for everything except Active Energy. Health had **no
+> FunFitness entries**, so every workout save was declined and dropped without a message. Active Energy
+> was probably on because it was added later (3.1 C5): HealthKit asks only once per data type, so that
+> later prompt was the only one that asked for it. Jay has turned write access back on.
+> The app can't ask again for types that were declined. It has to notice and send the user to Settings.
+>
+> **Built (2026-11-12, local, not yet on device), items 1 + 2:** saves return `HealthSaveResult` (saved /
+> access off / failed) and log errors (`os.Logger`, category "HealthKit"). `HealthAccessNotice` ("access is off
+> · Open Settings") shows in the Log sheet (distance), the walk/run summary and Profile when write-back is on but
+> declined. The strength summary shows Saving… / Saved / failed. Home shows a dismissible banner after a failed
+> save. Manual distance logs gain Walk/Run + optional Duration, and the date is the "Start Time": a duration gives a
+> real workout; with no duration it's a plain distance sample. New `ActivityLog.durationSeconds` /
+> `distanceKindRaw` (optional; **needs a CloudKit production schema deploy**). Repeat Last keeps both. 7 new tests
+> in `ManualDistanceTimingTests`.
+>
+> **Manual distance logs (Jay, 2026-11-12):** saving them as 60-second walks is wrong. Save the real
+> time and distance, and treat the entered date/time as the **start** (standard: Health's "Add Data"
+> and Strava's manual entry both ask for start + duration). See "Manual distance logs" below.
+
+> "Why don't fun fitness workouts display in the iOS fitness/activity app?" — 2026-11-07 14:16,
+> 3.1 (12), iOS 27.2 (screenshot: the live Walk tracking screen, 2:16 · 0.1 mi)
+
+**What the app does now:** FunFitness can save workouts to Health, and the Fitness app lists
+third-party Health workouts. A finished GPS walk/run becomes a Walking/Running workout with a route
+(`HealthKitManager.saveTrackedWorkout`), a timed strength session becomes Traditional Strength Training
+(`saveStrengthSession`), and a manual distance log becomes a 60-second walk (`saveDistanceWorkout`). The
+Watch app records with `HKWorkoutSession`, so Watch workouts always save.
+
+**Likely causes, most likely first:**
+1. **Write-back is off by default.** `UserProfile.healthKitWriteBackEnabled = false`, and every save
+   checks it (`ActivityWriter` ~L100/L161, `StrengthSessionManager` L159). Turning on Health *import*
+   doesn't turn on write-back. The toggle's subtitle, "Write the distance activities you log back to
+   Health" (`ProfileView.swift` ~L848), doesn't say it covers tracked workouts and strength sessions,
+   so it's easy to miss.
+2. **Saves that fail are silent.** All three save functions return nil on any error (for example,
+   workout write permission declined in Health). The user is never told, and the app never offers
+   to fix it.
+3. **Rings don't move, even when the workout is there.** Phone-tracked walks/runs save no active
+   energy, so they add nothing to the Move ring. The Fitness app can show the workout without
+   changing the rings, which looks like the workout is missing. Strength sessions do include
+   estimated kcal.
+
+**Fix:**
+- **Turn it on and say so (S):** ask "Save workouts to Apple Health?" the first time someone finishes
+  a tracked walk/run or timed strength session (or during Health onboarding), with write-back on as
+  the suggested choice. Rename the toggle to "Save workouts to Apple Health", with the subtitle "Walks,
+  runs and strength sessions show in Health and Fitness". Existing users keep their current setting.
+- **Show the result (S):** on the workout summary, show "Saved to Apple Health" or "Couldn't save to
+  Health · Open Settings" depending on whether `healthKitUUID` came back. Check
+  `authorizationStatus(for: .workoutType())` to tell a declined permission apart from other errors.
+- **Rings credit (M):** add estimated active energy to tracked walks/runs, reusing `CalorieEstimator`
+  with body weight, the same way C4/C5 does for strength. Optional, later (L): record phone walks/runs
+  with an iPhone `HKWorkoutSession` (iOS 26+) so Health collects energy and heart rate during the workout,
+  as the code comment at `HealthKitManager.swift` L156 already suggests.
+**Diagnosis (write-back on):**
+- On the phone: **Health → Browse → Activity → Workouts → Show All Data.** Are there FunFitness
+  entries? Also **Settings → Health → Data Access & Devices → FunFitness:** is Workouts allowed under
+  "Allow to Write"?
+  - No entries, or Workouts not allowed → the saves fail or are declined (cause 2). The
+    saved/failed message fixes the silence, and the summary can link to the permission.
+  - Entries in Health but not in Fitness → the saves work, and the gap is how Fitness shows them
+    (cause 3: no energy, so no ring credit). Do the M fix.
+- In code: add a debug log of the error that `saveTrackedWorkout` / `saveStrengthSession` currently
+  ignore, so a failure on device shows its reason.
+
+**Manual distance logs (Jay, 2026-11-12: "should be updated"):**
+- **Why they're 60 seconds now:** the Log sheet only asks for distance and a date/time. A Health
+  workout needs a start and end, so `saveDistanceWorkout` makes up a one-minute window ending at the
+  logged time (`HealthKitManager.swift` L120). It's also always saved as **Walking**, because a
+  manual log doesn't record walk vs. run.
+- **Fix:** add an optional **Duration** field (and Walk/Run) to distance logs in the Log sheet. The
+  date/time becomes the start (label it "Started"), and the Health workout runs from start to start + duration, with the
+  distance spread over that time. Also store the duration on the `ActivityLog` (new optional field,
+  CloudKit-safe). If there's no duration, don't make up a time window. Save the distance as a plain
+  distance sample, not a workout.
+- Sizes: **S–M** (Log sheet field, model field, save change, tests). Existing 60-second workouts
+  already in Health stay as they are. Editing a log later doesn't update Health (same as today).
+- **Tests:** default/migration of the setting, the summary showing saved vs. failed, and the energy sample
+  on tracked workouts. On device: finish a walk with write-back on and confirm it appears in Fitness →
+  Workouts, and whether the rings change.
+
+**Size: S** for the setting, wording and saved/failed message. **M** if we add calories to walks/runs.
+
+---
+
 ## Older feedback (FB-0005 to FB-0019) — status
 
 Details are in `20261013_testflight_feedback_build3.md`.
@@ -203,7 +293,10 @@ Details are in `20261013_testflight_feedback_build3.md`.
 
 1. ~~**Build 10:** FB-0002, FB-0001, FB-0004, FB-0003~~ — all done 2026-10-31. Next: commit, bump to build
    10 per `release_checklist.md`, upload, and check the items on device (see each item's status note).
-2. **Then:** answer C7's open questions; C3 → C6 with the ~3.3 content move. D1 waits for a UI refresh.
+2. **Next (from 2026-11-12):** FB-0020. Cause found: Health write permission was declined. In order: (1) find
+   declined write permission + show saved/failed with a Settings link, plus error logging; (2) manual-log
+   start + duration; (3) prompt + toggle rename; (4) walk/run calories so phone workouts count toward the rings.
+3. **Then:** answer C7's open questions; C3 → C6 with the ~3.3 content move. D1 waits for a UI refresh.
 
 ## Decisions (Jay, 2026-10-31)
 
