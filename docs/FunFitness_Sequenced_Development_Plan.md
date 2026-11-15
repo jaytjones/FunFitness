@@ -191,30 +191,49 @@ Three dependency rules drive the entire order below:
 - Style picker in Profile with live previews of locked styles
 - **StoreKit 2** pulled forward from 3.5 if any style is sold, so purchases and restore are proven before theme packs use them
 - **Field Guide** (the structural outlier: ruled sections, rulers, redrawn charts) follows here or with 3.5, if still wanted
-- **Owner and tester access** (agreed 2026-11-15): Jay has every style without earning or buying it, and testers can check both locked and unlocked screens. See below.
+- **Unreleased styles are Jay-only** (agreed 2026-11-15): until a style launches, it's compiled only into Jay's builds, and no tester sees it, not even in TestFlight. Other features keep shipping from `main` as usual. See below.
 
-**Owner and tester access**
+**Unreleased styles: Jay-only, behind a build flag**
 
-A style is unlocked if any of these is true. All are derived at launch, so nothing new is stored or synced:
+*Layer 1 (the main safeguard): compiled out of normal builds.* All code for an unreleased style sits behind `#if INTERNAL_STYLES`: its tokens, layout pieces, catalog entry and picker row. The flag is set (`SWIFT_ACTIVE_COMPILATION_CONDITIONS`) only in the **Debug** configuration and in a new **Internal** configuration (a copy of Release), never in **Release**. TestFlight and App Store uploads are archived from Release, so they contain no trace of the style. Jay tests by running Debug or Internal from Xcode on Jay's own iPhone and Watch.
 
-1. **Earned:** the style's rule is met (rank or badge count; rules TBD).
+*Layer 2 (optional): Internal TestFlight builds go to Jay alone.* To try an unreleased style through TestFlight, archive with the Internal configuration and add that build only to an internal TestFlight group containing just Jay. Normal Release builds go to every other group. Internal testers must be App Store Connect users on the team, so if anyone else is added to the team later, layer 3 still applies.
+
+*Layer 3 (backstop): owner check inside Internal builds.* Even with the flag on, an unreleased style only shows when the iCloud account is Jay's. At launch the app reads `CKContainer.userRecordID()` for its container (stable across Jay's devices, visible only to this app) and compares its SHA-256 with one constant. Anyone else, or no iCloud, sees Playful Bold only.
+
+*Building other features meanwhile.* Everything else is unflagged and ships in every Release build. Rules:
+1. Flagged code lives in its own files where possible (e.g. `Styles/Arcade/`, each file wrapped whole in `#if`), plus a few small hooks in shared code.
+2. Shared code works with the flag on and off. No feature depends on an unreleased style.
+3. Invisible plumbing can ship unflagged: the style catalog, unlock resolution, the picker (hidden while only one style is available) and the unknown-style fallback.
+4. Unreleased text stays out of `Localizable.xcstrings`, which ships in every build. Use `Text(verbatim:)` / non-localized strings inside flagged code, and move them into the catalog at launch.
+5. Both versions build. Tests run in Debug (flag on). Before every upload, a Release build (flag off) must compile too (see `release_checklist.md`).
+6. **Launching a style = removing its `#if`** in one small commit, adding its strings to the catalog, then a normal upload.
+
+*Synced style choice.* `UserProfile.activeStyleID` syncs. If Jay picks Arcade in a Debug build, Jay's devices on Release builds receive `"arcade"`. A build that doesn't know the ID shows Playful Bold and never writes the value back, so the choice survives until that device gets the style. **Build this fallback (with a test) before any Arcade work starts.**
+
+*Guards (unit tests):* the Release configuration doesn't define `INTERNAL_STYLES` (the test reads the built app's compilation flags through a constant exposed by the app target); an unknown `activeStyleID` resolves to Playful Bold and is left unchanged; the owner hash check matches only the stored hash.
+
+**Unlocking styles after launch**
+
+Once a style is released, it's unlocked if either:
+1. **Earned:** its rule is met (rank or badge count; rules TBD), or
 2. **Purchased:** a verified StoreKit 2 entitlement in `Transaction.currentEntitlements`.
-3. **Tester override:** a hidden "Tester" menu (e.g. long-press the version row in Profile) with **Unlock all styles**. It only appears when `AppTransaction.shared` reports `.xcode` or `.sandbox` (Xcode and TestFlight builds), and never in App Store builds. It defaults to on for Jay, and can be switched off to test the locked screens. Stored per device in `UserDefaults`.
-4. **Owner allowlist:** for Jay's App Store install. At launch the app reads `CKContainer.userRecordID()` for the app's iCloud container. That ID is stable across Jay's devices and only visible to this app. Its SHA-256 is compared with one hash constant in the app. A match unlocks everything. Only the owner's account is ever on the list: App Review rules allow a developer override, but not hidden unlocks of paid content for customers. Without iCloud, or offline, the check just fails and normal rules apply.
+
+The owner check (layer 3) also unlocks every released style for Jay, so Jay's App Store install has everything without earning or buying it. Only Jay's account is ever on that list: App Review allows a developer override, but not hidden unlocks of paid content for customers. Unlock state is derived at launch, so nothing new is stored or synced.
 
 How purchases are tested:
 
 | Build | Purchases |
 |---|---|
-| Xcode | A StoreKit configuration file (`FunFitness.storekit`). Simulated, resettable, no App Store Connect setup needed. |
-| TestFlight | Always the sandbox, so free for everyone. Testers can also sign in to a Sandbox Apple Account (Settings › Developer) to reset purchases. |
-| App Store | Jay redeems a free **offer code** for each paid style (App Store Connect › the in-app purchase › Offer Codes; supported for non-consumables on iOS 16.3+). It's a real transaction, so it restores on all Jay's devices and exercises the production purchase path. The app shows Apple's redeem sheet (`offerCodeRedemption(isPresented:)`) from the style picker. |
+| Xcode (Debug / Internal) | A StoreKit configuration file (`FunFitness.storekit`). Simulated, resettable, no App Store Connect setup needed. |
+| TestFlight | Always the sandbox, so free for testers once a style is released. Testers can sign in to a Sandbox Apple Account (Settings › Developer) to reset purchases. |
+| App Store | Jay redeems a free **offer code** for each paid style (App Store Connect › the in-app purchase › Offer Codes; supported for non-consumables on iOS 16.3+). It's a real transaction that restores on all Jay's devices and exercises the production purchase path. The style picker shows Apple's redeem sheet (`offerCodeRedemption(isPresented:)`). |
 
-Tests: unlock resolution is a pure function (earned / purchased / tester / owner → unlocked), covered by unit tests. The allowlist hash and the environment gate each get a test, so the tester menu can't appear in production.
+Tests: unlock resolution is a pure function (earned / purchased / owner → unlocked), covered by unit tests.
 
-**Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges, App Store entitlements, the tester override and the owner allowlist, so nothing new is stored in the synced data.
+**Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges, App Store entitlements and the owner check, so nothing new is stored in the synced data. The build flag lets 3.3 style work and other features share `main` without testers seeing a style before Jay releases it.
 
-**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold); the Tester menu never appears in an App Store build; Jay's App Store install has every style.
+**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold); a Release build contains no unreleased style (flag off, verified by test); an unknown synced style falls back to Playful Bold without being overwritten; Jay's App Store install has every released style.
 
 ---
 
@@ -298,4 +317,4 @@ Tests: unlock resolution is a pure function (earned / purchased / tester / owner
 
 - **2026-07-30:** original plan (1.1 → 3.3).
 - **2026-11-06 (Jay):** after 3.1, a visual-identity release is inserted. Playful Bold becomes the default style (today's look is retired, not kept as a fourth style); Arcade and Field Guide become unlockable (earned + purchased, rules TBD); the chosen style syncs across devices. Releases renumbered: 3.2 New Look, 3.3 Your Style, 3.4 Social (was 3.2), 3.5 Franchise (was 3.3).
-- **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3 gets owner/tester access: a Tester menu in Xcode/TestFlight builds, an owner allowlist (iCloud user record ID) for the App Store build, and offer codes for paid styles.
+- **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3: unreleased styles are Jay-only, behind an `INTERNAL_STYLES` build flag (Debug + Internal configurations only), optional Internal TestFlight builds for Jay alone, and an owner check (iCloud user record ID) as a backstop; other features keep shipping from `main`. After launch, styles unlock by earning or buying; Jay gets them via the owner check and free offer codes.

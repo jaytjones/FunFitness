@@ -20,6 +20,11 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
 2. **CloudKit:** if any `@Model` changed, deploy the schema first (`-initCloudKitSchema` Debug run →
    CloudKit Console › Deploy to Production), then untick the argument.
 3. **Tests:** `xcodebuild test -scheme FunFitness -only-testing:FunFitnessTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`.
+   **Release build too:** tests run in Debug, where `INTERNAL_STYLES` (unreleased styles, Jay-only) is on.
+   Also build Release, where it's off, so a TestFlight upload can't break or leak a style:
+   `xcodebuild build -scheme FunFitness -configuration Release -destination 'generic/platform=iOS Simulator'`.
+   Archive only from **Release** for testers; an **Internal** archive goes only to the TestFlight group with
+   just Jay in it.
 4. **Commit and push** the bump (message: `Build N`).
 5. **Archive:** Any iOS Device (arm64) › Product › Archive. Organizer should show `3.2 (N)`.
 6. **Distribute:** TestFlight & App Store › on the options screen **untick "Manage Version and Build
