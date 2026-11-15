@@ -17,6 +17,8 @@ struct ShareCardContent {
     let emoji: String
     let headline: String
     let subtext: String
+    /// The milestone behind a milestone card (styles that frame cards by rarity use it).
+    var milestoneId: String? = nil
 
     /// Stable identity for re-rendering when the underlying data changes.
     var cacheKey: String { "\(badge)|\(emoji)|\(headline)|\(subtext)" }
@@ -28,7 +30,8 @@ struct ShareCardContent {
             badge: "MILESTONE UNLOCKED",
             emoji: milestone.getEmoji(for: pack),
             headline: milestone.title(pref: pref),
-            subtext: milestone.getComparison(for: pack)
+            subtext: milestone.getComparison(for: pack),
+            milestoneId: milestone.id
         )
     }
 
@@ -65,6 +68,18 @@ struct ShareCard: View {
     let content: ShareCardContent
 
     var body: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            ArcadeShareCard(content: content)
+        } else {
+            playfulBold
+        }
+        #else
+        playfulBold
+        #endif
+    }
+
+    private var playfulBold: some View {
         VStack(spacing: 16) {
             VStack(spacing: 16) {
                 Text(content.badge)
