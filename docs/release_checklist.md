@@ -23,8 +23,9 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
    **Release build too:** tests run in Debug, where `INTERNAL_STYLES` (unreleased styles, Jay-only) is on.
    Also build Release, where it's off, so a TestFlight upload can't break or leak a style:
    `xcodebuild build -scheme FunFitness -configuration Release -destination 'generic/platform=iOS Simulator'`.
-   Archive only from **Release** for testers; an **Internal** archive goes only to the TestFlight group with
-   just Jay in it.
+   Archive testers' builds with the **FunFitness** scheme (archives Release). The **FunFitness Internal**
+   scheme archives Internal (unreleased styles compiled in); give that build only to the TestFlight group
+   with just Jay in it. `BuildFlagsTests` fails if Release ever sets `INTERNAL_STYLES`.
 4. **Commit and push** the bump (message: `Build N`).
 5. **Archive:** Any iOS Device (arm64) › Product › Archive. Organizer should show `3.2 (N)`.
 6. **Distribute:** TestFlight & App Store › on the options screen **untick "Manage Version and Build
