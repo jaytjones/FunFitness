@@ -20,6 +20,8 @@ struct TrackWorkoutView: View {
 
     private let tracker = WorkoutTracker.shared
     @State private var selectedKind: TrackedWorkoutKind = .walk
+    // Outdoor (GPS + route) or indoor (treadmill, steps); remembers the last choice. (FB-0020)
+    @AppStorage("trackerIndoor") private var startsIndoor = false
     @State private var showFinishConfirm = false
     @State private var showDiscardConfirm = false
     // Outdoor surface for the saved run; prefilled from the last one used. (3.1)
@@ -106,7 +108,17 @@ struct TrackWorkoutView: View {
             .padding(.horizontal, 40)
             .accessibilityIdentifier("trackerKindPicker")
 
-            Text("Uses GPS to measure your route. Tracking continues with the screen locked.")
+            Picker("Where", selection: $startsIndoor) {
+                Label("Outdoor", systemImage: "sun.max.fill").tag(false)
+                Label("Indoor", systemImage: "figure.walk.treadmill").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 40)
+            .accessibilityIdentifier("trackerIndoorPicker")
+
+            Text(startsIndoor
+                 ? "For a treadmill or indoor track: distance is counted from your steps, without GPS."
+                 : "Uses GPS to measure your route. Tracking continues with the screen locked.")
                 .ffFont(.body)
                 .foregroundStyle(Color.ffInkMuted)
                 .multilineTextAlignment(.center)
@@ -126,9 +138,9 @@ struct TrackWorkoutView: View {
 
             Button {
                 WorkoutLiveActivityController.shared.configure(pref: pref, packId: viewModel.activePack.id)
-                tracker.start(kind: selectedKind)
+                tracker.start(kind: selectedKind, indoor: startsIndoor)
             } label: {
-                Text("Start \(selectedKind.displayName)")
+                Text(startsIndoor ? "Start Indoor \(selectedKind.displayName)" : "Start \(selectedKind.displayName)")
             }
             .buttonStyle(.ffPrimary)
             .disabled(strengthRunning)
@@ -142,16 +154,29 @@ struct TrackWorkoutView: View {
 
     private var liveScreen: some View {
         VStack(spacing: 0) {
-            RouteMapView(points: tracker.points.map { ($0.latitude, $0.longitude) }, followsUser: true)
-                .frame(maxHeight: .infinity)
+            if tracker.isIndoor {
+                VStack(spacing: 8) {
+                    Image(systemName: "figure.walk.treadmill")
+                        .font(.system(size: 72))
+                        .foregroundStyle(Color.ffAccent)
+                        .accessibilityHidden(true)
+                    Text("Indoors · counting your steps")
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInkMuted)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                RouteMapView(points: tracker.points.map { ($0.latitude, $0.longitude) }, followsUser: true)
+                    .frame(maxHeight: .infinity)
+            }
 
             VStack(spacing: 16) {
                 if let issue = tracker.locationIssue {
-                    Label(issue, systemImage: "location.slash")
+                    Label(issue, systemImage: tracker.isIndoor ? "figure.walk.motion" : "location.slash")
                         .ffFont(.caption)
                         .foregroundStyle(Color.ffDanger)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                } else if !tracker.hasLocationFix {
+                } else if !tracker.isIndoor, !tracker.hasLocationFix {
                     Label("Finding GPS…", systemImage: "location.magnifyingglass")
                         .ffFont(.caption)
                         .foregroundStyle(Color.ffInkMuted)
@@ -215,13 +240,21 @@ struct TrackWorkoutView: View {
         let distanceKm = result.distanceMeters / 1000
         return ScrollView {
             VStack(spacing: 20) {
-                RouteMapView(points: result.points.map { ($0.latitude, $0.longitude) }, followsUser: false)
-                    .frame(height: 280)
-                    .clipShape(.rect(cornerRadius: FFRadius.md, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
-                            .strokeBorder(Color.ffLine, lineWidth: FFStroke.card)
-                    )
+                if result.isIndoor {
+                    // Treadmill: no route to show. (FB-0020)
+                    Label("Indoor — distance counted from your steps", systemImage: "figure.walk.treadmill")
+                        .ffFont(.caption)
+                        .foregroundStyle(Color.ffInkMuted)
+                        .accessibilityIdentifier("trackerIndoorNote")
+                } else {
+                    RouteMapView(points: result.points.map { ($0.latitude, $0.longitude) }, followsUser: false)
+                        .frame(height: 280)
+                        .clipShape(.rect(cornerRadius: FFRadius.md, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: FFRadius.md, style: .continuous)
+                                .strokeBorder(Color.ffLine, lineWidth: FFStroke.card)
+                        )
+                }
 
                 LiveStatsGrid(
                     elapsed: UnitConverter.elapsedString(result.movingSeconds),
@@ -246,10 +279,12 @@ struct TrackWorkoutView: View {
                         .ffCard(padding: FFSpace.s4, radius: FFRadius.md, fill: .ffAccent2)
                 }
 
-                SurfacePicker(selection: $surface, options: DistanceSurface.outdoor)
+                SurfacePicker(selection: $surface, options: result.isIndoor ? DistanceSurface.allCases : DistanceSurface.outdoor)
                     .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
                     .onAppear {
-                        if surface == nil, let last = viewModel.lastSurface, DistanceSurface.outdoor.contains(last) {
+                        if result.isIndoor {
+                            if surface == nil { surface = .treadmill }
+                        } else if surface == nil, let last = viewModel.lastSurface, DistanceSurface.outdoor.contains(last) {
                             surface = last
                         }
                     }
@@ -260,7 +295,9 @@ struct TrackWorkoutView: View {
                 }
 
                 if !result.isSavable {
-                    Text("That's too short to save — GPS may not have found you. You can discard it and try again outdoors.")
+                    Text(result.isIndoor
+                         ? "That's too short to save — no steps were counted. Check Settings › Privacy & Security › Motion & Fitness › FunFitness."
+                         : "That's too short to save — GPS may not have found you. Indoors or on a treadmill, choose Indoor when you start.")
                         .ffFont(.caption)
                         .foregroundStyle(Color.ffInkMuted)
                         .multilineTextAlignment(.center)

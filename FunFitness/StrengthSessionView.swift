@@ -401,6 +401,12 @@ struct StrengthSessionView: View {
                 .accessibilityIdentifier("strengthHealthSaved")
         case .done(.accessOff):
             HealthAccessNotice(kind: .saveFailed(.accessOff))
+        case .tooShort:
+            Text("Too short to save to Apple Health (under 1 minute).")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+                .multilineTextAlignment(.center)
+                .accessibilityIdentifier("strengthHealthTooShort")
         case .done(.failed):
             Text("Couldn't save to Apple Health. You can try again from this session in History.")
                 .ffFont(.caption)

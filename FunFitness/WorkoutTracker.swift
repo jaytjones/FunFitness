@@ -11,9 +11,13 @@
 //  keeps updates flowing with the screen locked under When In Use authorization and shows the
 //  system's blue location indicator. A `CLServiceSession` makes the When In Use request.
 //
+//  Indoor (treadmill) workouts, picked on the start screen, skip GPS: distance comes from the
+//  step counter (`CMPedometer`) and there's no route (FB-0020).
+//
 
 import Foundation
 import CoreLocation
+import CoreMotion
 import Observation
 
 /// A finished workout, ready to save. Value type so it can be handed to HealthKit off the view.
@@ -25,11 +29,27 @@ nonisolated struct TrackedWorkoutResult: Equatable, Sendable {
     let movingSeconds: TimeInterval
     let points: [RoutePoint]
     let pauseIntervals: [DateInterval]
+    /// Treadmill/indoors: the distance came from the step counter and there's no route.
+    var isIndoor = false
 
-    /// Under this the save button is disabled — usually GPS never got a fix.
+    /// Under this the save button is disabled — usually neither GPS nor the step counter got anything.
     static let minimumSavableMeters: Double = 10
 
     var isSavable: Bool { distanceMeters >= Self.minimumSavableMeters }
+}
+
+/// Step-counter distance with paused time left out. `CMPedometer` reports a running total since
+/// the start; only the growth while not paused is counted. Pure so it's unit-tested. (FB-0020)
+nonisolated struct StepDistance: Equatable, Sendable {
+    private(set) var countedMeters: Double = 0
+    private var lastTotal: Double = 0
+    var isPaused = false
+
+    mutating func update(total: Double) {
+        let growth = max(0, total - lastTotal)
+        lastTotal = max(lastTotal, total)
+        if !isPaused { countedMeters += growth }
+    }
 }
 
 @MainActor
@@ -53,16 +73,23 @@ final class WorkoutTracker {
     /// True once Core Location has delivered any fix, so the UI can say "Finding GPS…" until then.
     private(set) var hasLocationFix = false
 
+    /// Indoor (treadmill): no GPS; distance from the step counter. Set at `start`.
+    private(set) var isIndoor = false
+    /// Step-counter distance for an indoor workout.
+    private(set) var steps = StepDistance()
+
     private var updatesTask: Task<Void, Never>?
     private var serviceSession: CLServiceSession?
     private var backgroundSession: CLBackgroundActivitySession?
+    private let pedometer = CMPedometer()
     private var liveActivity: WorkoutLiveActivityController { .shared }
 
     private init() {}
 
     var isRecording: Bool { phase == .active || phase == .paused }
     var kind: TrackedWorkoutKind { accumulator.kind }
-    var distanceMeters: Double { accumulator.distanceMeters }
+    /// GPS distance outdoors; the step counter's indoors.
+    var distanceMeters: Double { isIndoor ? steps.countedMeters : accumulator.distanceMeters }
     var points: [RoutePoint] { accumulator.points }
     var startedAt: Date? { accumulator.startedAt }
 
@@ -74,21 +101,28 @@ final class WorkoutTracker {
 
     /// Starts recording. Call from the foreground (the location prompt and background session
     /// both require it).
-    func start(kind: TrackedWorkoutKind, at date: Date = Date()) {
+    func start(kind: TrackedWorkoutKind, indoor: Bool = false, at date: Date = Date()) {
         guard phase == .idle else { return }
         accumulator = RouteAccumulator(kind: kind)
         accumulator.start(at: date)
         result = nil
         locationIssue = nil
         hasLocationFix = false
+        isIndoor = indoor
+        steps = StepDistance()
         phase = .active
-        startLocationUpdates()
+        if indoor {
+            startStepUpdates(from: date)
+        } else {
+            startLocationUpdates()
+        }
         liveActivity.start(for: self, at: date)
     }
 
     func pause(at date: Date = Date()) {
         guard phase == .active else { return }
         accumulator.pause(at: date)
+        steps.isPaused = true
         phase = .paused
         liveActivity.update(for: self, force: true, at: date)
     }
@@ -96,6 +130,7 @@ final class WorkoutTracker {
     func resume(at date: Date = Date()) {
         guard phase == .paused else { return }
         accumulator.resume(at: date)
+        steps.isPaused = false
         phase = .active
         liveActivity.update(for: self, force: true, at: date)
     }
@@ -105,18 +140,12 @@ final class WorkoutTracker {
     func finish(at date: Date = Date()) -> TrackedWorkoutResult? {
         guard isRecording, let startedAt = accumulator.startedAt else { return nil }
         stopLocationUpdates()
+        stopStepUpdates()
         accumulator.finish(at: date)
-        let finished = TrackedWorkoutResult(
-            kind: accumulator.kind,
-            startedAt: startedAt,
-            endedAt: date,
-            distanceMeters: accumulator.distanceMeters,
-            movingSeconds: accumulator.movingSeconds(at: date),
-            points: accumulator.points,
-            pauseIntervals: accumulator.pauseIntervals
-        )
+        let finished = makeResult(startedAt: startedAt, endedAt: date)
         result = finished
         phase = .finished
+        if isIndoor { refreshFinalSteps(startedAt: startedAt, endedAt: date) }
         // The Live Activity stays up showing the final numbers until the run is saved or discarded.
         liveActivity.update(for: self, force: true, at: date)
         return finished
@@ -125,12 +154,68 @@ final class WorkoutTracker {
     /// Returns to idle after the result is saved or discarded (or abandons a recording).
     func reset() {
         stopLocationUpdates()
+        stopStepUpdates()
         liveActivity.endAll()
         accumulator = RouteAccumulator(kind: .walk)
+        isIndoor = false
+        steps = StepDistance()
         result = nil
         locationIssue = nil
         hasLocationFix = false
         phase = .idle
+    }
+
+    // MARK: - Steps
+
+    private func makeResult(startedAt: Date, endedAt: Date) -> TrackedWorkoutResult {
+        TrackedWorkoutResult(
+            kind: accumulator.kind,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            distanceMeters: distanceMeters,
+            movingSeconds: accumulator.movingSeconds(at: endedAt),
+            points: isIndoor ? [] : accumulator.points,
+            pauseIntervals: accumulator.pauseIntervals,
+            isIndoor: isIndoor
+        )
+    }
+
+    /// Live step updates stop while the app is suspended (indoor workouts have no location session
+    /// keeping it awake), so the summary asks the step counter for its final total once.
+    private func refreshFinalSteps(startedAt: Date, endedAt: Date) {
+        guard CMPedometer.isDistanceAvailable() else { return }
+        pedometer.queryPedometerData(from: startedAt, to: endedAt) { [weak self] data, _ in
+            guard let meters = data?.distance?.doubleValue else { return }
+            Task { @MainActor in
+                guard let self, self.phase == .finished, self.result?.startedAt == startedAt else { return }
+                self.steps.update(total: meters)
+                self.result = self.makeResult(startedAt: startedAt, endedAt: endedAt)
+            }
+        }
+    }
+
+    /// The first indoor start asks for Motion & Fitness access.
+    private func startStepUpdates(from date: Date) {
+        guard CMPedometer.isDistanceAvailable() else {
+            locationIssue = "This iPhone can't measure distance from steps, so indoor distance won't be recorded."
+            return
+        }
+        guard CMPedometer.authorizationStatus() != .denied, CMPedometer.authorizationStatus() != .restricted else {
+            locationIssue = "Motion & Fitness access is off, so indoor distance can't be counted. Turn it on in Settings › Privacy & Security › Motion & Fitness."
+            return
+        }
+        pedometer.startUpdates(from: date) { [weak self] data, _ in
+            guard let meters = data?.distance?.doubleValue else { return }
+            Task { @MainActor in
+                guard let self, self.isRecording else { return }
+                self.steps.update(total: meters)
+                self.liveActivity.update(for: self)   // throttled
+            }
+        }
+    }
+
+    private func stopStepUpdates() {
+        pedometer.stopUpdates()
     }
 
     // MARK: - Location

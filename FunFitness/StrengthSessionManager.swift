@@ -31,10 +31,12 @@ final class StrengthSessionManager {
     private(set) var endedAt: Date?
 
     /// The Health save for the ended session, for the summary screen (FB-0020). nil when nothing is
-    /// being saved (Health saving off, untimed, or no session yet).
+    /// being saved (Health saving off, or no session yet).
     enum HealthSaveStatus: Equatable {
         case saving
         case done(HealthSaveResult)
+        /// Health saving is on, but the session was under a minute, so it isn't saved.
+        case tooShort
     }
     private(set) var healthSaveStatus: HealthSaveStatus?
 
@@ -164,7 +166,10 @@ final class StrengthSessionManager {
             // workout with estimated calories. Weight: the profile's, else Health's latest
             // (without prompting here — the session screen is in front). (3.1 C5)
             let profile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
-            if profile?.healthKitWriteBackEnabled == true, record.isTimed {
+            if profile?.healthKitWriteBackEnabled == true, !record.isTimed {
+                // Under a minute: not worth a workout in Health, but say so. (FB-0020)
+                healthSaveStatus = .tooShort
+            } else if profile?.healthKitWriteBackEnabled == true {
                 let profileWeight = profile?.weightKg
                 healthSaveStatus = .saving
                 Task { @MainActor in

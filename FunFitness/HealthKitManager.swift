@@ -130,6 +130,14 @@ final class HealthKitManager {
         return result
     }
 
+    /// A save that can't be attempted (nothing to save). Logged and shown like any other failure,
+    /// so it's never silent. (FB-0020)
+    private func skipped(_ what: String, reason: String) -> HealthSaveResult {
+        logger.error("Didn't save \(what, privacy: .public) to Health: \(reason, privacy: .public)")
+        lastFailedSave = .failed
+        return .failed
+    }
+
     // MARK: - Reading
 
     /// Fetches distance workouts (walking/running/hiking/cycling) with a
@@ -177,7 +185,8 @@ final class HealthKitManager {
     /// The returned UUID tags the entry so our own write-back isn't re-imported (echo prevention;
     /// the import only reads workouts, so a sample can't echo either way).
     func saveManualDistance(distanceKm: Double, start: Date, durationSeconds: Double?, kind: TrackedWorkoutKind) async -> HealthSaveResult {
-        guard isAvailable, distanceKm > 0 else { return .failed }
+        guard isAvailable else { return .failed }
+        guard distanceKm > 0 else { return skipped("distance", reason: "no distance") }
         await requestAuthorization()
 
         let distanceType = HKQuantityType(.distanceWalkingRunning)
@@ -214,18 +223,22 @@ final class HealthKitManager {
 extension HealthKitManager {
 
     /// Saves a GPS-tracked walk or run to Health as a real workout — actual start/end, pause
-    /// events, distance, and the route. A `.saved` result carries the workout's UUID (echo
+    /// events, distance, and the route. An indoor one (treadmill; distance from the step counter)
+    /// is saved as an indoor workout with no route. A `.saved` result carries the workout's UUID (echo
     /// prevention, as for manual write-back). Built after the run with `HKWorkoutBuilder` so it works on iOS 18;
     /// iPhone `HKWorkoutSession` (iOS 26) is a possible future upgrade. On failure the
     /// in-app log and route are already saved; the result says why Health didn't get it. (3.1 B1a)
     func saveTrackedWorkout(_ result: TrackedWorkoutResult) async -> HealthSaveResult {
-        guard isAvailable, result.distanceMeters > 0, result.endedAt > result.startedAt else { return .failed }
+        guard isAvailable else { return .failed }
+        guard result.distanceMeters > 0, result.endedAt > result.startedAt else {
+            return skipped("tracked workout", reason: "no distance or no time")
+        }
         // Prompts only for types not yet decided (e.g. the route type added in 3.1).
         await requestAuthorization()
 
         let config = HKWorkoutConfiguration()
         config.activityType = result.kind == .run ? .running : .walking
-        config.locationType = .outdoor
+        config.locationType = result.isIndoor ? .indoor : .outdoor
         let builder = HKWorkoutBuilder(healthStore: store, configuration: config, device: .local())
 
         let workout: HKWorkout
@@ -243,7 +256,7 @@ extension HealthKitManager {
                 HKWorkoutEvent(type: .resume, dateInterval: DateInterval(start: pause.end, duration: 0), metadata: nil),
             ] }
             if !events.isEmpty { try await builder.addWorkoutEvents(events) }
-            try await builder.addMetadata([HKMetadataKeyIndoorWorkout: false])
+            try await builder.addMetadata([HKMetadataKeyIndoorWorkout: result.isIndoor])
             try await builder.endCollection(at: result.endedAt)
             guard let finished = try await builder.finishWorkout() else {
                 return outcome(nil, error: nil, type: HKObjectType.workoutType(), what: "tracked workout")
@@ -254,7 +267,7 @@ extension HealthKitManager {
         }
 
         // The route is best-effort: a declined route permission still leaves the workout saved.
-        if !result.points.isEmpty {
+        if !result.isIndoor, !result.points.isEmpty {
             let routeBuilder = HKWorkoutRouteBuilder(healthStore: store, device: .local())
             let locations = result.points.map { point in
                 CLLocation(
@@ -341,7 +354,8 @@ extension HealthKitManager {
     /// carries the workout's UUID. Strength workouts aren't imported back (the import is
     /// distance-only), so there's no echo to guard against.
     func saveStrengthSession(start: Date, end: Date, kcal: Double?, isIndoor: Bool?) async -> HealthSaveResult {
-        guard isAvailable, end > start else { return .failed }
+        guard isAvailable else { return .failed }
+        guard end > start else { return skipped("strength workout", reason: "end isn't after start") }
         await requestAuthorization()
 
         let config = HKWorkoutConfiguration()
