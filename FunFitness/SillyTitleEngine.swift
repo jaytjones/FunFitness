@@ -34,6 +34,17 @@ struct SillyTitleEngine {
         return SillyTitle(title: tier.title, rank: tier.rank, rankEmoji: tier.emoji)
     }
 
+    /// Rank as a level: the tier's index, Unranked = 0 … Diamond = 7, plus the next tier and how
+    /// many more ranked badges reach it (nil at the top). Display only; counts ranked ids like
+    /// `sillyTitle(unlockedIds:)`.
+    static func level(unlockedIds: Set<String>) -> (level: Int, nextRank: String?, badgesToNext: Int) {
+        let count = unlockedIds.intersection(rankedMilestoneIds).count
+        let ascending = Array(tiers.reversed())
+        let level = ascending.lastIndex { count >= $0.minUnlocked } ?? 0
+        let next = ascending.first { $0.minUnlocked > count }
+        return (level, next?.rank, (next?.minUnlocked ?? count) - count)
+    }
+
     // MARK: - Private
 
     private struct Tier {

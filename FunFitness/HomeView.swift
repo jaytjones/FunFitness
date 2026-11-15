@@ -47,35 +47,22 @@ struct HomeView: View {
                     // and rank → challenge → the rest; Ticker, Recent Activity and "Compare with"
                     // lower down. (3.2)
                     VStack(spacing: FFSpace.s4) {
-                        Text(greeting)
-                            .ffFont(.display)
-                            .foregroundStyle(Color.ffInk)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityAddTraits(.isHeader)
-                            .padding(.bottom, FFSpace.s1)
-
-                        // A save to Health that didn't make it (FB-0020); the save ran after its sheet closed.
-                        if let failed = HealthKitManager.shared.lastFailedSave {
-                            HealthAccessNotice(kind: .saveFailed(failed)) {
-                                HealthKitManager.shared.dismissFailedSave()
-                            }
+                        #if INTERNAL_STYLES
+                        if StyleRuntime.current == .arcade {
+                            // Arcade (unreleased): wordmark + level, next card, tiles, collection.
+                            ArcadeHomeTop(
+                                viewModel: viewModel,
+                                unlocked: achievements,
+                                onLog: openLog,
+                                onUseShield: { showShieldConfirm = true }
+                            )
+                            failedSaveNotice
+                        } else {
+                            playfulBoldTop
                         }
-
-                        HeroStat(viewModel: viewModel, type: .distance) {
-                            openLog(.distance)
-                        }
-
-                        ForEach(tileTypes, id: \.self) { type in
-                            StatTile(viewModel: viewModel, type: type) {
-                                openLog(type)
-                            }
-                        }
-
-                        StreakCard(viewModel: viewModel, onActivateShield: {
-                            showShieldConfirm = true
-                        })
-
-                        SillyTitleBanner(viewModel: viewModel)
+                        #else
+                        playfulBoldTop
+                        #endif
 
                         ChallengeCard(viewModel: viewModel)
 
@@ -135,6 +122,45 @@ struct HomeView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("A streak shield protects your streak for one missed week. You have \(viewModel.shieldsAvailable) shield\(viewModel.shieldsAvailable == 1 ? "" : "s") available. Shields regenerate monthly.")
+            }
+        }
+    }
+
+    /// Playful Bold's top of Home: greeting → HeroStat → StatTiles → streak → rank. (3.2)
+    @ViewBuilder
+    private var playfulBoldTop: some View {
+        Text(greeting)
+            .ffFont(.display)
+            .foregroundStyle(Color.ffInk)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+            .padding(.bottom, FFSpace.s1)
+
+        failedSaveNotice
+
+        HeroStat(viewModel: viewModel, type: .distance) {
+            openLog(.distance)
+        }
+
+        ForEach(tileTypes, id: \.self) { type in
+            StatTile(viewModel: viewModel, type: type) {
+                openLog(type)
+            }
+        }
+
+        StreakCard(viewModel: viewModel, onActivateShield: {
+            showShieldConfirm = true
+        })
+
+        SillyTitleBanner(viewModel: viewModel)
+    }
+
+    /// A save to Health that didn't make it (FB-0020); the save ran after its sheet closed.
+    @ViewBuilder
+    private var failedSaveNotice: some View {
+        if let failed = HealthKitManager.shared.lastFailedSave {
+            HealthAccessNotice(kind: .saveFailed(failed)) {
+                HealthKitManager.shared.dismissFailedSave()
             }
         }
     }
