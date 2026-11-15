@@ -24,7 +24,7 @@ Estimates include tests.
 | FB-0001 | Deleted set still shows in the live session; removing a set is hard | 3.1 (9) | Bug + UX | M | **P1** | ✅ Fixed for build 10 |
 | FB-0004 | Milestone says "You've run" even for walks | 3.1 (6) | Copy | S | P2 | ✅ Fixed for build 10 |
 | FB-0003 | Live walk banner looks like every other card; should be pinned | 3.1 (6) | UX | M | P2 | ✅ Built for build 10, needs on-device check |
-| FB-0020 | FunFitness workouts don't show in the Fitness / Activity app | 3.1 (12) | Bug + UX | S–M | **P1** | Items 1–2 built (local); on-device check next |
+| FB-0020 | FunFitness workouts don't show in the Fitness / Activity app | 3.1 (12) | Bug + UX | S–M | **P1** | Items 1–2 in 3.1 (13); items 3–4 + indoor tracking in 3.2 (14); on-device check next |
 
 **Also for build 10 (not tester feedback):** the build was broken by `docs/design/` being added to the app
 target in `1c07e66` (duplicate `.md` names in the bundle). All docs were removed from the app's Copy Bundle
@@ -178,6 +178,15 @@ distinct "live" style (pulsing dot, accent border). That makes it stand out but 
 ---
 
 ## FB-0020 · Workouts don't show in the Fitness / Activity app — P1 · S–M
+
+> **Status (2026-11-15): built for 3.2 (14).** Jay's retest on build 13 still showed nothing in Health. Both
+> tries were skipped on purpose, with no message: a treadmill walk had no GPS distance (Save was
+> disabled), and a 30-second strength session was under the 1-minute minimum. Fixes: an Outdoor /
+> Indoor choice when starting a walk/run (indoor counts distance from steps and saves an indoor workout),
+> "Too short to save to Apple Health" on short strength sessions, and skipped saves now log and show the
+> Home banner. Item 3 (rename to "Save workouts to Apple Health" + a one-time prompt on the summaries)
+> and item 4 (estimated active energy on tracked walks/runs) are built too. Jay confirmed a strength
+> session over a minute saves to Health.
 
 > **Status (2026-11-12): cause found (cause 2).** "Save logs to Apple Health" was on, but in Settings →
 > Health → FunFitness, write access was off for everything except Active Energy. Health had **no

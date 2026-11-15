@@ -21,12 +21,12 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
    CloudKit Console › Deploy to Production), then untick the argument.
 3. **Tests:** `xcodebuild test -scheme FunFitness -only-testing:FunFitnessTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`.
 4. **Commit and push** the bump (message: `Build N`).
-5. **Archive:** Any iOS Device (arm64) › Product › Archive. Organizer should show `3.1 (N)`.
+5. **Archive:** Any iOS Device (arm64) › Product › Archive. Organizer should show `3.2 (N)`.
 6. **Distribute:** TestFlight & App Store › on the options screen **untick "Manage Version and Build
    Number"** (Xcode otherwise renumbers the upload if the number is taken, and the repo goes out of
    step). With it off, a duplicate number fails the upload with a clear error — bump and re-archive.
-7. **Tag** the uploaded commit: `git tag 3.1-N && git push origin 3.1-N`.
-8. App Store Connect: confirm `3.1 (N)` is processing, add What to Test, add testers, expire the
+7. **Tag** the uploaded commit: `git tag 3.2-N && git push origin 3.2-N`.
+8. App Store Connect: confirm `3.2 (N)` is processing, add What to Test, add testers, expire the
    previous build.
 
 ## Build history
@@ -38,4 +38,4 @@ Store Connect. Set up 2026-10-17 after Xcode silently uploaded the build-8 archi
 | 3.1 (11) | `382d9fc` (tag `3.1-11`) | C7 Effort Points, C3/C6 exercises, Journey Mode, first Apple Watch app. Archived as build 10; Xcode renumbered the upload to 11 (code identical). Repo set to 11 afterwards. |
 | 3.1 (12) | — | Uploaded; commit not recorded (untagged). |
 | 3.1 (13) | `9662f68` (tag `3.1-13`) | FB-0020: Apple Health save results + "access is off" notices with a Settings link, failed-save banner on Home; manual distance logs get Walk/Run, optional duration and a start time. New `ActivityLog` fields `durationSeconds` / `distanceKindRaw` (CloudKit schema deployed to Production). Uploaded 2026-11-12. |
-| 3.1 (14) | — | Next upload. |
+| 3.2 (14) | — | Next upload. First 3.2: the Playful Bold look (in builds 12–13, labelled 3.1) with SF Pro Rounded. FB-0020: Outdoor/Indoor tracking (indoor distance from steps), "Save workouts to Apple Health" rename + one-time prompt, calories on tracked walks/runs, strength "too short" message, no silent skipped saves; Watch writes distance + energy. No CloudKit change. |
