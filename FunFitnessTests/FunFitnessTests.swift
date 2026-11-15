@@ -442,6 +442,17 @@ struct StreakEngineTests {
         return ActivityLog(type: .distance, value: 1.0, loggedAt: date)
     }
 
+    /// A log `weeksAgo` calendar weeks back, `day` days into that week (noon). Anchored to the
+    /// week's start so the tests pass on any weekday — "1 day ago" is last week on a Sunday
+    /// with a Sunday-first calendar.
+    private func makeLog(weeksAgo: Int, day: Int = 0) -> ActivityLog {
+        let cal = Calendar.current
+        let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start ?? cal.startOfDay(for: Date())
+        let noon = weekStart.addingTimeInterval(12 * 3600)
+        let date = cal.date(byAdding: .day, value: day - weeksAgo * 7, to: noon) ?? noon
+        return ActivityLog(type: .distance, value: 1.0, loggedAt: date)
+    }
+
     @Test func emptyActivitiesProducesZeroStreak() {
         let result = StreakEngine.compute(activities: [])
         #expect(result.currentStreak == 0)
@@ -457,9 +468,9 @@ struct StreakEngineTests {
 
     @Test func consecutiveWeeksProduceCorrectStreak() {
         let logs = [
-            makeLog(daysAgo: 0),    // this week
-            makeLog(daysAgo: 8),    // last week
-            makeLog(daysAgo: 15),   // 2 weeks ago
+            makeLog(weeksAgo: 0),   // this week
+            makeLog(weeksAgo: 1),   // last week
+            makeLog(weeksAgo: 2),   // 2 weeks ago
         ]
         let result = StreakEngine.compute(activities: logs)
         #expect(result.currentStreak == 3)
@@ -468,8 +479,8 @@ struct StreakEngineTests {
 
     @Test func gapBreaksStreak() {
         let logs = [
-            makeLog(daysAgo: 0),    // this week
-            makeLog(daysAgo: 15),   // 2 weeks ago (gap last week)
+            makeLog(weeksAgo: 0),   // this week
+            makeLog(weeksAgo: 2),   // 2 weeks ago (gap last week)
         ]
         let result = StreakEngine.compute(activities: logs)
         #expect(result.currentStreak == 1)
@@ -480,8 +491,8 @@ struct StreakEngineTests {
         let shieldKey = WeekKey.from(date: lastWeek)
         let shieldJSON = StreakEngine.encodeShieldedWeeks([shieldKey])
         let logs = [
-            makeLog(daysAgo: 0),    // this week
-            makeLog(daysAgo: 15),   // 2 weeks ago — with shield on last week, chain continues
+            makeLog(weeksAgo: 0),   // this week
+            makeLog(weeksAgo: 2),   // 2 weeks ago — with shield on last week, chain continues
         ]
         let result = StreakEngine.compute(activities: logs, shieldedWeekKeysJSON: shieldJSON)
         #expect(result.currentStreak == 3)
@@ -494,7 +505,7 @@ struct StreakEngineTests {
     }
 
     @Test func duplicateActivitiesSameWeekCountOnce() {
-        let logs = [makeLog(daysAgo: 0), makeLog(daysAgo: 1), makeLog(daysAgo: 2)]
+        let logs = [makeLog(weeksAgo: 0, day: 0), makeLog(weeksAgo: 0, day: 1), makeLog(weeksAgo: 0, day: 2)]
         let result = StreakEngine.compute(activities: logs)
         #expect(result.currentStreak == 1)
     }

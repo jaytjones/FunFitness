@@ -142,6 +142,7 @@ struct ActivityWriter {
         surface: DistanceSurface? = nil,
         heartRate: HeartRateSummary? = nil,
         readsHeartRate: Bool = false,
+        weightKg: Double? = nil,
         context: ModelContext,
         viewModel: AppViewModel,
         writeBackToHealth: Bool
@@ -182,7 +183,11 @@ struct ActivityWriter {
         if writeBackToHealth {
             let activity = result.activity
             Task { @MainActor in
-                if let uuid = await HealthKitManager.shared.saveTrackedWorkout(workout).uuid {
+                // Calories need a body weight: the profile's, else Health's latest (no prompt here).
+                var weight = weightKg
+                if weight == nil { weight = await HealthKitManager.shared.latestBodyMassKg(requestingAccess: false) }
+                let kcal = CalorieEstimator.kcal(distanceMeters: workout.distanceMeters, kind: workout.kind, weightKg: weight)
+                if let uuid = await HealthKitManager.shared.saveTrackedWorkout(workout, kcal: kcal).uuid {
                     activity.healthKitUUID = uuid
                     route.healthKitWorkoutUUID = uuid
                     try? context.save()

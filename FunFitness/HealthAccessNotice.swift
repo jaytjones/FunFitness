@@ -81,6 +81,60 @@ struct HealthAccessNotice: View {
     }
 }
 
+/// Asks once (per device) after a finished workout whether to save workouts to Apple Health,
+/// while that setting is off (FB-0020 item 3). Testers didn't find the setting in Profile, so
+/// their workouts never reached Health or Fitness.
+struct HealthSavePrompt: View {
+    static let answeredKey = "healthSavePromptAnswered"
+
+    let profile: UserProfile?
+    /// Runs after Health access has been requested, so the caller can save right away.
+    var onTurnOn: () -> Void = {}
+
+    @AppStorage(HealthSavePrompt.answeredKey) private var answered = false
+
+    var body: some View {
+        if !answered, HealthKitManager.shared.isAvailable, let profile, !profile.healthKitWriteBackEnabled {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "heart.fill")
+                        .foregroundStyle(Color.ffAccent)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Save workouts to Apple Health?")
+                            .ffFont(.bodyStrong)
+                            .foregroundStyle(Color.ffInk)
+                        Text("Your walks, runs and strength sessions will show up in Health and Fitness and count toward your rings. You can change this in Profile.")
+                            .ffFont(.caption)
+                            .foregroundStyle(Color.ffInkMuted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                HStack(spacing: 12) {
+                    Button("Turn On") {
+                        profile.healthKitWriteBackEnabled = true
+                        answered = true
+                        Task {
+                            await HealthKitManager.shared.requestAuthorization()
+                            onTurnOn()
+                        }
+                    }
+                    .buttonStyle(.ffPrimary)
+                    .accessibilityIdentifier("healthSavePromptTurnOn")
+
+                    Button("Not Now") { answered = true }
+                        .buttonStyle(.ffSecondary)
+                        .accessibilityIdentifier("healthSavePromptNotNow")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("healthSavePrompt")
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 16) {
         HealthAccessNotice(kind: .accessOff)

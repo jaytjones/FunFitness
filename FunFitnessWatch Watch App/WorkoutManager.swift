@@ -201,7 +201,15 @@ final class WorkoutManager: NSObject {
     // MARK: - Health
 
     private func requestAuthorization() async throws {
-        let share: Set<HKSampleType> = [HKQuantityType.workoutType(), HKSeriesType.workoutRoute()]
+        // The live builder saves distance and energy samples as this app, so it needs write access
+        // to them too, or the workout lands in Health with no distance or calories (and, with no
+        // distance, never reaches the phone). Already-decided types aren't asked again. (FB-0020)
+        let share: Set<HKSampleType> = [
+            HKQuantityType.workoutType(),
+            HKSeriesType.workoutRoute(),
+            HKQuantityType(.distanceWalkingRunning),
+            HKQuantityType(.activeEnergyBurned),
+        ]
         let read: Set<HKObjectType> = [
             HKQuantityType(.distanceWalkingRunning),
             HKQuantityType(.heartRate),

@@ -228,7 +228,8 @@ extension HealthKitManager {
     /// prevention, as for manual write-back). Built after the run with `HKWorkoutBuilder` so it works on iOS 18;
     /// iPhone `HKWorkoutSession` (iOS 26) is a possible future upgrade. On failure the
     /// in-app log and route are already saved; the result says why Health didn't get it. (3.1 B1a)
-    func saveTrackedWorkout(_ result: TrackedWorkoutResult) async -> HealthSaveResult {
+    /// `kcal` is the estimated active energy (FB-0020), so the workout counts toward the Move ring.
+    func saveTrackedWorkout(_ result: TrackedWorkoutResult, kcal: Double? = nil) async -> HealthSaveResult {
         guard isAvailable else { return .failed }
         guard result.distanceMeters > 0, result.endedAt > result.startedAt else {
             return skipped("tracked workout", reason: "no distance or no time")
@@ -250,7 +251,16 @@ extension HealthKitManager {
                 start: result.startedAt,
                 end: result.endedAt
             )
-            try await builder.addSamples([distance])
+            var samples: [HKSample] = [distance]
+            if let kcal, kcal > 0 {
+                samples.append(HKCumulativeQuantitySample(
+                    type: HKQuantityType(.activeEnergyBurned),
+                    quantity: HKQuantity(unit: .kilocalorie(), doubleValue: kcal),
+                    start: result.startedAt,
+                    end: result.endedAt
+                ))
+            }
+            try await builder.addSamples(samples)
             let events = result.pauseIntervals.flatMap { pause in [
                 HKWorkoutEvent(type: .pause, dateInterval: DateInterval(start: pause.start, duration: 0), metadata: nil),
                 HKWorkoutEvent(type: .resume, dateInterval: DateInterval(start: pause.end, duration: 0), metadata: nil),

@@ -289,6 +289,10 @@ struct TrackWorkoutView: View {
                         }
                     }
 
+                // Saving is off and they haven't been asked: offer it before Save, so this one
+                // goes to Health too. (FB-0020 item 3)
+                HealthSavePrompt(profile: profiles.first)
+
                 // Health saving is on but permission was declined: say so before Save. (FB-0020)
                 if profiles.first?.healthKitWriteBackEnabled == true, HealthKitManager.shared.writeAccessOff {
                     HealthAccessNotice(kind: .accessOff)
@@ -339,6 +343,7 @@ struct TrackWorkoutView: View {
             surface: surface,
             heartRate: heartRate,
             readsHeartRate: readsHeartRate,
+            weightKg: profiles.first?.weightKg,
             context: modelContext,
             viewModel: viewModel,
             writeBackToHealth: profiles.first?.healthKitWriteBackEnabled ?? false

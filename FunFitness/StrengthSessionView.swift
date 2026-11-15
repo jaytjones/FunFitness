@@ -14,6 +14,7 @@ import SwiftData
 struct StrengthSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
     @Bindable var viewModel: AppViewModel
 
     private let manager = StrengthSessionManager.shared
@@ -370,6 +371,11 @@ struct StrengthSessionView: View {
                     .foregroundStyle(Color.ffInkMuted)
 
                 healthSaveRow
+
+                // Saving is off and they haven't been asked: offer it once. (FB-0020 item 3)
+                HealthSavePrompt(profile: profiles.first) {
+                    manager.healthSavingTurnedOn()
+                }
             }
 
             Spacer(minLength: 0)

@@ -96,6 +96,20 @@ nonisolated enum CalorieEstimator {
         return met * weightKg * seconds / 3600
     }
 
+    /// Active (net) energy per kg of body weight per km for tracked walks and runs: walking at
+    /// everyday speeds ≈ 0.5, running ≈ 1.0, and both roughly independent of pace. Distance-based,
+    /// so indoor walks (distance from steps) get an estimate too. Saved to Health so tracked walks
+    /// and runs count toward the Move ring. (FB-0020)
+    static let walkingKcalPerKgKm = 0.5
+    static let runningKcalPerKgKm = 1.0
+
+    /// nil without a distance or a usable body weight.
+    static func kcal(distanceMeters: Double, kind: TrackedWorkoutKind, weightKg: Double?) -> Double? {
+        guard distanceMeters > 0, let weightKg, weightKg > 0 else { return nil }
+        let perKgKm = kind == .run ? runningKcalPerKgKm : walkingKcalPerKgKm
+        return perKgKm * weightKg * distanceMeters / 1000
+    }
+
     /// "≈ 210 kcal (est.)"
     static func text(_ kcal: Double) -> String {
         "≈ \(Int(kcal.rounded())) kcal (est.)"

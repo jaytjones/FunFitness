@@ -844,8 +844,8 @@ struct HealthKitSettingsSection: View {
                     )
                     Divider()
                     NotificationToggleRow(
-                        title: "Save logs to Apple Health",
-                        subtitle: "Write the distance activities you log back to Health",
+                        title: "Save workouts to Apple Health",
+                        subtitle: "Walks, runs and strength sessions show up in Health and Fitness",
                         icon: "square.and.arrow.up.fill",
                         iconColor: .ffLink,
                         isOn: Binding(
