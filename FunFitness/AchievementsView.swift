@@ -40,6 +40,32 @@ struct AchievementsView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
+                    #if INTERNAL_STYLES
+                    if StyleRuntime.current == .arcade {
+                        // Arcade (unreleased): the trading-card binder.
+                        ArcadeBinder(achievements: achievements, viewModel: viewModel)
+                            .padding()
+                    } else {
+                        playfulBoldList
+                    }
+                    #else
+                    playfulBoldList
+                    #endif
+                }
+            }
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+
+    private var navigationTitle: String {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return AppTab.badges.arcadeLabel }
+        #endif
+        return String(localized: "Achievements")
+    }
+
+    private var playfulBoldList: some View {
                     VStack(spacing: 16) {
                         ProgressBanner(
                             unlockedCount: achievements.count,
@@ -89,11 +115,6 @@ struct AchievementsView: View {
                         }
                     }
                     .padding()
-                }
-            }
-            .navigationTitle("Achievements")
-            .navigationBarTitleDisplayMode(.large)
-        }
     }
 }
 
