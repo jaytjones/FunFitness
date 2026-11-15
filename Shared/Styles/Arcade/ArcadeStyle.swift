@@ -9,13 +9,32 @@
 //  builds), so Release builds contain nothing of Arcade. Launch = remove this #if, set
 //  `StyleID.arcade.isReleased`, move user-facing text into the string catalog.
 //
-//  Fonts: the spec calls for Chakra Petch / Rubik / JetBrains Mono. Until Jay decides on bundling
-//  fonts, system stand-ins are used: SF Pro for display and body, SF Mono for HUD labels.
+//  Fonts (Jay, 2026-11-15): Chakra Petch Bold for headings (display-hero, display, title, tab) only;
+//  SF Pro for body and numerals, SF Mono for HUD labels. The font file and its licence sit in
+//  Fonts/ and are excluded from Release builds (EXCLUDED_SOURCE_FILE_NAMES), and it's registered at
+//  launch rather than through Info.plist, so Release builds don't name it either.
 //
 
 #if INTERNAL_STYLES
 
 import SwiftUI
+import CoreText
+
+// MARK: - Fonts
+
+nonisolated enum ArcadeFonts {
+    /// PostScript name of the bundled heading font.
+    static let display = "ChakraPetch-Bold"
+
+    private static let registration: Void = {
+        guard let url = Bundle.main.url(forResource: "ChakraPetch-Bold", withExtension: "ttf") else { return }
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+    }()
+
+    /// Registers the heading font once for this process (the app and the widget extension each call
+    /// it at launch). Missing file → headings fall back to SF Pro.
+    static func register() { _ = registration }
+}
 
 // MARK: - Shared tokens in Arcade
 
@@ -132,9 +151,17 @@ extension FFTextStyle {
         }
     }
 
-    /// System stand-ins: SF Mono for HUD labels, SF Pro for everything else.
+    /// SF Mono for HUD labels, SF Pro for everything else (headings use `arcadeFontName`).
     nonisolated var arcadeDesign: Font.Design {
         self == .label ? .monospaced : .default
+    }
+
+    /// Chakra Petch for headings; nil = system font.
+    nonisolated var arcadeFontName: String? {
+        switch self {
+        case .displayHero, .display, .title, .tab: return ArcadeFonts.display
+        default: return nil
+        }
     }
 }
 

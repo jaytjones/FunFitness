@@ -15,6 +15,9 @@ struct FunFitnessApp: App {
     private let sharedModelContainer: ModelContainer
 
     init() {
+        #if INTERNAL_STYLES
+        ArcadeFonts.register()   // unreleased Arcade headings (3.3)
+        #endif
         #if DEBUG
         // One-off: launch a Debug build on a signed-in device with `-initCloudKitSchema` to push
         // the model layer to the CloudKit Development environment, then deploy it to Production

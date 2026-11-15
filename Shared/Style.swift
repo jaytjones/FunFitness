@@ -391,6 +391,12 @@ private struct FFFontModifier: ViewModifier {
     }
 
     private var font: Font {
+        #if INTERNAL_STYLES
+        // Chakra Petch Bold is a single static weight, so no extra weight is applied.
+        if StyleRuntime.current == .arcade, let name = style.arcadeFontName {
+            return .custom(name, fixedSize: size)
+        }
+        #endif
         if let family = style.isDisplay ? FFFontFamily.display : FFFontFamily.body {
             return .custom(family, size: size).weight(style.weight)
         }

@@ -13,6 +13,9 @@ struct FunFitnessWidgetsBundle: WidgetBundle {
     init() {
         // Draw in the Style the app is showing (3.3).
         StyleRuntime.loadFromAppGroup()
+        #if INTERNAL_STYLES
+        ArcadeFonts.register()
+        #endif
     }
 
     var body: some Widget {

@@ -128,7 +128,7 @@ RoundedRectangle(cornerRadius: 18)
     .strokeBorder(LinearGradient(colors: Color.ffGradient, startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
 ```
 
-Fonts: bundle Chakra Petch, Rubik and JetBrains Mono (all OFL) and register them in Info.plist; use `.font(.custom("ChakraPetch-Bold", size: 34, relativeTo: .largeTitle))` so Dynamic Type still scales.
+Fonts (Jay, 2026-11-15): **Chakra Petch Bold for headings only** (display-hero, display, title, tab). Body and numerals use SF Pro, HUD labels SF Mono; Rubik and JetBrains Mono aren't bundled (side by side they were barely different from the system fonts). The font is registered at launch, not in Info.plist, and excluded from Release builds until Arcade launches.
 
 ## Adapting the app
 
