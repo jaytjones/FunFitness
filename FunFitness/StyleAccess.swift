@@ -97,7 +97,9 @@ nonisolated enum OwnerCheck {
     static func currentAccountIsOwner(containerIdentifier: String) async -> Bool {
         do {
             let id = try await CKContainer(identifier: containerIdentifier).userRecordID()
-            #if DEBUG
+            // Debug builds use CloudKit's Development environment and Internal builds Production, so
+            // both log the hash; Release builds (testers) never do.
+            #if DEBUG || INTERNAL_STYLES
             Logger(subsystem: "com.jaytjones.FunFitness", category: "Styles")
                 .notice("Owner hash for this iCloud account: \(hash(recordName: id.recordName), privacy: .public)")
             #endif
