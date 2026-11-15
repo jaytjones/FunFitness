@@ -28,6 +28,16 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
         case .playfulBold: return "Playful Bold"
         }
     }
+
+    /// The Style to show for a synced `activeStyleID`. Falls back to the default when the value is
+    /// one this build doesn't have (e.g. a Style picked in Jay's Internal build and synced to a
+    /// device running a Release build), or when `isAvailable` says this person can't use it.
+    /// Callers must never write the result back: the synced choice has to survive until this
+    /// device gets that Style. (3.3 plan)
+    static func resolve(_ rawValue: String, isAvailable: (StyleID) -> Bool = { _ in true }) -> StyleID {
+        guard let style = StyleID(rawValue: rawValue), isAvailable(style) else { return .default }
+        return style
+    }
 }
 
 // MARK: - Color tokens
