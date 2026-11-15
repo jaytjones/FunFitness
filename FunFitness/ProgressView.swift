@@ -11,6 +11,13 @@ import SwiftData
 import Charts
 
 struct ProgressTabView: View {
+    private var navigationTitle: String {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return AppTab.progress.arcadeLabel }
+        #endif
+        return String(localized: "Progress")
+    }
+
     @Query private var activities: [ActivityLog]
     @Bindable var viewModel: AppViewModel
 
@@ -71,7 +78,7 @@ struct ProgressTabView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Progress")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -262,14 +269,17 @@ struct WeeklyVolumeCard: View {
                 .pickerStyle(.segmented)
             }
 
+            // Arcade: a zero week shows a thin track-coloured stub instead of nothing (ProgressCharts.md).
+            let stub = pick(playfulBold: 0.0, arcade: (buckets.map { UnitConverter.fromSI($0.total, type: type, to: pref) }.max() ?? 1) * 0.015)
             Chart(buckets) { bucket in
+                let value = UnitConverter.fromSI(bucket.total, type: type, to: pref)
                 BarMark(
                     x: .value("Week", bucket.weekStart, unit: .weekOfYear),
-                    y: .value(unitLabel, UnitConverter.fromSI(bucket.total, type: type, to: pref))
+                    y: .value(unitLabel, bucket.total > 0 ? value : stub)
                 )
                 // Zero weeks read as track, not as the type colour.
                 .foregroundStyle(bucket.total > 0 ? type.ffFill : Color.ffProgressTrack)
-                .cornerRadius(4)
+                .cornerRadius(pick(playfulBold: 4, arcade: 2))
             }
             .chartXAxis {
                 AxisMarks { _ in
@@ -358,6 +368,13 @@ struct ActivityHeatmapCard: View {
     }
 
     private func color(_ count: Int) -> Color {
+        #if INTERNAL_STYLES
+        // Arcade: accent at 35 / 60 / 80 / 100% over the track (ProgressCharts.md).
+        if StyleRuntime.current == .arcade {
+            let opacity: [Double] = [0, 0.35, 0.6, 0.8, 1]
+            return count == 0 ? .ffProgressTrack : Color.ffAccent.opacity(opacity[min(count, 4)])
+        }
+        #endif
         switch count {
         case 0:  return .ffProgressTrack
         case 1:  return .ffHeat1
@@ -365,6 +382,9 @@ struct ActivityHeatmapCard: View {
         default: return .ffHeat3
         }
     }
+
+    /// Legend steps: Playful Bold has 4 (0, 1, 2, 3+), Arcade 5.
+    private var legendSteps: Int { pick(playfulBold: 4, arcade: 5) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -377,7 +397,8 @@ struct ActivityHeatmapCard: View {
                     VStack(spacing: 4) {
                         ForEach(week) { day in
                             RoundedRectangle(cornerRadius: 3)
-                                .fill(color(day.count))
+                                .fill(Color.ffProgressTrack)
+                                .overlay(RoundedRectangle(cornerRadius: 3).fill(color(day.count)))
                                 // Outlined so steps differ by more than hue.
                                 .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
                                 .frame(width: 14, height: 14)
@@ -389,9 +410,10 @@ struct ActivityHeatmapCard: View {
 
             HStack(spacing: 6) {
                 Text("Less").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
-                ForEach(0..<4) { i in
+                ForEach(0..<legendSteps, id: \.self) { i in
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(color(i))
+                        .fill(Color.ffProgressTrack)
+                        .overlay(RoundedRectangle(cornerRadius: 3).fill(color(i)))
                         .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
                         .frame(width: 12, height: 12)
                 }
