@@ -221,7 +221,7 @@ struct ContentView: View {
                         tracker: WorkoutTracker.shared, strength: StrengthSessionManager.shared)
                     // Style access (3.3): the purchase, and whether this iCloud account is the owner's.
                     StylePurchases.shared.start()
-                    viewModel.isStyleOwner = await OwnerCheck.currentAccountIsOwner(
+                    viewModel.ownerCheck = await OwnerCheck.checkCurrentAccount(
                         containerIdentifier: PersistenceController.cloudKitContainerID)
                 }
                 .onChange(of: scenePhase) { _, phase in

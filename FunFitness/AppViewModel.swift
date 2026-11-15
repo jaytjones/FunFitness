@@ -151,8 +151,9 @@ final class AppViewModel {
     var bestStreakEver: Int = 0
 
     // MARK: - Styles (3.3)
-    /// Set at launch from the iCloud account (`OwnerCheck`).
-    var isStyleOwner: Bool = false
+    /// Set at launch from the iCloud account (`OwnerCheck`); shown in Debug/Internal builds' Profile.
+    var ownerCheck: OwnerCheck.Result = .checking
+    var isStyleOwner: Bool { ownerCheck.isOwner }
 
     /// Who can see and use each Style right now.
     var styleAccess: StyleAccess {

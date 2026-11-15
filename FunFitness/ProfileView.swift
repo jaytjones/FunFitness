@@ -349,6 +349,12 @@ struct ProfileView: View {
                             .padding(.horizontal)
                         }
                         .padding(.bottom)
+
+                        #if DEBUG || INTERNAL_STYLES
+                        // Jay's builds only: is this iCloud account the owner? (3.3)
+                        OwnerCheckSection(viewModel: viewModel)
+                            .padding(.bottom)
+                        #endif
                     }
                 }
             }
@@ -961,3 +967,84 @@ private extension UIImage {
     ProfileView(viewModel: AppViewModel())
         .modelContainer(for: [UserProfile.self, ActivityLog.self, UnlockedAchievement.self], inMemory: true)
 }
+
+#if DEBUG || INTERNAL_STYLES
+// MARK: - Owner Check (Debug and Internal builds only)
+
+/// Shows whether this iCloud account is recognized as the owner, with the hash to copy into
+/// `OwnerCheck.ownerRecordHashes`. Never compiled into Release builds, so testers don't see it.
+/// Text is verbatim so none of it reaches the string catalog that ships in every build.
+private struct OwnerCheckSection: View {
+    @Bindable var viewModel: AppViewModel
+    @State private var copied = false
+
+    private var hash: String? {
+        switch viewModel.ownerCheck {
+        case .owner(let hash), .notOwner(let hash): return hash
+        default: return nil
+        }
+    }
+
+    private var status: String {
+        switch viewModel.ownerCheck {
+        case .checking: return "Checking iCloud…"
+        case .owner: return "Owner ✓"
+        case .notOwner: return "Not recognized"
+        case .unavailable: return "iCloud unavailable"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(verbatim: "Owner check (internal)")
+                .ffFont(.headline)
+                .foregroundStyle(Color.ffInk)
+                .padding(.horizontal)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: status)
+                    .ffFont(.bodyStrong)
+                    .foregroundStyle(viewModel.isStyleOwner ? Color.ffSuccess : Color.ffInk)
+                if let hash {
+                    Text(verbatim: hash)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(Color.ffInkMuted)
+                        .textSelection(.enabled)
+                }
+                if case .unavailable(let reason) = viewModel.ownerCheck {
+                    Text(verbatim: reason)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(Color.ffDanger)
+                        .textSelection(.enabled)
+                }
+                HStack(spacing: 16) {
+                    if let hash {
+                        Button {
+                            UIPasteboard.general.string = hash
+                            copied = true
+                        } label: {
+                            Text(verbatim: copied ? "Copied" : "Copy hash")
+                        }
+                    }
+                    Button {
+                        copied = false
+                        viewModel.ownerCheck = .checking
+                        Task {
+                            viewModel.ownerCheck = await OwnerCheck.checkCurrentAccount(
+                                containerIdentifier: PersistenceController.cloudKitContainerID)
+                        }
+                    } label: {
+                        Text(verbatim: "Check again")
+                    }
+                }
+                .ffFont(.bodyStrong)
+                .foregroundStyle(Color.ffLink)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
+            .padding(.horizontal)
+        }
+        .accessibilityIdentifier("ownerCheckSection")
+    }
+}
+#endif

@@ -92,20 +92,44 @@ nonisolated enum OwnerCheck {
         ownerHashes.contains(hash(recordName: recordName))
     }
 
-    /// Asks iCloud for this account's record ID in the app's container. In Debug builds it logs the
-    /// hash so the owner can copy it into `ownerRecordHashes` (a hash, never the ID itself).
-    static func currentAccountIsOwner(containerIdentifier: String) async -> Bool {
-        do {
-            let id = try await CKContainer(identifier: containerIdentifier).userRecordID()
-            // Debug builds use CloudKit's Development environment and Internal builds Production, so
-            // both log the hash; Release builds (testers) never do.
-            #if DEBUG || INTERNAL_STYLES
-            Logger(subsystem: "com.jaytjones.FunFitness", category: "Styles")
-                .notice("Owner hash for this iCloud account: \(hash(recordName: id.recordName), privacy: .public)")
-            #endif
-            return isOwner(recordName: id.recordName)
-        } catch {
+    /// What the check found, for the Debug/Internal "Owner check" row in Profile.
+    enum Result: Equatable, Sendable {
+        case checking
+        case owner(hash: String)
+        case notOwner(hash: String)
+        /// iCloud couldn't say (not signed in, offline, CloudKit error); normal rules apply.
+        case unavailable(reason: String)
+
+        var isOwner: Bool {
+            if case .owner = self { return true }
             return false
         }
+    }
+
+    /// Asks iCloud for this account's record ID in the app's container and compares its hash.
+    /// Debug and Internal builds log the outcome, including failures (a hash, never the ID itself);
+    /// Release builds (testers) never do. Debug builds use CloudKit's Development environment,
+    /// TestFlight/App Store builds Production.
+    static func checkCurrentAccount(containerIdentifier: String) async -> Result {
+        let result: Result
+        do {
+            let id = try await CKContainer(identifier: containerIdentifier).userRecordID()
+            let hashed = hash(recordName: id.recordName)
+            result = isOwner(recordName: id.recordName) ? .owner(hash: hashed) : .notOwner(hash: hashed)
+        } catch {
+            result = .unavailable(reason: String(describing: error))
+        }
+        #if DEBUG || INTERNAL_STYLES
+        let logger = Logger(subsystem: "com.jaytjones.FunFitness", category: "Styles")
+        switch result {
+        case .owner(let hashed), .notOwner(let hashed):
+            logger.notice("Owner hash for this iCloud account: \(hashed, privacy: .public) (owner: \(result.isOwner, privacy: .public))")
+        case .unavailable(let reason):
+            logger.error("Owner hash unavailable: \(reason, privacy: .public)")
+        case .checking:
+            break
+        }
+        #endif
+        return result
     }
 }
