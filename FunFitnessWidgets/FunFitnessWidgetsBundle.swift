@@ -10,6 +10,11 @@ import SwiftUI
 
 @main
 struct FunFitnessWidgetsBundle: WidgetBundle {
+    init() {
+        // Draw in the Style the app is showing (3.3).
+        StyleRuntime.loadFromAppGroup()
+    }
+
     var body: some Widget {
         FunFitnessWidget()
         WorkoutLiveActivityWidget()   // 3.1 tracked walk/run Live Activity

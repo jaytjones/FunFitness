@@ -26,7 +26,6 @@ struct StyleFallbackTests {
     }
 
     @Test func unknownStyleFallsBackToDefault() {
-        #expect(StyleID.resolve("arcade") == .default)
         #expect(StyleID.resolve("") == .default)
         #expect(StyleID.resolve("some-future-style") == .default)
     }
@@ -40,7 +39,7 @@ struct StyleFallbackTests {
     @Test func readingTheStyleNeverOverwritesTheSyncedChoice() throws {
         let context = container.mainContext
         let profile = UserProfile()
-        profile.activeStyleID = "arcade"   // synced from an Internal build
+        profile.activeStyleID = "not-in-this-build"   // e.g. synced from an Internal build
         context.insert(profile)
         try context.save()
 
@@ -48,7 +47,7 @@ struct StyleFallbackTests {
         try context.save()
 
         let stored = try #require(try context.fetch(FetchDescriptor<UserProfile>()).first)
-        #expect(stored.activeStyleID == "arcade")
+        #expect(stored.activeStyleID == "not-in-this-build")
     }
 
     @Test func styleRawValuesAreStable() {

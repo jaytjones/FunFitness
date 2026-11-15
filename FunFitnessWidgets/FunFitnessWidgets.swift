@@ -17,10 +17,13 @@ struct FunFitnessProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (FunFitnessEntry) -> Void) {
+        StyleRuntime.loadFromAppGroup()
         completion(FunFitnessEntry(snapshot: .load()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<FunFitnessEntry>) -> Void) {
+        // The app reloads timelines after the Style changes; pick it up here.
+        StyleRuntime.loadFromAppGroup()
         let entry = FunFitnessEntry(snapshot: .load())
         // Refresh every 30 minutes; the main app also triggers a reload via
         // WidgetCenter.shared.reloadAllTimelines() after each activity log.

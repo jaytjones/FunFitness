@@ -15,17 +15,25 @@
 
 import SwiftUI
 import UIKit
+import Synchronization
 
 /// The visual Styles the app can show. Raw values are persisted (`UserProfile.activeStyleID`),
 /// so never rename them.
 nonisolated enum StyleID: String, CaseIterable, Sendable {
     case playfulBold = "playful-bold"
+    #if INTERNAL_STYLES
+    // Unreleased (Jay-only until launch): see Styles/Arcade/ArcadeStyle.swift.
+    case arcade = "arcade"
+    #endif
 
     static let `default`: StyleID = .playfulBold
 
     var displayName: String {
         switch self {
         case .playfulBold: return "Playful Bold"
+        #if INTERNAL_STYLES
+        case .arcade: return "Arcade"
+        #endif
         }
     }
 
@@ -35,6 +43,9 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
     var isReleased: Bool {
         switch self {
         case .playfulBold: return true
+        #if INTERNAL_STYLES
+        case .arcade: return false
+        #endif
         }
     }
 
@@ -43,6 +54,9 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
     var streakWeeksToUnlock: Int? {
         switch self {
         case .playfulBold: return nil
+        #if INTERNAL_STYLES
+        case .arcade: return 4
+        #endif
         }
     }
 
@@ -57,10 +71,110 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
     }
 }
 
+// MARK: - Active Style
+
+/// The Style being drawn right now. Tokens read it when they resolve (on any thread, including
+/// SwiftUI's render thread), so it's a lock-protected value rather than view state. The app sets it
+/// from the synced, access-checked choice (`ContentView`); widgets set it from the App Group.
+/// Changing it only takes effect on screen after a redraw, so the app rebuilds its root view.
+nonisolated enum StyleRuntime {
+    private static let storage = Mutex(StyleID.default)
+
+    static var current: StyleID { storage.withLock { $0 } }
+
+    static func set(_ style: StyleID) { storage.withLock { $0 = style } }
+
+    /// App Group key the app writes and widgets read (an already-resolved `StyleID.rawValue`).
+    static let appGroupKey = "activeStyleID"
+    static let appGroupSuite = "group.com.discoverhealthquest.funfitness"
+
+    /// Widgets and the Live Activity: use the Style the app last showed. The app has already
+    /// checked access; a Style this build doesn't have (e.g. Release widget) falls back.
+    static func loadFromAppGroup() {
+        let raw = UserDefaults(suiteName: appGroupSuite)?.string(forKey: appGroupKey) ?? ""
+        set(StyleID.resolve(raw))
+    }
+
+    /// The app, after the Style it shows changes.
+    static func saveToAppGroup(_ style: StyleID) {
+        UserDefaults(suiteName: appGroupSuite)?.set(style.rawValue, forKey: appGroupKey)
+    }
+}
+
 // MARK: - Color tokens
 
+/// Every color token, by its tokens.json name. Each Style gives each token a light/dark pair;
+/// Playful Bold's are below, others live with their Style (e.g. Styles/Arcade).
+nonisolated enum FFColorToken: CaseIterable, Sendable {
+    case bg, surface, surfaceAlt, ink, inkMuted, line, shadowInk
+    case brandYellow, accent, onAccent, accent2, onAccent2, link
+    case typeDistance, onTypeDistance, typeWeight, onTypeWeight
+    case typeDuration, onTypeDuration, typeReps, onTypeReps
+    case progressTrack, streak, success, danger, focus, heat1, heat2, heat3
+
+    /// Playful Bold: Sunny (light) / After Dark (dark).
+    var playfulBold: (light: UInt32, dark: UInt32) {
+        switch self {
+        case .bg: return (0xFFD43B, 0x17122E)
+        case .surface: return (0xFFFFFF, 0x262051)
+        case .surfaceAlt: return (0xFFF4C7, 0x1F1A42)
+        case .ink: return (0x1E1640, 0xFFF8E1)
+        case .inkMuted: return (0x4A4170, 0xC9C2EA)
+        case .line: return (0x1E1640, 0x08060F)
+        case .shadowInk: return (0x1E1640, 0x08060F)
+        case .brandYellow: return (0xFFD43B, 0xFFD43B)
+        case .accent: return (0xFF5C8A, 0xFF6E98)
+        case .onAccent: return (0x1E1640, 0x1E1640)
+        case .accent2: return (0x6C3CE9, 0x8B66FF)
+        case .onAccent2: return (0xFFFFFF, 0x10082A)
+        // Not a tokens.json name: `accent` is never a text color, so links use `accent-2` in Sunny
+        // and `brand-yellow` in After Dark (the README's "links on surface (light only)" and
+        // "brand-yellow … greeting, focus" rules).
+        case .link: return (0x6C3CE9, 0xFFD43B)
+        case .typeDistance: return (0xFF5C8A, 0xFF6E98)
+        case .onTypeDistance: return (0x1E1640, 0x1E1640)
+        case .typeWeight: return (0x6C3CE9, 0x8B66FF)
+        case .onTypeWeight: return (0xFFFFFF, 0x10082A)
+        case .typeDuration: return (0x14C8B4, 0x2ED8C3)
+        case .onTypeDuration: return (0x1E1640, 0x1E1640)
+        case .typeReps: return (0xFF9F43, 0xFFAD5C)
+        case .onTypeReps: return (0x1E1640, 0x1E1640)
+        case .progressTrack: return (0xEFEAFF, 0x3A3270)
+        case .streak: return (0xFF6B35, 0xFF8A50)
+        case .success: return (0x157A43, 0x5BD38A)
+        case .danger: return (0xB4232A, 0xFF7B7B)
+        case .focus: return (0x1E1640, 0xFFD43B)
+        case .heat1: return (0xFFE58A, 0x4A3A8C)
+        case .heat2: return (0xFFB3C8, 0x8A4A9C)
+        case .heat3: return (0xFF5C8A, 0xFF6E98)
+        }
+    }
+
+    /// This token's pair in a Style. A Style that doesn't define a token uses Playful Bold's.
+    func pair(in style: StyleID) -> (light: UInt32, dark: UInt32) {
+        switch style {
+        case .playfulBold: return playfulBold
+        #if INTERNAL_STYLES
+        case .arcade: return arcade ?? playfulBold
+        #endif
+        }
+    }
+}
+
 nonisolated enum FFColor {
-    /// A light/dark pair as one dynamic color (Sunny / After Dark).
+    /// A token that follows the active Style and the light/dark appearance.
+    static func token(_ token: FFColorToken) -> Color {
+        Color(uiToken(token))
+    }
+
+    static func uiToken(_ token: FFColorToken) -> UIColor {
+        UIColor { traits in
+            let pair = token.pair(in: StyleRuntime.current)
+            return rgb(traits.userInterfaceStyle == .dark ? pair.dark : pair.light)
+        }
+    }
+
+    /// A fixed light/dark pair, the same in every Style.
     static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor(light, dark))
     }
@@ -83,44 +197,42 @@ nonisolated enum FFColor {
 
 extension Color {
     // Grounds and text
-    nonisolated static let ffBg = FFColor.dynamic(0xFFD43B, 0x17122E)
-    nonisolated static let ffSurface = FFColor.dynamic(0xFFFFFF, 0x262051)
-    nonisolated static let ffSurfaceAlt = FFColor.dynamic(0xFFF4C7, 0x1F1A42)
-    nonisolated static let ffInk = FFColor.dynamic(0x1E1640, 0xFFF8E1)
-    nonisolated static let ffInkMuted = FFColor.dynamic(0x4A4170, 0xC9C2EA)
-    nonisolated static let ffLine = FFColor.dynamic(0x1E1640, 0x08060F)
-    nonisolated static let ffShadowInk = FFColor.dynamic(0x1E1640, 0x08060F)
+    nonisolated static let ffBg = FFColor.token(.bg)
+    nonisolated static let ffSurface = FFColor.token(.surface)
+    nonisolated static let ffSurfaceAlt = FFColor.token(.surfaceAlt)
+    nonisolated static let ffInk = FFColor.token(.ink)
+    nonisolated static let ffInkMuted = FFColor.token(.inkMuted)
+    nonisolated static let ffLine = FFColor.token(.line)
+    nonisolated static let ffShadowInk = FFColor.token(.shadowInk)
 
     // Brand and actions
-    nonisolated static let ffBrandYellow = FFColor.dynamic(0xFFD43B, 0xFFD43B)
-    nonisolated static let ffAccent = FFColor.dynamic(0xFF5C8A, 0xFF6E98)
-    nonisolated static let ffOnAccent = FFColor.dynamic(0x1E1640, 0x1E1640)
-    nonisolated static let ffAccent2 = FFColor.dynamic(0x6C3CE9, 0x8B66FF)
-    nonisolated static let ffOnAccent2 = FFColor.dynamic(0xFFFFFF, 0x10082A)
-    /// Text links and tinted glyphs on bg/surface. Not a tokens.json name: `accent` is never a
-    /// text color, so links use `accent-2` in Sunny and `brand-yellow` in After Dark (the README's
-    /// "links on surface (light only)" and "brand-yellow … greeting, focus" rules).
-    nonisolated static let ffLink = FFColor.dynamic(0x6C3CE9, 0xFFD43B)
+    nonisolated static let ffBrandYellow = FFColor.token(.brandYellow)
+    nonisolated static let ffAccent = FFColor.token(.accent)
+    nonisolated static let ffOnAccent = FFColor.token(.onAccent)
+    nonisolated static let ffAccent2 = FFColor.token(.accent2)
+    nonisolated static let ffOnAccent2 = FFColor.token(.onAccent2)
+    /// Text links and tinted glyphs on bg/surface (see `FFColorToken.link`).
+    nonisolated static let ffLink = FFColor.token(.link)
 
     // Activity types
-    nonisolated static let ffTypeDistance = FFColor.dynamic(0xFF5C8A, 0xFF6E98)
-    nonisolated static let ffOnTypeDistance = FFColor.dynamic(0x1E1640, 0x1E1640)
-    nonisolated static let ffTypeWeight = FFColor.dynamic(0x6C3CE9, 0x8B66FF)
-    nonisolated static let ffOnTypeWeight = FFColor.dynamic(0xFFFFFF, 0x10082A)
-    nonisolated static let ffTypeDuration = FFColor.dynamic(0x14C8B4, 0x2ED8C3)
-    nonisolated static let ffOnTypeDuration = FFColor.dynamic(0x1E1640, 0x1E1640)
-    nonisolated static let ffTypeReps = FFColor.dynamic(0xFF9F43, 0xFFAD5C)
-    nonisolated static let ffOnTypeReps = FFColor.dynamic(0x1E1640, 0x1E1640)
+    nonisolated static let ffTypeDistance = FFColor.token(.typeDistance)
+    nonisolated static let ffOnTypeDistance = FFColor.token(.onTypeDistance)
+    nonisolated static let ffTypeWeight = FFColor.token(.typeWeight)
+    nonisolated static let ffOnTypeWeight = FFColor.token(.onTypeWeight)
+    nonisolated static let ffTypeDuration = FFColor.token(.typeDuration)
+    nonisolated static let ffOnTypeDuration = FFColor.token(.onTypeDuration)
+    nonisolated static let ffTypeReps = FFColor.token(.typeReps)
+    nonisolated static let ffOnTypeReps = FFColor.token(.onTypeReps)
 
     // States and data
-    nonisolated static let ffProgressTrack = FFColor.dynamic(0xEFEAFF, 0x3A3270)
-    nonisolated static let ffStreak = FFColor.dynamic(0xFF6B35, 0xFF8A50)
-    nonisolated static let ffSuccess = FFColor.dynamic(0x157A43, 0x5BD38A)
-    nonisolated static let ffDanger = FFColor.dynamic(0xB4232A, 0xFF7B7B)
-    nonisolated static let ffFocus = FFColor.dynamic(0x1E1640, 0xFFD43B)
-    nonisolated static let ffHeat1 = FFColor.dynamic(0xFFE58A, 0x4A3A8C)
-    nonisolated static let ffHeat2 = FFColor.dynamic(0xFFB3C8, 0x8A4A9C)
-    nonisolated static let ffHeat3 = FFColor.dynamic(0xFF5C8A, 0xFF6E98)
+    nonisolated static let ffProgressTrack = FFColor.token(.progressTrack)
+    nonisolated static let ffStreak = FFColor.token(.streak)
+    nonisolated static let ffSuccess = FFColor.token(.success)
+    nonisolated static let ffDanger = FFColor.token(.danger)
+    nonisolated static let ffFocus = FFColor.token(.focus)
+    nonisolated static let ffHeat1 = FFColor.token(.heat1)
+    nonisolated static let ffHeat2 = FFColor.token(.heat2)
+    nonisolated static let ffHeat3 = FFColor.token(.heat3)
 }
 
 // MARK: - Spacing, radius, stroke, shadow
@@ -136,23 +248,34 @@ nonisolated enum FFSpace {
     static let s12: CGFloat = 48
 }
 
+// Radius, stroke and shadow follow the active Style (read when a view is built; the app rebuilds
+// its root view when the Style changes).
+
 nonisolated enum FFRadius {
-    static let sm: CGFloat = 12
-    static let md: CGFloat = 20
-    static let lg: CGFloat = 32
+    static var sm: CGFloat { styleMetric(playfulBold: 12, arcade: 6) }
+    static var md: CGFloat { styleMetric(playfulBold: 20, arcade: 12) }
+    static var lg: CGFloat { styleMetric(playfulBold: 32, arcade: 18) }
     // radius-pill: use `.capsule`.
 }
 
 nonisolated enum FFStroke {
-    static let card: CGFloat = 3
-    static let control: CGFloat = 2.5
+    static var card: CGFloat { styleMetric(playfulBold: 3, arcade: 1.5) }
+    static var control: CGFloat { styleMetric(playfulBold: 2.5, arcade: 1.5) }
 }
 
 nonisolated enum FFShadow {
-    /// shadow-pop: hard 6pt down-right, no blur.
-    static let pop: CGFloat = 6
+    /// shadow-pop: hard 6pt down-right, no blur. Arcade panels are flat (0).
+    static var pop: CGFloat { styleMetric(playfulBold: 6, arcade: 0) }
     /// shadow-press: what's left while pressed (the element moves 4pt).
-    static let press: CGFloat = 2
+    static var press: CGFloat { styleMetric(playfulBold: 2, arcade: 0) }
+}
+
+/// A metric for the active Style. The Arcade value is ignored (and not compiled in) in Release.
+nonisolated private func styleMetric(playfulBold: CGFloat, arcade: CGFloat) -> CGFloat {
+    #if INTERNAL_STYLES
+    if StyleRuntime.current == .arcade { return arcade }
+    #endif
+    return playfulBold
 }
 
 // MARK: - Type
@@ -166,6 +289,9 @@ nonisolated enum FFTextStyle: Sendable {
     case tab
 
     var size: CGFloat {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeSize }
+        #endif
         switch self {
         case .displayHero: return 88
         case .display, .numeral: return 40
@@ -179,6 +305,9 @@ nonisolated enum FFTextStyle: Sendable {
     }
 
     var weight: Font.Weight {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeWeight }
+        #endif
         switch self {
         case .displayHero, .display, .numeral: return .bold
         case .title, .headline, .body, .tab: return .semibold
@@ -209,12 +338,31 @@ nonisolated enum FFTextStyle: Sendable {
 
     /// Letter spacing in points at the base size.
     var tracking: CGFloat {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeTracking }
+        #endif
         switch self {
         case .displayHero: return -0.02 * 88
         case .display: return -0.01 * 40
         case .label: return 0.08 * 13
         default: return 0
         }
+    }
+
+    /// Shown in capitals (the source text stays sentence case for VoiceOver).
+    var isUppercase: Bool {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeIsUppercase }
+        #endif
+        return self == .label
+    }
+
+    /// System font design for the active Style.
+    var design: Font.Design {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeDesign }
+        #endif
+        return .rounded
     }
 }
 
@@ -239,14 +387,14 @@ private struct FFFontModifier: ViewModifier {
             .font(font)
             .tracking(style.tracking * size / style.size)
             .monospacedDigit()
-            .textCase(style == .label ? .uppercase : nil)
+            .textCase(style.isUppercase ? .uppercase : nil)
     }
 
     private var font: Font {
         if let family = style.isDisplay ? FFFontFamily.display : FFFontFamily.body {
             return .custom(family, size: size).weight(style.weight)
         }
-        return .system(size: size, weight: style.weight, design: .rounded)
+        return .system(size: size, weight: style.weight, design: style.design)
     }
 }
 
@@ -271,8 +419,8 @@ private struct FFCardModifier: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(fill, in: shape)
             .overlay(shape.strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
-            // Hard offset shadow: a solid copy of the shape behind, no blur.
-            .background(shape.fill(Color.ffShadowInk).offset(x: FFShadow.pop, y: FFShadow.pop))
+            // Hard offset shadow: a solid copy of the shape behind, no blur (none in flat Styles).
+            .background(shape.fill(FFShadow.pop > 0 ? Color.ffShadowInk : .clear).offset(x: FFShadow.pop, y: FFShadow.pop))
     }
 }
 

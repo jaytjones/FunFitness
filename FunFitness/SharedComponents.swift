@@ -44,11 +44,11 @@ extension Color {
 // 3.2: these are the Style tokens `bg` and `surface` (Shared/Style.swift); the names stay so
 // older call sites and AdaptiveColorTests keep working. Prefer `Color.ffBg` / `.ffSurface`.
 extension UIColor {
-    /// Screen ground (`bg`): Sunny yellow / After Dark grape.
-    nonisolated static let appBackground = FFColor.uiColor(0xFFD43B, 0x17122E)
+    /// Screen ground (`bg`), following the active Style.
+    nonisolated static let appBackground = FFColor.uiToken(.bg)
 
-    /// Card face (`surface`): white / lifted grape.
-    nonisolated static let appCard = FFColor.uiColor(0xFFFFFF, 0x262051)
+    /// Card face (`surface`), following the active Style.
+    nonisolated static let appCard = FFColor.uiToken(.surface)
 }
 
 extension Color {

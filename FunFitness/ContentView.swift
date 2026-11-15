@@ -189,12 +189,27 @@ struct ContentView: View {
     }
     private var showsNowTracking: Bool { NowTrackingContent.isShowing }
 
+    /// The Style to draw (3.3): the synced choice if this person can use it, else Playful Bold. The
+    /// synced value is never rewritten here, so a choice made on another device survives.
+    private var activeStyle: StyleID {
+        StyleID.resolve(profiles.first?.activeStyleID ?? "", isAvailable: viewModel.styleAccess.isAvailable)
+    }
+
     var body: some View {
+        // Tokens read the active Style while this body's children are built and drawn, so it's set
+        // before them (idempotent), and the tabs are rebuilt when it changes.
+        let style = activeStyle
+        let _ = StyleRuntime.set(style)
         Group {
             if !hasProfile {
                 OnboardingView { }
             } else {
                 tabs
+                .id(style)
+                .onChange(of: style) { _, newStyle in
+                    StyleRuntime.saveToAppGroup(newStyle)
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
                 .onAppear {
                     if let profile = profiles.first {
                         viewModel.activePack     = ThemePackCatalog.pack(id: profile.activeTheme)
@@ -208,6 +223,7 @@ struct ContentView: View {
                     reconcileAchievements()
                     reconcileChallenges()
                     updateStreak()
+                    StyleRuntime.saveToAppGroup(style)
                     writeWidgetData()
                     checkJourneyCheckpoints(silently: true)
                 }
