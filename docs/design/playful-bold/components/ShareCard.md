@@ -9,7 +9,7 @@ The image people post: the badge card on a yellow frame, first-person headline, 
 **Rules**
 - Always rendered in Sunny (light) colors, whatever the device appearance. Posts should look the same everywhere.
 - 4:5 for Instagram; a 9:16 variant adds the Ticker line under the card.
-- Wordmark is "FunFitness" set in Fredoka Bold. There is no logo yet.
+- Wordmark is "FunFitness" set in SF Pro Rounded Bold. There is no logo yet.
 - Never include personal data beyond the title.
 
 **Tokens:** `brand-yellow`, `on-accent`, `surface`, `line`, `title`, `body`.

@@ -130,8 +130,8 @@ nonisolated enum FFShadow {
 
 // MARK: - Type
 
-/// The type scale from tokens.json. Display styles use Fredoka, text styles Nunito; both fall back
-/// to SF Pro Rounded, which is what ships until the fonts are bundled (see `FFFontFamily`).
+/// The type scale from tokens.json, set in SF Pro Rounded. Playful Bold keeps the system font
+/// (Jay, 2026-11-15: Fredoka/Nunito dropped); `FFFontFamily` stays as the hook for a future style.
 nonisolated enum FFTextStyle: Sendable {
     case displayHero, display, numeral, title, headline
     case body, bodyStrong, caption, label
@@ -191,11 +191,11 @@ nonisolated enum FFTextStyle: Sendable {
     }
 }
 
-/// Bundled font names, once the Fredoka/Nunito files are added to the app (OFL fonts). Until then
-/// these are nil and the rounded system font is used, as the README's fallback allows.
+/// Bundled font names for a style that uses custom fonts. nil = SF Pro Rounded, which is
+/// Playful Bold's font by decision (2026-11-15).
 nonisolated enum FFFontFamily {
-    static let display: String? = nil   // e.g. "Fredoka"
-    static let body: String? = nil      // e.g. "Nunito"
+    static let display: String? = nil
+    static let body: String? = nil
 }
 
 private struct FFFontModifier: ViewModifier {

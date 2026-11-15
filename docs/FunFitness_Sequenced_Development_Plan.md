@@ -162,7 +162,7 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.2 — "New Look"
 
-> **Status: built (2026-11-06), not yet uploaded.** Foundation (`b36d94b`) and structure (`2b0137c`). Not yet: bundled Fredoka/Nunito fonts (SF Pro Rounded fallback in use), a contrast/Dynamic Type audit on device.
+> **Status: built (2026-11-06).** Foundation (`b36d94b`) and structure (`2b0137c`). Ships in 3.1 builds 12–13. Font: SF Pro Rounded (Jay, 2026-11-15; Fredoka/Nunito dropped). Not yet: a contrast/Dynamic Type audit on device.
 
 **Theme:** One coherent visual identity: **Playful Bold** (`docs/design/playful-bold/`) becomes the app's style, replacing today's look.
 

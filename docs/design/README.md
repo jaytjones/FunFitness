@@ -18,8 +18,8 @@ The links are private to April's account until shared.
   `FunFitness/PlayfulChrome.swift` and `HomeView.swift`.
 - **Arcade, then Field Guide** become unlockable styles in 3.3 (earned + purchased; rules TBD). The
   chosen style syncs (`UserProfile.activeStyleID`).
-- Fonts: Fredoka/Nunito aren't bundled yet; SF Pro Rounded is used (the README's fallback).
-  Bundling them is one change in `FFFontFamily`.
+- Fonts: Playful Bold uses SF Pro Rounded (Jay, 2026-11-15; Fredoka/Nunito dropped). A future
+  style can bundle its own through `FFFontFamily`.
 
 ## Changes since build 9
 

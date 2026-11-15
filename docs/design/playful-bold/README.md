@@ -32,10 +32,10 @@ Real lines to model on: "Log your first activity to unlock achievements!", "A st
 All text pairs meet 4.5:1 in both themes, including `on-type-weight` on `type-weight` (white in Sunny, dark in After Dark, because the lifted purple is too light for white).
 
 ### Type
-- **Fredoka** (display, 600–700) for numbers, titles, buttons, tabs and tags. **Nunito** (body, 600–800) for sentences and rows. Fallback: SF Pro Rounded.
+- **SF Pro Rounded** for everything: display styles (600–700) for numbers, titles, buttons, tabs and tags; text styles (600–800) for sentences and rows. (Fredoka/Nunito were proposed and dropped, 2026-11-15.)
 - One `display-hero` per screen. Totals use `numeral` with tabular figures.
-- Body text is Nunito 600, not 400; regular weight looks thin next to the outlines.
-- In SwiftUI, scale every style with Dynamic Type (`.font(.custom("Fredoka", size: 40, relativeTo: .largeTitle))`).
+- Body text is 600, not 400; regular weight looks thin next to the outlines.
+- In SwiftUI, scale every style with Dynamic Type (`ffFont(_:)` uses `@ScaledMetric` relative to a text style).
 
 ### Shape, outline and shadow
 - Corners: `radius-lg` (32) for cards and sheets, `radius-md` (20) for tiles, fields and widgets, `radius-sm` (12) for chips inside cards, `radius-pill` for tags, chips, buttons, meters and the tab bar.
@@ -66,7 +66,7 @@ Line glyphs drawn at 2.6pt stroke with round caps, sitting inside 44pt rounded-s
 
 Pack art is drawn as chunky flat shapes: rounded rectangles and circles filled from the palette (`type-reps` orange, `brand-yellow`, `accent-2` purple, `surface`), outlined at 3px in `line`, with one solid `ink` dot for an eye. No gradients, no texture, no faces beyond dots. The previews include a bee, a blue whale, a brown bear, a pumpkin, a flame and a medal as examples of the style. Until illustrations exist for all five packs, show the pack emoji at 56pt inside an outlined 72pt circle.
 
-There is no logo yet. Set "FunFitness" in Fredoka Bold.
+There is no logo yet. Set "FunFitness" in SF Pro Rounded Bold.
 
 ## Using it in SwiftUI
 
