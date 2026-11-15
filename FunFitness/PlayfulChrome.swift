@@ -18,6 +18,9 @@ enum AppTab: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
 
     var label: String {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade { return arcadeLabel }
+        #endif
         switch self {
         case .home:     return "Home"
         case .progress: return "Progress"
@@ -42,6 +45,18 @@ struct FFTabBar: View {
     @Binding var selection: AppTab
 
     var body: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            ArcadeTabBar(selection: $selection)
+        } else {
+            playfulBold
+        }
+        #else
+        playfulBold
+        #endif
+    }
+
+    private var playfulBold: some View {
         // Tabs size to their words (equal widths truncated "Progress"); spare room goes between them.
         HStack(spacing: 0) {
             ForEach(AppTab.allCases) { tab in
@@ -97,14 +112,7 @@ struct LogButton: View {
                 Button("Repeat last: \(repeatLastLabel)", systemImage: "arrow.counterclockwise", action: onRepeatLast)
             }
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.ffOnAccent)
-                .frame(width: 64, height: 64)
-                .background(Color.ffAccent, in: .circle)
-                .overlay(Circle().strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
-                .background(Circle().fill(Color.ffShadowInk).offset(x: FFShadow.pop, y: FFShadow.pop))
-                .contentShape(.circle)
+            face
         } primaryAction: {
             onLog(nil)
         }
@@ -113,6 +121,30 @@ struct LogButton: View {
         .accessibilityLabel("Log an activity")
         .accessibilityHint("Touch and hold for more options")
         .accessibilityIdentifier("logButton")
+    }
+
+    @ViewBuilder
+    private var face: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            ArcadeLogButtonFace()
+        } else {
+            playfulBoldFace
+        }
+        #else
+        playfulBoldFace
+        #endif
+    }
+
+    private var playfulBoldFace: some View {
+        Image(systemName: "plus")
+            .font(.system(size: 28, weight: .bold))
+            .foregroundStyle(Color.ffOnAccent)
+            .frame(width: 64, height: 64)
+            .background(Color.ffAccent, in: .circle)
+            .overlay(Circle().strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
+            .background(Circle().fill(Color.ffShadowInk).offset(x: FFShadow.pop, y: FFShadow.pop))
+            .contentShape(.circle)
     }
 }
 
