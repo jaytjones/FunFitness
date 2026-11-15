@@ -183,13 +183,13 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.3 — "Your Style"
 
-**Theme:** Choice and reward — styles become something you earn or buy.
+**Theme:** Choice and reward — styles are earned by keeping a streak, or unlocked sooner with one purchase.
 
 **Scope**
 - **Arcade** as the second style (structurally closest to Playful Bold, so cheaper to add)
-- **Style catalog with unlock rules** — a mix of earned (e.g. a rank or badge count) and purchased; exact rules **TBD (Jay)** before this release starts
-- Style picker in Profile with live previews of locked styles
-- **StoreKit 2** pulled forward from 3.5 if any style is sold, so purchases and restore are proven before theme packs use them
+- **Style catalog with unlock rules** (Jay, 2026-11-15): a streak ladder (Arcade at a 4-week streak, Field Guide at 8, each later style +4 weeks), or one purchase that unlocks every style now. Playful Bold is always free. Comparison packs aren't affected. See "Unlocking styles" below.
+- Style picker in Profile with live previews of locked styles, each showing its streak goal and progress ("Keep a 4-week streak — you're at 2"), plus **Unlock all styles now** and **Restore Purchases**
+- **StoreKit 2** pulled forward from 3.5 for the one style purchase, so purchases and restore are proven before theme packs use them
 - **Field Guide** (the structural outlier: ruled sections, rulers, redrawn charts) follows here or with 3.5, if still wanted
 - **Unreleased styles are Jay-only** (agreed 2026-11-15): until a style launches, it's compiled only into Jay's builds, and no tester sees it, not even in TestFlight. Other features keep shipping from `main` as usual. See below.
 
@@ -213,11 +213,11 @@ Three dependency rules drive the entire order below:
 
 *Guards (unit tests):* the Release configuration doesn't define `INTERNAL_STYLES` (the test reads the built app's compilation flags through a constant exposed by the app target); an unknown `activeStyleID` resolves to Playful Bold and is left unchanged; the owner hash check matches only the stored hash.
 
-**Unlocking styles after launch**
+**Unlocking styles** (rules decided by Jay, 2026-11-15)
 
-Once a style is released, it's unlocked if either:
-1. **Earned:** its rule is met (rank or badge count; rules TBD), or
-2. **Purchased:** a verified StoreKit 2 entitlement in `Transaction.currentEntitlements`.
+Playful Bold is always free. Once a style is released, it's unlocked if either:
+1. **Earned by streak:** the **longest streak ever** reaches the style's goal. Arcade: 4 weeks. Field Guide: 8 weeks. Each later style: 4 more weeks than the previous one. The goal sits on the style's catalog entry (`streakWeeksToUnlock`). It's the longest streak, not the current one, so a style stays unlocked if the streak later breaks. It comes from `StreakEngine.compute(…).longestStreak`, which counts shielded weeks and is worked out from synced workout history and `StreakRecord`. So it survives reinstall and syncs, with nothing new stored. People who already had a 4-week streak get Arcade as soon as 3.3 arrives. Known edge: deleting old workouts can shorten the longest streak and lock a style again, the same way badges already behave after deletes.
+2. **Purchased:** one non-consumable in-app purchase, **"Unlock all styles"** (product ID e.g. `com.jaytjones.FunFitness.styles.all`), unlocks every style now, including styles added later. It's checked through a verified StoreKit 2 entitlement in `Transaction.currentEntitlements`.
 
 The owner check (layer 3) also unlocks every released style for Jay, so Jay's App Store install has everything without earning or buying it. Only Jay's account is ever on that list: App Review allows a developer override, but not hidden unlocks of paid content for customers. Unlock state is derived at launch, so nothing new is stored or synced.
 
@@ -227,13 +227,13 @@ How purchases are tested:
 |---|---|
 | Xcode (Debug / Internal) | A StoreKit configuration file (`FunFitness.storekit`). Simulated, resettable, no App Store Connect setup needed. |
 | TestFlight | Always the sandbox, so free for testers once a style is released. Testers can sign in to a Sandbox Apple Account (Settings › Developer) to reset purchases. |
-| App Store | Jay redeems a free **offer code** for each paid style (App Store Connect › the in-app purchase › Offer Codes; supported for non-consumables on iOS 16.3+). It's a real transaction that restores on all Jay's devices and exercises the production purchase path. The style picker shows Apple's redeem sheet (`offerCodeRedemption(isPresented:)`). |
+| App Store | Jay redeems one free **offer code** for "Unlock all styles" (App Store Connect › the in-app purchase › Offer Codes; supported for non-consumables on iOS 16.3+). It's a real transaction that restores on all Jay's devices and exercises the production purchase path. The style picker shows Apple's redeem sheet (`offerCodeRedemption(isPresented:)`). |
 
-Tests: unlock resolution is a pure function (earned / purchased / owner → unlocked), covered by unit tests.
+Tests: unlock resolution is a pure function of (style, longest streak, has purchase, is owner) → unlocked / weeks to go, covered by unit tests: the ladder thresholds (3 weeks → none, 4 → Arcade, 8 → both), the purchase unlocking all, Playful Bold always unlocked, and "weeks to go" for the picker.
 
 **Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges, App Store entitlements and the owner check, so nothing new is stored in the synced data. The build flag lets 3.3 style work and other features share `main` without testers seeing a style before Jay releases it.
 
-**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold); a Release build contains no unreleased style (flag off, verified by test); an unknown synced style falls back to Playful Bold without being overwritten; Jay's App Store install has every released style.
+**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; streak unlocks follow the ladder and survive reinstall and a broken streak; the "Unlock all styles" purchase and Restore work across devices; a Release build contains no unreleased style (flag off, verified by test); an unknown synced style falls back to Playful Bold without being overwritten; Jay's App Store install has every released style.
 
 ---
 
@@ -317,4 +317,4 @@ Tests: unlock resolution is a pure function (earned / purchased / owner → unlo
 
 - **2026-07-30:** original plan (1.1 → 3.3).
 - **2026-11-06 (Jay):** after 3.1, a visual-identity release is inserted. Playful Bold becomes the default style (today's look is retired, not kept as a fourth style); Arcade and Field Guide become unlockable (earned + purchased, rules TBD); the chosen style syncs across devices. Releases renumbered: 3.2 New Look, 3.3 Your Style, 3.4 Social (was 3.2), 3.5 Franchise (was 3.3).
-- **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3: unreleased styles are Jay-only, behind an `INTERNAL_STYLES` build flag (Debug + Internal configurations only), optional Internal TestFlight builds for Jay alone, and an owner check (iCloud user record ID) as a backstop; other features keep shipping from `main`. After launch, styles unlock by earning or buying; Jay gets them via the owner check and free offer codes.
+- **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3: unreleased styles are Jay-only, behind an `INTERNAL_STYLES` build flag (Debug + Internal configurations only), optional Internal TestFlight builds for Jay alone, and an owner check (iCloud user record ID) as a backstop; other features keep shipping from `main`. After launch, styles unlock by earning or buying; Jay gets them via the owner check and free offer codes. Unlock rules: a streak ladder on the longest streak ever (Arcade 4 weeks, Field Guide 8, +4 each after) or one "Unlock all styles" purchase; comparison packs unaffected.
