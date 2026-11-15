@@ -78,9 +78,11 @@ nonisolated struct StyleAccess: Equatable, Sendable {
 /// Only the owner's account is ever listed: a developer override is fine, hidden unlocks of paid
 /// content for customers are not (App Review).
 nonisolated enum OwnerCheck {
-    /// SHA-256 (hex, lowercase) of the owner's CloudKit user record name. Empty until Jay runs a
-    /// Debug build once and copies the value it logs (see `currentAccountIsOwner`).
-    static let ownerRecordHashes: Set<String> = []
+    /// SHA-256 (hex, lowercase) of the owner's CloudKit user record name, copied from the Debug log
+    /// (see `currentAccountIsOwner`). Jay's iCloud account, added 2026-11-15.
+    static let ownerRecordHashes: Set<String> = [
+        "025412e9f6f319294d6876ae765768c513e06cca95a8e35571eb6df85532400d",
+    ]
 
     static func hash(recordName: String) -> String {
         SHA256.hash(data: Data(recordName.utf8)).map { String(format: "%02x", $0) }.joined()
