@@ -141,7 +141,7 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.1 — "On Your Wrist, On the Map"
 
-> **Status: code complete (2026-11-06).** Builds 5–11 in TestFlight; Watch GPS routes, stats glance and complications are in the next upload. Remaining: the 5K field test (route accuracy and battery on iPhone and Watch).
+> **Status: code complete (2026-11-06).** Builds 5–11 in TestFlight; Watch GPS routes, stats glance and complications are in the next upload. Remaining: the 5K field test (route accuracy and battery on iPhone and Watch) — **deferred by Jay (2026-11-15)**.
 
 **Theme:** Presence during the workout itself.
 
@@ -162,7 +162,7 @@ Three dependency rules drive the entire order below:
 
 ## Release 3.2 — "New Look"
 
-> **Status: built (2026-11-06).** Foundation (`b36d94b`) and structure (`2b0137c`). Ships in 3.1 builds 12–13. Font: SF Pro Rounded (Jay, 2026-11-15; Fredoka/Nunito dropped). Not yet: a contrast/Dynamic Type audit on device.
+> **Status: complete (2026-11-15).** Foundation (`b36d94b`) and structure (`2b0137c`); in TestFlight since build 12 (labelled 3.1), first labelled **3.2 (14)**. Font: SF Pro Rounded (Jay, 2026-11-15; Fredoka/Nunito dropped). Contrast and Dynamic Type checked on device by Jay (2026-11-15).
 
 **Theme:** One coherent visual identity: **Playful Bold** (`docs/design/playful-bold/`) becomes the app's style, replacing today's look.
 
@@ -191,10 +191,30 @@ Three dependency rules drive the entire order below:
 - Style picker in Profile with live previews of locked styles
 - **StoreKit 2** pulled forward from 3.5 if any style is sold, so purchases and restore are proven before theme packs use them
 - **Field Guide** (the structural outlier: ruled sections, rulers, redrawn charts) follows here or with 3.5, if still wanted
+- **Owner and tester access** (agreed 2026-11-15): Jay has every style without earning or buying it, and testers can check both locked and unlocked screens. See below.
 
-**Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges or App Store entitlements, so nothing new is stored.
+**Owner and tester access**
 
-**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold).
+A style is unlocked if any of these is true. All are derived at launch, so nothing new is stored or synced:
+
+1. **Earned:** the style's rule is met (rank or badge count; rules TBD).
+2. **Purchased:** a verified StoreKit 2 entitlement in `Transaction.currentEntitlements`.
+3. **Tester override:** a hidden "Tester" menu (e.g. long-press the version row in Profile) with **Unlock all styles**. It only appears when `AppTransaction.shared` reports `.xcode` or `.sandbox` (Xcode and TestFlight builds), and never in App Store builds. It defaults to on for Jay, and can be switched off to test the locked screens. Stored per device in `UserDefaults`.
+4. **Owner allowlist:** for Jay's App Store install. At launch the app reads `CKContainer.userRecordID()` for the app's iCloud container. That ID is stable across Jay's devices and only visible to this app. Its SHA-256 is compared with one hash constant in the app. A match unlocks everything. Only the owner's account is ever on the list: App Review rules allow a developer override, but not hidden unlocks of paid content for customers. Without iCloud, or offline, the check just fails and normal rules apply.
+
+How purchases are tested:
+
+| Build | Purchases |
+|---|---|
+| Xcode | A StoreKit configuration file (`FunFitness.storekit`). Simulated, resettable, no App Store Connect setup needed. |
+| TestFlight | Always the sandbox, so free for everyone. Testers can also sign in to a Sandbox Apple Account (Settings › Developer) to reset purchases. |
+| App Store | Jay redeems a free **offer code** for each paid style (App Store Connect › the in-app purchase › Offer Codes; supported for non-consumables on iOS 16.3+). It's a real transaction, so it restores on all Jay's devices and exercises the production purchase path. The app shows Apple's redeem sheet (`offerCodeRedemption(isPresented:)`) from the style picker. |
+
+Tests: unlock resolution is a pure function (earned / purchased / tester / owner → unlocked), covered by unit tests. The allowlist hash and the environment gate each get a test, so the tester menu can't appear in production.
+
+**Why this order:** The foundation and the first style (3.2) build the slots every style plugs into; a second style tests that they generalize. Unlocks reuse the theme-pack pattern (`ThemePack.isPremium`); unlock state is derived from badges, App Store entitlements, the tester override and the owner allowlist, so nothing new is stored in the synced data.
+
+**Exit criteria:** Switching styles syncs across devices within seconds; locked styles can't be applied; earned unlocks survive reinstall; purchase/restore works across devices (if any style is sold); the Tester menu never appears in an App Store build; Jay's App Store install has every style.
 
 ---
 
@@ -278,3 +298,4 @@ Three dependency rules drive the entire order below:
 
 - **2026-07-30:** original plan (1.1 → 3.3).
 - **2026-11-06 (Jay):** after 3.1, a visual-identity release is inserted. Playful Bold becomes the default style (today's look is retired, not kept as a fourth style); Arcade and Field Guide become unlockable (earned + purchased, rules TBD); the chosen style syncs across devices. Releases renumbered: 3.2 New Look, 3.3 Your Style, 3.4 Social (was 3.2), 3.5 Franchise (was 3.3).
+- **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3 gets owner/tester access: a Tester menu in Xcode/TestFlight builds, an owner allowlist (iCloud user record ID) for the App Store build, and offer codes for paid styles.
