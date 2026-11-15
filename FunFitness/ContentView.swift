@@ -238,6 +238,13 @@ struct ContentView: View {
                     StyleRuntime.saveToAppGroup(style)
                     writeWidgetData()
                     checkJourneyCheckpoints(silently: true)
+                    #if DEBUG
+                    // Screenshots: `-previewCelebration D2` shows that milestone's celebration.
+                    if let id = UserDefaults.standard.string(forKey: "previewCelebration"),
+                       let milestone = ComparisonEngine.milestone(withId: id) {
+                        viewModel.celebrate([milestone])
+                    }
+                    #endif
                 }
                 .task(id: hasProfile) {
                     await syncHealthKitIfEnabled()

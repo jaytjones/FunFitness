@@ -21,6 +21,29 @@ struct MilestoneView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            // Arcade (unreleased): card-pack reveal.
+            ArcadeCelebration(milestone: milestone, pack: pack, pref: pref, onDismiss: onDismiss) {
+                shareButton
+            }
+            .task { await renderShareCard() }
+        } else {
+            playfulBold
+        }
+        #else
+        playfulBold
+        #endif
+    }
+
+    private func renderShareCard() async {
+        shareCardURL = ShareCardRenderer.pngURL(
+            for: .milestone(milestone, pack: pack, pref: pref),
+            filename: "funfitness_milestone.png"
+        )
+    }
+
+    private var playfulBold: some View {
         ZStack {
             Color.ffBg
                 .ignoresSafeArea()
@@ -83,12 +106,7 @@ struct MilestoneView: View {
                 .padding(.bottom, 40)
             }
         }
-        .task {
-            shareCardURL = ShareCardRenderer.pngURL(
-                for: .milestone(milestone, pack: pack, pref: pref),
-                filename: "funfitness_milestone.png"
-            )
-        }
+        .task { await renderShareCard() }
         .onAppear {
             showContent = true
             if !reduceMotion {
