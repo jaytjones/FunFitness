@@ -8,6 +8,11 @@
 //  nothing is stored by the app. TestFlight uses the sandbox (free); on the App Store Jay redeems a
 //  free offer code.
 //
+//  Compiled only with INTERNAL_STYLES until a second Style launches: Release builds only have
+//  Playful Bold, so they don't need the purchase (or its product ID) yet.
+//
+
+#if INTERNAL_STYLES
 
 import Foundation
 import StoreKit
@@ -109,3 +114,5 @@ final class StylePurchases {
         await refreshEntitlements()
     }
 }
+
+#endif

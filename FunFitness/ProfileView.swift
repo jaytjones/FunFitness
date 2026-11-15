@@ -238,6 +238,11 @@ struct ProfileView: View {
                             .padding(.horizontal)
                         }
 
+                        #if INTERNAL_STYLES
+                        // Style (3.3, unreleased): only when more than one is available.
+                        StylePickerSection(profile: profile, viewModel: viewModel)
+                        #endif
+
                         // Fitness Goal
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Fitness Goal")

@@ -18,7 +18,13 @@ struct ContentView: View {
     @Query private var customExercises: [CustomExercise]
 
     @State private var viewModel = AppViewModel()
-    @State private var selectedTab: AppTab = .home
+    @State private var selectedTab: AppTab = {
+        #if DEBUG
+        // Screenshots: `-previewTab 3` opens on that tab (AppTab raw value).
+        if let tab = AppTab(rawValue: UserDefaults.standard.integer(forKey: "previewTab")) { return tab }
+        #endif
+        return .home
+    }()
     @State private var currentMilestoneIndex = 0
     // The LogButton's sheet (3.2). nil type = open on the last-used type.
     @State private var showLogSheet = false
@@ -192,7 +198,13 @@ struct ContentView: View {
     /// The Style to draw (3.3): the synced choice if this person can use it, else Playful Bold. The
     /// synced value is never rewritten here, so a choice made on another device survives.
     private var activeStyle: StyleID {
-        StyleID.resolve(profiles.first?.activeStyleID ?? "", isAvailable: viewModel.styleAccess.isAvailable)
+        #if DEBUG
+        // Screenshots on a simulator without iCloud: `-previewStyle arcade` forces a Style.
+        if let raw = UserDefaults.standard.string(forKey: "previewStyle"), let style = StyleID(rawValue: raw) {
+            return style
+        }
+        #endif
+        return StyleID.resolve(profiles.first?.activeStyleID ?? "", isAvailable: viewModel.styleAccess.isAvailable)
     }
 
     var body: some View {
@@ -236,7 +248,16 @@ struct ContentView: View {
                     WorkoutLiveActivityController.shared.endOrphanedActivities(
                         tracker: WorkoutTracker.shared, strength: StrengthSessionManager.shared)
                     // Style access (3.3): the purchase, and whether this iCloud account is the owner's.
+                    #if INTERNAL_STYLES
                     StylePurchases.shared.start()
+                    #endif
+                    #if DEBUG
+                    // `-previewOwner YES`: act as the owner on a simulator without iCloud.
+                    if UserDefaults.standard.bool(forKey: "previewOwner") {
+                        viewModel.ownerCheck = .owner(hash: "preview")
+                        return
+                    }
+                    #endif
                     viewModel.ownerCheck = await OwnerCheck.checkCurrentAccount(
                         containerIdentifier: PersistenceController.cloudKitContainerID)
                 }

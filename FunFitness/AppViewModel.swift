@@ -155,11 +155,20 @@ final class AppViewModel {
     var ownerCheck: OwnerCheck.Result = .checking
     var isStyleOwner: Bool { ownerCheck.isOwner }
 
+    /// The "Unlock all styles" purchase (compiled in with the unreleased Styles only).
+    private static var ownsAllStyles: Bool {
+        #if INTERNAL_STYLES
+        return StylePurchases.shared.ownsAllStyles
+        #else
+        return false
+        #endif
+    }
+
     /// Who can see and use each Style right now.
     var styleAccess: StyleAccess {
         StyleAccess(
             longestStreakWeeks: bestStreakEver,
-            ownsAllStyles: StylePurchases.shared.ownsAllStyles,
+            ownsAllStyles: Self.ownsAllStyles,
             isOwner: isStyleOwner
         )
     }

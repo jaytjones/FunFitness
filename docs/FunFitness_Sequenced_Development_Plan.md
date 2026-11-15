@@ -204,7 +204,7 @@ Three dependency rules drive the entire order below:
 *Building other features meanwhile.* Everything else is unflagged and ships in every Release build. Rules:
 1. Flagged code lives in its own files where possible (e.g. `Styles/Arcade/`, each file wrapped whole in `#if`), plus a few small hooks in shared code.
 2. Shared code works with the flag on and off. No feature depends on an unreleased style.
-3. Invisible plumbing can ship unflagged: the style catalog, unlock resolution, the picker (hidden while only one style is available) and the unknown-style fallback.
+3. Invisible plumbing can ship unflagged: the style catalog, unlock resolution and the unknown-style fallback. The picker (`StylePickerSection`) and the purchase (`StylePurchases`, with its product ID) are flagged too, since Release builds only have Playful Bold and the strings or ID could otherwise be found in the binary.
 4. Unreleased text stays out of `Localizable.xcstrings`, which ships in every build. Use `Text(verbatim:)` / non-localized strings inside flagged code, and move them into the catalog at launch.
 5. Both versions build. Tests run in Debug (flag on). Before every upload, a Release build (flag off) must compile too (see `release_checklist.md`).
 6. **Launching a style = removing its `#if`** in one small commit, adding its strings to the catalog, then a normal upload.
