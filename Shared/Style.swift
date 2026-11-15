@@ -29,6 +29,23 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
         }
     }
 
+    /// Shown to everyone. An unreleased Style is compiled only into Debug/Internal builds
+    /// (`INTERNAL_STYLES`) and, even there, shown only to the owner. Launching one = flipping this
+    /// and removing its `#if`. (3.3 plan)
+    var isReleased: Bool {
+        switch self {
+        case .playfulBold: return true
+        }
+    }
+
+    /// Weeks of longest-ever streak that unlock this Style: Arcade 4, Field Guide 8, each later
+    /// Style 4 more (Jay, 2026-11-15). nil = always free (Playful Bold).
+    var streakWeeksToUnlock: Int? {
+        switch self {
+        case .playfulBold: return nil
+        }
+    }
+
     /// The Style to show for a synced `activeStyleID`. Falls back to the default when the value is
     /// one this build doesn't have (e.g. a Style picked in Jay's Internal build and synced to a
     /// device running a Release build), or when `isAvailable` says this person can't use it.

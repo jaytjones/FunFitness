@@ -146,6 +146,22 @@ final class AppViewModel {
     var isActiveThisWeekStreak: Bool = false
     var shieldsAvailable: Int = 0
     var pendingShieldActivation: Bool = false
+    /// Highest streak ever recorded (`StreakRecord.longestStreak`, never lowered), which unlocks
+    /// Styles. Unlike `longestStreak`, deleting old workouts doesn't reduce it. (3.3)
+    var bestStreakEver: Int = 0
+
+    // MARK: - Styles (3.3)
+    /// Set at launch from the iCloud account (`OwnerCheck`).
+    var isStyleOwner: Bool = false
+
+    /// Who can see and use each Style right now.
+    var styleAccess: StyleAccess {
+        StyleAccess(
+            longestStreakWeeks: bestStreakEver,
+            ownsAllStyles: StylePurchases.shared.ownsAllStyles,
+            isOwner: isStyleOwner
+        )
+    }
 
     // MARK: - Achievement reconcile & celebration (v2.4)
 

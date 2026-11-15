@@ -219,6 +219,10 @@ struct ContentView: View {
                     // A Live Activity left from a previous launch has no workout behind it now.
                     WorkoutLiveActivityController.shared.endOrphanedActivities(
                         tracker: WorkoutTracker.shared, strength: StrengthSessionManager.shared)
+                    // Style access (3.3): the purchase, and whether this iCloud account is the owner's.
+                    StylePurchases.shared.start()
+                    viewModel.isStyleOwner = await OwnerCheck.currentAccountIsOwner(
+                        containerIdentifier: PersistenceController.cloudKitContainerID)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
@@ -307,6 +311,7 @@ struct ContentView: View {
         record.lastUpdated   = Date()
         viewModel.currentStreak          = result.currentStreak
         viewModel.longestStreak          = result.longestStreak
+        viewModel.bestStreakEver         = record.longestStreak
         viewModel.isActiveThisWeekStreak = result.isActiveThisWeek
         viewModel.shieldsAvailable       = record.shieldsAvailable
         try? modelContext.save()
