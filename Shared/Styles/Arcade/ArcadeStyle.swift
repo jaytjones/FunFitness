@@ -104,6 +104,37 @@ extension Color {
     )
 }
 
+// MARK: - Progress
+
+/// 8-segment progress (ProgressMeter.md): lit = round(progress × 8), held at 1–7 until reached.
+nonisolated enum ArcadeSegmentRule {
+    static func lit(progress: Double) -> Int {
+        if progress >= 1 { return 8 }
+        if progress <= 0 { return 0 }
+        return min(7, max(1, Int((progress * 8).rounded())))
+    }
+}
+
+/// The 8-segment bar, lit in the activity's colour over `progress-track`.
+struct ArcadeSegments: View {
+    let progress: Double
+    let tint: Color
+    var height: CGFloat = 10
+
+    var body: some View {
+        let lit = ArcadeSegmentRule.lit(progress: progress)
+        HStack(spacing: FFSpace.s1) {
+            ForEach(0..<8, id: \.self) { i in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(i < lit ? tint : Color.ffProgressTrack)
+                    .frame(height: height)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel(Text(verbatim: "\(Int((progress * 100).rounded())) percent"))
+    }
+}
+
 // MARK: - Type
 
 extension FFTextStyle {

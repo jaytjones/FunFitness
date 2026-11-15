@@ -270,6 +270,15 @@ nonisolated enum FFShadow {
     static var press: CGFloat { styleMetric(playfulBold: 2, arcade: 0) }
 }
 
+/// A value that differs by Style, for small hooks in shared views (e.g. a card fill). Release
+/// builds always get the Playful Bold value.
+nonisolated func pick<T>(playfulBold: T, arcade: @autoclosure () -> T) -> T {
+    #if INTERNAL_STYLES
+    if StyleRuntime.current == .arcade { return arcade() }
+    #endif
+    return playfulBold
+}
+
 /// A metric for the active Style. The Arcade value is ignored (and not compiled in) in Release.
 nonisolated private func styleMetric(playfulBold: CGFloat, arcade: CGFloat) -> CGFloat {
     #if INTERNAL_STYLES
@@ -516,6 +525,18 @@ struct FFMeterStyle: ProgressViewStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         let fraction = min(1, max(0, configuration.fractionCompleted ?? 0))
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            ArcadeSegments(progress: fraction, tint: fill)
+        } else {
+            capsule(fraction: fraction)
+        }
+        #else
+        capsule(fraction: fraction)
+        #endif
+    }
+
+    private func capsule(fraction: Double) -> some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.ffProgressTrack)
@@ -544,6 +565,6 @@ struct FFTag: View {
             .padding(.vertical, FFSpace.s1)
             .background(fill, in: .capsule)
             .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
-            .rotationEffect(.degrees(-2))
+            .rotationEffect(.degrees(pick(playfulBold: -2, arcade: 0)))
     }
 }

@@ -54,9 +54,7 @@ nonisolated enum ArcadeRarity: Equatable, Sendable {
 enum ArcadeRules {
     /// Lit segments of 8: round(progress × 8), held at 1–7 until the milestone is reached.
     static func litSegments(progress: Double) -> Int {
-        if progress >= 1 { return 8 }
-        if progress <= 0 { return 0 }
-        return min(7, max(1, Int((progress * 8).rounded())))
+        ArcadeSegmentRule.lit(progress: progress)
     }
 
     /// The type a milestone belongs to, its 1-based position and the type's count ("NEXT 03/15").
@@ -358,6 +356,53 @@ struct ArcadeCollectionRow: View {
     }
 }
 
+// MARK: - Ticker (Ticker.md)
+
+/// "Right now…": one line per type with a live comparison, each led by a mono type tag in that
+/// type's colour; a flat panel instead of today's inverted card.
+struct ArcadeTicker: View {
+    let viewModel: AppViewModel
+
+    private static func tag(_ type: ActivityType) -> String {
+        switch type {
+        case .distance: return "Dist"
+        case .weight: return "Wt"
+        case .duration: return "Time"
+        case .reps: return "Reps"
+        }
+    }
+
+    var body: some View {
+        let lines = ActivityType.allCases.compactMap { type in
+            viewModel.absurdityTickerText(for: type).map { (type, $0) }
+        }
+        if !lines.isEmpty {
+            VStack(alignment: .leading, spacing: FFSpace.s3) {
+                Text(verbatim: "Right now…")
+                    .ffFont(.label)
+                    .foregroundStyle(Color.ffInkMuted)
+                ForEach(lines, id: \.0) { type, line in
+                    HStack(alignment: .firstTextBaseline, spacing: FFSpace.s2) {
+                        Text(verbatim: Self.tag(type))
+                            .ffFont(.label)
+                            .fontWeight(.bold)
+                            .foregroundStyle(type.ffFill)
+                            .frame(width: 44, alignment: .leading)
+                        // Wraps, never truncates (Ticker.md).
+                        Text(verbatim: line)
+                            .ffFont(.headline)
+                            .foregroundStyle(Color.ffInk)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .ffCard(padding: FFSpace.s4, radius: FFRadius.md)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("absurdityTicker")
+        }
+    }
+}
+
 // MARK: - Pieces
 
 /// 8 segments (ProgressMeter.md): lit in the type colour, unlit `progress-track`.
@@ -366,16 +411,7 @@ struct ArcadeSegmentBar: View {
     let tint: Color
 
     var body: some View {
-        let lit = ArcadeRules.litSegments(progress: progress)
-        HStack(spacing: FFSpace.s1) {
-            ForEach(0..<8, id: \.self) { i in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(i < lit ? tint : Color.ffProgressTrack)
-                    .frame(height: 10)
-            }
-        }
-        .accessibilityElement()
-        .accessibilityLabel(Text(verbatim: "\(Int((progress * 100).rounded())) percent"))
+        ArcadeSegments(progress: progress, tint: tint)
     }
 }
 

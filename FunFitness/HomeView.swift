@@ -95,10 +95,12 @@ struct HomeView: View {
 
                         ThemeSelector(selectedPack: $viewModel.activePack)
 
-                        AchievementPreview(
-                            unlockedCount: achievements.count,
-                            totalCount: ComparisonEngine.allMilestones.count
-                        )
+                        if pick(playfulBold: true, arcade: false) {
+                            AchievementPreview(
+                                unlockedCount: achievements.count,
+                                totalCount: ComparisonEngine.allMilestones.count
+                            )
+                        }
                     }
                     .padding(.horizontal, FFSpace.s5)
                     .padding(.vertical, FFSpace.s4)
@@ -332,10 +334,10 @@ struct ChallengeCard: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(completed ? "Challenge Complete! 🎉" : "\(monthName(challenge.month)) Challenge")
                             .ffFont(.label)
-                            .foregroundStyle(Color.ffOnTypeReps)
+                            .foregroundStyle(pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk))
                         Text(challenge.title)
                             .ffFont(.headline)
-                            .foregroundStyle(Color.ffOnTypeReps)
+                            .foregroundStyle(pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk))
                     }
                     Spacer()
                     // Reserve trailing space for the share button in the overlay below.
@@ -344,7 +346,7 @@ struct ChallengeCard: View {
 
                 Text(challenge.blurb)
                     .ffFont(.body)
-                    .foregroundStyle(Color.ffOnTypeReps)
+                    .foregroundStyle(pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk))
 
                 // Card fill is type-reps for every challenge; the meter uses the challenge's own
                 // type color (ChallengeCard.md).
@@ -356,14 +358,14 @@ struct ChallengeCard: View {
                 HStack {
                     Text(completed ? "Done — \(doneStr)" : "\(doneStr) / \(targetStr)")
                         .ffFont(.caption)
-                        .foregroundStyle(Color.ffOnTypeReps)
+                        .foregroundStyle(pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk))
                     Spacer()
                     Text("\(Int(fraction * 100))%")
                         .ffFont(.caption)
-                        .foregroundStyle(Color.ffOnTypeReps)
+                        .foregroundStyle(pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk))
                 }
             }
-            .ffCard(fill: .ffTypeReps)
+            .ffCard(fill: pick(playfulBold: Color.ffTypeReps, arcade: Color.ffSurface))
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
                 "\(monthName(challenge.month)) challenge: \(challenge.title). "
@@ -376,7 +378,7 @@ struct ChallengeCard: View {
                     ShareCardButton(
                         content: .challenge(challenge),
                         filename: "funfitness_challenge.png",
-                        tint: Color.ffOnTypeReps
+                        tint: pick(playfulBold: Color.ffOnTypeReps, arcade: Color.ffInk)
                     )
                     .padding(12)
                 }
@@ -659,6 +661,19 @@ struct AbsurdityTicker: View {
     }
 
     var body: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .arcade {
+            ArcadeTicker(viewModel: viewModel)
+        } else {
+            playfulBold
+        }
+        #else
+        playfulBold
+        #endif
+    }
+
+    @ViewBuilder
+    private var playfulBold: some View {
         if !lines.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 6) {
@@ -691,7 +706,7 @@ struct ThemeSelector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: FFSpace.s3) {
-            Text("Compare with")
+            heading
                 .ffFont(.headline)
                 .foregroundStyle(Color.ffInk)
                 .accessibilityAddTraits(.isHeader)
@@ -712,6 +727,14 @@ struct ThemeSelector: View {
         }
         .ffCard()
         .accessibilityIdentifier("packPicker")
+    }
+
+    private var heading: Text {
+        #if INTERNAL_STYLES
+        // Arcade calls the skins "themes", so this says "pack" (PackPicker.md).
+        if StyleRuntime.current == .arcade { return Text(verbatim: "Comparison pack") }
+        #endif
+        return Text("Compare with")
     }
 }
 
