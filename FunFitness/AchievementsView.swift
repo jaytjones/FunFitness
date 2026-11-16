@@ -45,6 +45,11 @@ struct AchievementsView: View {
                         // Arcade (unreleased): the trading-card binder.
                         ArcadeBinder(achievements: achievements, viewModel: viewModel)
                             .padding()
+                    } else if StyleRuntime.current == .fieldGuide {
+                        // Field Guide (unreleased): the specimen catalogue.
+                        FieldGuideCollection(achievements: achievements, viewModel: viewModel)
+                            .padding(.horizontal, FFSpace.s6)
+                            .padding(.vertical, FFSpace.s4)
                     } else {
                         playfulBoldList
                     }
@@ -55,12 +60,15 @@ struct AchievementsView: View {
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.large)
+            // Field Guide pages open with their own masthead instead.
+            .toolbar(pick(playfulBold: Visibility.automatic, arcade: .automatic, fieldGuide: .hidden), for: .navigationBar)
         }
     }
 
     private var navigationTitle: String {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return AppTab.badges.arcadeLabel }
+        if StyleRuntime.current == .fieldGuide { return AppTab.badges.fieldGuideLabel }
         #endif
         return String(localized: "Achievements")
     }
