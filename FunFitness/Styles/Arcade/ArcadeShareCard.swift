@@ -86,12 +86,12 @@ struct ArcadeShareCard: View {
     }
 }
 
-/// A visible Share control for Arcade (label, or icon-only where space is tight). Renders the share
-/// image in the background; until it's ready the control shows but is disabled.
+/// Arcade's share control: a small icon chip (Jay prefers icons to "Share" buttons, 2026-11-15).
+/// Renders the share image in the background; until it's ready the icon shows but is disabled.
 struct ArcadeShareButton: View {
     let content: ShareCardContent
     let filename: String
-    var showsLabel = true
+    var showsLabel = false
 
     @State private var url: URL?
 

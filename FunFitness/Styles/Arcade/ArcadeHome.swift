@@ -120,8 +120,7 @@ struct ArcadeHomeTop: View {
             // Shares the silly title and rank (Playful Bold's title banner does this today).
             ArcadeShareButton(
                 content: .title(viewModel.sillyTitle, badgeCount: unlockedIds.count),
-                filename: "funfitness_title.png",
-                showsLabel: false
+                filename: "funfitness_title.png"
             )
         }
         .padding(.bottom, FFSpace.s1)
