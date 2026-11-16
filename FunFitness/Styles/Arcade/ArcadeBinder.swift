@@ -55,16 +55,6 @@ struct ArcadeBinder: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            // Outside the card's button, so it's its own tap target.
-                            .overlay(alignment: .topTrailing) {
-                                if dates[milestone.id] != nil {
-                                    ArcadeShareButton(
-                                        content: .milestone(milestone, pack: viewModel.activePack, pref: pref),
-                                        filename: "funfitness_milestone.png"
-                                    )
-                                    .padding(4)
-                                }
-                            }
                         }
                     }
                 }
@@ -249,6 +239,16 @@ private struct ArcadeCardDetail: View {
         }
         .padding(FFSpace.s6)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Collected cards: share from the sheet's top-right corner (not from the grid).
+        .overlay(alignment: .topTrailing) {
+            if unlockedAt != nil {
+                ArcadeShareButton(
+                    content: .milestone(milestone, pack: pack, pref: pref),
+                    filename: "funfitness_milestone.png"
+                )
+                .padding(FFSpace.s4)
+            }
+        }
         .background(Color.ffBg.ignoresSafeArea())
     }
 }
