@@ -14,6 +14,7 @@ struct ProgressTabView: View {
     private var navigationTitle: String {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return AppTab.progress.arcadeLabel }
+        if StyleRuntime.current == .fieldGuide { return "" }
         #endif
         return String(localized: "Progress")
     }
@@ -39,6 +40,11 @@ struct ProgressTabView: View {
 
                 ScrollView {
                     VStack(spacing: 16) {
+                        #if INTERNAL_STYLES
+                        if StyleRuntime.current == .fieldGuide {
+                            FieldGuideMasthead(runningHead: "Progress")
+                        }
+                        #endif
                         OverallProgressCard(
                             totalActivities: viewModel.totalActivities,
                             isActiveThisWeek: viewModel.isActiveThisWeek
@@ -79,7 +85,8 @@ struct ProgressTabView: View {
                 }
             }
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.large)
+            // Field Guide: the masthead heads the page; the bar keeps History.
+            .navigationBarTitleDisplayMode(pick(playfulBold: .large, arcade: .large, fieldGuide: .inline))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -255,7 +262,7 @@ struct WeeklyVolumeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Weekly Volume")
+            weeklyTitle
                 .ffFont(.headline)
                 .foregroundStyle(Color.ffInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,6 +276,32 @@ struct WeeklyVolumeCard: View {
                 .pickerStyle(.segmented)
             }
 
+            #if INTERNAL_STYLES
+            if StyleRuntime.current == .fieldGuide {
+                FieldGuideStemChart(buckets: buckets, type: type, pref: pref)
+            } else {
+                barChart
+            }
+            #else
+            barChart
+            #endif
+
+            Text("Last 8 weeks · \(unitLabel)")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+        }
+        .ffCard()
+    }
+
+    private var weeklyTitle: Text {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide { return Text(verbatim: "Fig. A · Weekly volume") }
+        #endif
+        return Text("Weekly Volume")
+    }
+
+    @ViewBuilder
+    private var barChart: some View {
             // Arcade: a zero week shows a thin track-coloured stub instead of nothing (ProgressCharts.md).
             let stub = pick(playfulBold: 0.0, arcade: (buckets.map { UnitConverter.fromSI($0.total, type: type, to: pref) }.max() ?? 1) * 0.015)
             Chart(buckets) { bucket in
@@ -297,12 +330,6 @@ struct WeeklyVolumeCard: View {
             }
             .frame(height: 160)
             .accessibilityLabel("Weekly \(type.displayName.lowercased()) volume, last 8 weeks")
-
-            Text("Last 8 weeks · \(unitLabel)")
-                .ffFont(.caption)
-                .foregroundStyle(Color.ffInkMuted)
-        }
-        .ffCard()
     }
 }
 
@@ -388,7 +415,7 @@ struct ActivityHeatmapCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Activity — Last 12 Weeks")
+            heatmapTitle
                 .ffFont(.headline)
                 .foregroundStyle(Color.ffInk)
 
@@ -396,33 +423,60 @@ struct ActivityHeatmapCard: View {
                 ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
                     VStack(spacing: 4) {
                         ForEach(week) { day in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color.ffProgressTrack)
-                                .overlay(RoundedRectangle(cornerRadius: 3).fill(color(day.count)))
-                                // Outlined so steps differ by more than hue.
-                                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
-                                .frame(width: 14, height: 14)
+                            cell(day.count)
                         }
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
-                Text("Less").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
-                ForEach(0..<legendSteps, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.ffProgressTrack)
-                        .overlay(RoundedRectangle(cornerRadius: 3).fill(color(i)))
-                        .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
-                        .frame(width: 12, height: 12)
-                }
-                Text("More").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
-            }
+            legend
         }
         .ffCard()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Activity heatmap for the last 12 weeks")
+    }
+
+    private var heatmapTitle: Text {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide { return Text(verbatim: "Fig. B · Last 12 weeks") }
+        #endif
+        return Text("Activity — Last 12 Weeks")
+    }
+
+    /// Field Guide stipples cells with ink dots; the others fill them with a colour step.
+    @ViewBuilder
+    private func cell(_ count: Int, size: CGFloat = 14) -> some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide {
+            FieldGuideStippleCell(count: count, size: size)
+        } else {
+            colourCell(count, size: size)
+        }
+        #else
+        colourCell(count, size: size)
+        #endif
+    }
+
+    private func colourCell(_ count: Int, size: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(Color.ffProgressTrack)
+            .overlay(RoundedRectangle(cornerRadius: 3).fill(color(count)))
+            // Outlined so steps differ by more than hue.
+            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.ffLine, lineWidth: 1))
+            .frame(width: size, height: size)
+    }
+
+    /// Less → More. Field Guide shows its three dot counts (none, one, three).
+    private var legend: some View {
+        let steps = pick(playfulBold: Array(0..<legendSteps), arcade: Array(0..<legendSteps), fieldGuide: [0, 1, 2])
+        return HStack(spacing: 6) {
+            Text("Less").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+            ForEach(steps, id: \.self) { i in
+                cell(i, size: 12)
+            }
+            Text("More").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+        }
     }
 }
 
