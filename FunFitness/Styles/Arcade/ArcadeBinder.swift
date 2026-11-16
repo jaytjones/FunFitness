@@ -55,6 +55,16 @@ struct ArcadeBinder: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            // Outside the card's button, so it's its own tap target.
+                            .overlay(alignment: .topTrailing) {
+                                if dates[milestone.id] != nil {
+                                    ArcadeShareButton(
+                                        content: .milestone(milestone, pack: viewModel.activePack, pref: pref),
+                                        filename: "funfitness_milestone.png"
+                                    )
+                                    .padding(4)
+                                }
+                            }
                         }
                     }
                 }
@@ -230,11 +240,6 @@ private struct ArcadeCardDetail: View {
                 Text(verbatim: "Collected \(unlockedAt.formatted(date: .abbreviated, time: .omitted))")
                     .ffFont(.caption)
                     .foregroundStyle(Color.ffInkMuted)
-                ArcadeShareButton(
-                    content: .milestone(milestone, pack: pack, pref: pref),
-                    filename: "funfitness_milestone.png"
-                )
-                .padding(.top, FFSpace.s2)
             } else {
                 Text(verbatim: "\(ArcadeBinder.requirement(milestone, pref: pref)) to unlock this card.")
                     .ffFont(.body)

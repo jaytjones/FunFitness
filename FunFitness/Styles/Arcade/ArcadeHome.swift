@@ -303,24 +303,24 @@ struct ArcadeStreakTile: View {
             Text(verbatim: "best \(viewModel.longestStreak) · \(viewModel.shieldsAvailable) shield\(viewModel.shieldsAvailable == 1 ? "" : "s")")
                 .ffFont(.caption)
                 .foregroundStyle(Color.ffInkMuted)
-            HStack(spacing: FFSpace.s2) {
-                if canUseShield {
-                    Button(action: onUseShield) {
-                        Text(verbatim: "Use shield")
-                            .ffFont(.label)
-                            .fontWeight(.bold)
-                            .foregroundStyle(Color.ffSuccess)
-                    }
-                    .buttonStyle(.plain)
+            if canUseShield {
+                Button(action: onUseShield) {
+                    Text(verbatim: "Use shield")
+                        .ffFont(.label)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.ffSuccess)
                 }
-                if weeks > 0 {
-                    ArcadeShareButton(
-                        content: .streak(current: weeks, longest: viewModel.longestStreak),
-                        filename: "funfitness_streak.png"
-                    )
-                }
+                .buttonStyle(.plain)
             }
-            .padding(.top, FFSpace.s1)
+        }
+        .overlay(alignment: .topTrailing) {
+            if weeks > 0 {
+                ArcadeShareButton(
+                    content: .streak(current: weeks, longest: viewModel.longestStreak),
+                    filename: "funfitness_streak.png"
+                )
+                .padding(FFSpace.s2)
+            }
         }
         .accessibilityElement(children: .contain)
     }

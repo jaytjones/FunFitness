@@ -14,6 +14,7 @@
 
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct ArcadeShareCard: View {
     let content: ShareCardContent
@@ -86,44 +87,43 @@ struct ArcadeShareCard: View {
     }
 }
 
+/// A share image rendered only when the share sheet asks for it, so a grid of share icons costs
+/// nothing until one is used.
+struct ArcadeShareImage: Transferable {
+    let content: ShareCardContent
+    let filename: String
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .png) { image in
+            let url = await MainActor.run {
+                ShareCardRenderer.pngURL(for: image.content, filename: image.filename)
+            }
+            guard let url else { throw CocoaError(.fileWriteUnknown) }
+            return SentTransferredFile(url)
+        }
+    }
+}
+
 /// Arcade's share control: a small icon chip (Jay prefers icons to "Share" buttons, 2026-11-15).
-/// Renders the share image in the background; until it's ready the icon shows but is disabled.
 struct ArcadeShareButton: View {
     let content: ShareCardContent
     let filename: String
-    var showsLabel = false
-
-    @State private var url: URL?
 
     var body: some View {
-        Group {
-            if let url {
-                ShareLink(item: url, preview: SharePreview(content.headline)) { face }
-            } else {
-                face.opacity(0.4)
-            }
+        ShareLink(
+            item: ArcadeShareImage(content: content, filename: filename),
+            preview: SharePreview(content.headline)
+        ) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Color.ffAccent)
+                .frame(width: 28, height: 28)
+                .background(Color.ffSurface.opacity(0.9), in: RoundedRectangle(cornerRadius: FFRadius.sm))
+                .overlay(RoundedRectangle(cornerRadius: FFRadius.sm).strokeBorder(Color.ffLineStrong, lineWidth: 1))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .task(id: content.cacheKey) {
-            url = ShareCardRenderer.pngURL(for: content, filename: filename)
-        }
         .accessibilityLabel(Text(verbatim: "Share"))
-    }
-
-    private var face: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "square.and.arrow.up")
-            if showsLabel {
-                Text(verbatim: "Share")
-            }
-        }
-        .ffFont(.label)
-        .fontWeight(.bold)
-        .foregroundStyle(Color.ffAccent)
-        .padding(.horizontal, showsLabel ? FFSpace.s2 : 6)
-        .padding(.vertical, FFSpace.s1)
-        .overlay(RoundedRectangle(cornerRadius: FFRadius.sm).strokeBorder(Color.ffLineStrong, lineWidth: 1))
-        .contentShape(Rectangle())
     }
 }
 
