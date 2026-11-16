@@ -20,6 +20,7 @@ enum AppTab: Int, CaseIterable, Identifiable {
     var label: String {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeLabel }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideLabel }
         #endif
         switch self {
         case .home:     return "Home"
@@ -48,6 +49,8 @@ struct FFTabBar: View {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade {
             ArcadeTabBar(selection: $selection)
+        } else if StyleRuntime.current == .fieldGuide {
+            FieldGuideTabBar(selection: $selection)
         } else {
             playfulBold
         }
@@ -128,6 +131,8 @@ struct LogButton: View {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade {
             ArcadeLogButtonFace()
+        } else if StyleRuntime.current == .fieldGuide {
+            FieldGuideLogBarFace(repeatLastLabel: repeatLastLabel)
         } else {
             playfulBoldFace
         }

@@ -88,7 +88,54 @@ struct ContentView: View {
     }
 
     /// Now-tracking row (when a session runs), then the word tabs and the LogButton.
+    @ViewBuilder
     private var bottomBar: some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide && usesFloatingTabBar {
+            fieldGuideBottomBar
+        } else {
+            standardBottomBar
+        }
+        #else
+        standardBottomBar
+        #endif
+    }
+
+    private var logButton: some View {
+        LogButton(
+            onLog: { type in
+                logType = type
+                showLogSheet = true
+            },
+            repeatLastLabel: viewModel.lastActivity.map(repeatLabel),
+            onRepeatLast: repeatLast
+        )
+    }
+
+    #if INTERNAL_STYLES
+    /// Field Guide (unreleased): the full-width "Log an entry" bar on Guide only, then the text
+    /// tabs edge to edge under their heavy rule (LogButton.md, TabBar.md).
+    private var fieldGuideBottomBar: some View {
+        VStack(spacing: FFSpace.s3) {
+            if showsNowTracking {
+                NowTrackingBar(viewModel: viewModel, style: .inset)
+                    .padding(.horizontal, FFSpace.s5)
+            }
+            if selectedTab == .home {
+                logButton
+                    .padding(.horizontal, FFSpace.s6)
+            }
+            FFTabBar(selection: $selectedTab)
+                .padding(.horizontal, FFSpace.s5)
+                .padding(.bottom, FFSpace.s1)
+        }
+        .padding(.top, FFSpace.s2)
+        // The page itself, edge to edge: content scrolls under it, not through it.
+        .background(Color.ffBg.ignoresSafeArea(edges: .bottom))
+    }
+    #endif
+
+    private var standardBottomBar: some View {
         VStack(spacing: FFSpace.s3) {
             if usesFloatingTabBar && showsNowTracking {
                 NowTrackingBar(viewModel: viewModel, style: .inset)
