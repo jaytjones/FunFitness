@@ -60,6 +60,15 @@ struct HomeView: View {
                                 onUseShield: { showShieldConfirm = true }
                             )
                             failedSaveNotice
+                        } else if StyleRuntime.current == .fieldGuide {
+                            // Field Guide (unreleased): masthead, lead plate, specimens, title page.
+                            FieldGuideHomeTop(
+                                viewModel: viewModel,
+                                unlocked: achievements,
+                                onLog: openLog,
+                                onUseShield: { showShieldConfirm = true }
+                            )
+                            failedSaveNotice
                         } else {
                             playfulBoldTop
                         }
@@ -84,7 +93,8 @@ struct HomeView: View {
                             StrengthSessionCard(viewModel: viewModel)
                         }
 
-                        if let last = viewModel.lastActivity {
+                        // Field Guide folds repeat-last into the Log an entry bar (LogButton.md).
+                        if let last = viewModel.lastActivity, pick(playfulBold: true, arcade: true, fieldGuide: false) {
                             RepeatLastButton(label: repeatLabel(for: last)) {
                                 repeatLast(last)
                             }
@@ -673,6 +683,8 @@ struct AbsurdityTicker: View {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade {
             ArcadeTicker(viewModel: viewModel)
+        } else if StyleRuntime.current == .fieldGuide {
+            FieldGuideFieldNotes(viewModel: viewModel)
         } else {
             playfulBold
         }
@@ -742,6 +754,7 @@ struct ThemeSelector: View {
         #if INTERNAL_STYLES
         // Arcade calls the skins "themes", so this says "pack" (PackPicker.md).
         if StyleRuntime.current == .arcade { return Text(verbatim: "Comparison pack") }
+        if StyleRuntime.current == .fieldGuide { return Text(verbatim: "Pack") }
         #endif
         return Text("Compare with")
     }
