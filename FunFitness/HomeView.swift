@@ -18,6 +18,9 @@ struct HomeView: View {
     // nil = general "+" (sheet opens on the last-logged type); set by per-card buttons.
     @State private var logType: ActivityType? = nil
     @State private var showHistory = false
+    // iCloud account, for the "only on this iPhone" notice.
+    @State private var cloudSync = CloudSyncManager()
+    @Environment(\.scenePhase) private var scenePhase
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -108,6 +111,10 @@ struct HomeView: View {
             }
             .navigationTitle("FunFitness")
             .toolbar(.hidden, for: .navigationBar)
+            // Re-check on return: they may have signed in to iCloud in Settings meanwhile.
+            .task(id: scenePhase) {
+                if scenePhase == .active { await cloudSync.refreshAccountStatus() }
+            }
             .sheet(isPresented: $showLogSheet, onDismiss: viewModel.presentLiveSessionIfRequested) {
                 LogActivitySheet(viewModel: viewModel, initialType: logType)
             }
@@ -157,7 +164,8 @@ struct HomeView: View {
         SillyTitleBanner(viewModel: viewModel)
     }
 
-    /// A save to Health that didn't make it (FB-0020); the save ran after its sheet closed.
+    /// Notices near the top of Home: a save to Health that didn't make it (FB-0020; the save ran
+    /// after its sheet closed), and data that lives only on this device.
     @ViewBuilder
     private var failedSaveNotice: some View {
         if let failed = HealthKitManager.shared.lastFailedSave {
@@ -165,6 +173,7 @@ struct HomeView: View {
                 HealthKitManager.shared.dismissFailedSave()
             }
         }
+        LocalDataNotice(pref: pref, accountState: cloudSync.accountState)
     }
 
     // Short description of the activity the repeat button will re-log.

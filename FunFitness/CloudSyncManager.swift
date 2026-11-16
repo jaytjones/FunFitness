@@ -149,6 +149,12 @@ struct CloudSyncSection: View {
                     .ffFont(.caption)
                     .foregroundStyle(Color.ffInkMuted)
                     .padding(.horizontal)
+            } else if LocalDataRule.isLocalOnly(syncManager.accountState) {
+                Text("Your data is only on this device and isn't backed up. Use Export Data below to keep a copy.")
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("localOnlyNote")
             }
         }
         .task {
