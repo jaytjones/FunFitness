@@ -1,0 +1,32 @@
+{
+  "identifier": "101A139F-3116-4F8E-848A-BC2D4E9A5212",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "11AC02D0-9990-4A10-BBAA-5F5D26082337",
+      "localizations": [
+        {
+          "description": "Unlock every FunFitness style now, including styles added later.",
+          "displayName": "Unlock All Styles",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jaytjones.FunFitness.styles.all",
+      "referenceName": "Unlock All Styles",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}
