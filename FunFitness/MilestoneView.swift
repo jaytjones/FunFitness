@@ -28,6 +28,12 @@ struct MilestoneView: View {
                 shareButton
             }
             .task { await renderShareCard() }
+        } else if StyleRuntime.current == .fieldGuide {
+            // Field Guide (unreleased): a freshly recorded plate.
+            FieldGuideCelebration(milestone: milestone, pack: pack, pref: pref, onDismiss: onDismiss) {
+                shareButton
+            }
+            .task { await renderShareCard() }
         } else {
             playfulBold
         }
