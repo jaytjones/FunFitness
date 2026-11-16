@@ -86,4 +86,45 @@ struct ArcadeShareCard: View {
     }
 }
 
+/// A visible Share control for Arcade (label, or icon-only where space is tight). Renders the share
+/// image in the background; until it's ready the control shows but is disabled.
+struct ArcadeShareButton: View {
+    let content: ShareCardContent
+    let filename: String
+    var showsLabel = true
+
+    @State private var url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                ShareLink(item: url, preview: SharePreview(content.headline)) { face }
+            } else {
+                face.opacity(0.4)
+            }
+        }
+        .buttonStyle(.plain)
+        .task(id: content.cacheKey) {
+            url = ShareCardRenderer.pngURL(for: content, filename: filename)
+        }
+        .accessibilityLabel(Text(verbatim: "Share"))
+    }
+
+    private var face: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "square.and.arrow.up")
+            if showsLabel {
+                Text(verbatim: "Share")
+            }
+        }
+        .ffFont(.label)
+        .fontWeight(.bold)
+        .foregroundStyle(Color.ffAccent)
+        .padding(.horizontal, showsLabel ? FFSpace.s2 : 6)
+        .padding(.vertical, FFSpace.s1)
+        .overlay(RoundedRectangle(cornerRadius: FFRadius.sm).strokeBorder(Color.ffLineStrong, lineWidth: 1))
+        .contentShape(Rectangle())
+    }
+}
+
 #endif

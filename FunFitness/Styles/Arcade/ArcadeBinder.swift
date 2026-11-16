@@ -67,7 +67,7 @@ struct ArcadeBinder: View {
                 pref: pref,
                 unlockedAt: unlockedAt[milestone.id]
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
     }
 
@@ -230,6 +230,11 @@ private struct ArcadeCardDetail: View {
                 Text(verbatim: "Collected \(unlockedAt.formatted(date: .abbreviated, time: .omitted))")
                     .ffFont(.caption)
                     .foregroundStyle(Color.ffInkMuted)
+                ArcadeShareButton(
+                    content: .milestone(milestone, pack: pack, pref: pref),
+                    filename: "funfitness_milestone.png"
+                )
+                .padding(.top, FFSpace.s2)
             } else {
                 Text(verbatim: "\(ArcadeBinder.requirement(milestone, pref: pref)) to unlock this card.")
                     .ffFont(.body)

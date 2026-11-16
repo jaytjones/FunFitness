@@ -117,6 +117,12 @@ struct ArcadeHomeTop: View {
                 .padding(.vertical, FFSpace.s1)
                 .overlay(RoundedRectangle(cornerRadius: FFRadius.sm).strokeBorder(Color.ffLineStrong, lineWidth: 1))
                 .accessibilityLabel(Text(verbatim: "Level \(level.level), \(rank)"))
+            // Shares the silly title and rank (Playful Bold's title banner does this today).
+            ArcadeShareButton(
+                content: .title(viewModel.sillyTitle, badgeCount: unlockedIds.count),
+                filename: "funfitness_title.png",
+                showsLabel: false
+            )
         }
         .padding(.bottom, FFSpace.s1)
     }
@@ -298,15 +304,24 @@ struct ArcadeStreakTile: View {
             Text(verbatim: "best \(viewModel.longestStreak) · \(viewModel.shieldsAvailable) shield\(viewModel.shieldsAvailable == 1 ? "" : "s")")
                 .ffFont(.caption)
                 .foregroundStyle(Color.ffInkMuted)
-            if canUseShield {
-                Button(action: onUseShield) {
-                    Text(verbatim: "Use shield")
-                        .ffFont(.label)
-                        .fontWeight(.bold)
-                        .foregroundStyle(Color.ffSuccess)
+            HStack(spacing: FFSpace.s2) {
+                if canUseShield {
+                    Button(action: onUseShield) {
+                        Text(verbatim: "Use shield")
+                            .ffFont(.label)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color.ffSuccess)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                if weeks > 0 {
+                    ArcadeShareButton(
+                        content: .streak(current: weeks, longest: viewModel.longestStreak),
+                        filename: "funfitness_streak.png"
+                    )
+                }
             }
+            .padding(.top, FFSpace.s1)
         }
         .accessibilityElement(children: .contain)
     }
