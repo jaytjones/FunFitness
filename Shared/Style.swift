@@ -24,6 +24,8 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
     #if INTERNAL_STYLES
     // Unreleased (Jay-only until launch): see Styles/Arcade/ArcadeStyle.swift.
     case arcade = "arcade"
+    // Unreleased (Jay-only until launch): see Styles/FieldGuide/FieldGuideStyle.swift.
+    case fieldGuide = "field-guide"
     #endif
 
     static let `default`: StyleID = .playfulBold
@@ -33,6 +35,7 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
         case .playfulBold: return "Playful Bold"
         #if INTERNAL_STYLES
         case .arcade: return "Arcade"
+        case .fieldGuide: return "Field Guide"
         #endif
         }
     }
@@ -44,7 +47,7 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
         switch self {
         case .playfulBold: return true
         #if INTERNAL_STYLES
-        case .arcade: return false
+        case .arcade, .fieldGuide: return false
         #endif
         }
     }
@@ -56,6 +59,7 @@ nonisolated enum StyleID: String, CaseIterable, Sendable {
         case .playfulBold: return nil
         #if INTERNAL_STYLES
         case .arcade: return 4
+        case .fieldGuide: return 8
         #endif
         }
     }
@@ -156,6 +160,7 @@ nonisolated enum FFColorToken: CaseIterable, Sendable {
         case .playfulBold: return playfulBold
         #if INTERNAL_STYLES
         case .arcade: return arcade ?? playfulBold
+        case .fieldGuide: return fieldGuide ?? playfulBold
         #endif
         }
     }
@@ -252,39 +257,45 @@ nonisolated enum FFSpace {
 // its root view when the Style changes).
 
 nonisolated enum FFRadius {
-    static var sm: CGFloat { styleMetric(playfulBold: 12, arcade: 6) }
-    static var md: CGFloat { styleMetric(playfulBold: 20, arcade: 12) }
-    static var lg: CGFloat { styleMetric(playfulBold: 32, arcade: 18) }
+    static var sm: CGFloat { styleMetric(playfulBold: 12, arcade: 6, fieldGuide: 0) }
+    static var md: CGFloat { styleMetric(playfulBold: 20, arcade: 12, fieldGuide: 2) }
+    static var lg: CGFloat { styleMetric(playfulBold: 32, arcade: 18, fieldGuide: 2) }
     // radius-pill: use `.capsule`.
 }
 
 nonisolated enum FFStroke {
-    static var card: CGFloat { styleMetric(playfulBold: 3, arcade: 1.5) }
-    static var control: CGFloat { styleMetric(playfulBold: 2.5, arcade: 1.5) }
+    static var card: CGFloat { styleMetric(playfulBold: 3, arcade: 1.5, fieldGuide: 1) }
+    static var control: CGFloat { styleMetric(playfulBold: 2.5, arcade: 1.5, fieldGuide: 1) }
 }
 
 nonisolated enum FFShadow {
     /// shadow-pop: hard 6pt down-right, no blur. Arcade panels are flat (0).
-    static var pop: CGFloat { styleMetric(playfulBold: 6, arcade: 0) }
+    static var pop: CGFloat { styleMetric(playfulBold: 6, arcade: 0, fieldGuide: 0) }
     /// shadow-press: what's left while pressed (the element moves 4pt).
-    static var press: CGFloat { styleMetric(playfulBold: 2, arcade: 0) }
+    static var press: CGFloat { styleMetric(playfulBold: 2, arcade: 0, fieldGuide: 0) }
 }
 
 /// A value that differs by Style, for small hooks in shared views (e.g. a card fill). Release
 /// builds always get the Playful Bold value.
 nonisolated func pick<T>(playfulBold: T, arcade: @autoclosure () -> T) -> T {
+    pick(playfulBold: playfulBold, arcade: arcade(), fieldGuide: arcade())
+}
+
+/// Three-way version; Field Guide shares Arcade's value unless given its own.
+nonisolated func pick<T>(playfulBold: T, arcade: @autoclosure () -> T, fieldGuide: @autoclosure () -> T) -> T {
     #if INTERNAL_STYLES
-    if StyleRuntime.current == .arcade { return arcade() }
+    switch StyleRuntime.current {
+    case .arcade: return arcade()
+    case .fieldGuide: return fieldGuide()
+    default: break
+    }
     #endif
     return playfulBold
 }
 
 /// A metric for the active Style. The Arcade value is ignored (and not compiled in) in Release.
-nonisolated private func styleMetric(playfulBold: CGFloat, arcade: CGFloat) -> CGFloat {
-    #if INTERNAL_STYLES
-    if StyleRuntime.current == .arcade { return arcade }
-    #endif
-    return playfulBold
+nonisolated private func styleMetric(playfulBold: CGFloat, arcade: CGFloat, fieldGuide: CGFloat) -> CGFloat {
+    pick(playfulBold: playfulBold, arcade: arcade, fieldGuide: fieldGuide)
 }
 
 // MARK: - Type
@@ -300,6 +311,7 @@ nonisolated enum FFTextStyle: Sendable {
     var size: CGFloat {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeSize }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideSize }
         #endif
         switch self {
         case .displayHero: return 88
@@ -316,6 +328,7 @@ nonisolated enum FFTextStyle: Sendable {
     var weight: Font.Weight {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeWeight }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideWeight }
         #endif
         switch self {
         case .displayHero, .display, .numeral: return .bold
@@ -349,6 +362,7 @@ nonisolated enum FFTextStyle: Sendable {
     var tracking: CGFloat {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeTracking }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideTracking }
         #endif
         switch self {
         case .displayHero: return -0.02 * 88
@@ -362,14 +376,24 @@ nonisolated enum FFTextStyle: Sendable {
     var isUppercase: Bool {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeIsUppercase }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideIsUppercase }
         #endif
         return self == .label
+    }
+
+    /// Shown in italics (Field Guide captions).
+    var isItalic: Bool {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide { return fieldGuideIsItalic }
+        #endif
+        return false
     }
 
     /// System font design for the active Style.
     var design: Font.Design {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade { return arcadeDesign }
+        if StyleRuntime.current == .fieldGuide { return fieldGuideDesign }
         #endif
         return .rounded
     }
@@ -396,6 +420,7 @@ private struct FFFontModifier: ViewModifier {
             .font(font)
             .tracking(style.tracking * size / style.size)
             .monospacedDigit()
+            .italic(style.isItalic)
             .textCase(style.isUppercase ? .uppercase : nil)
     }
 
@@ -467,6 +492,24 @@ struct FFButtonStyle: ButtonStyle {
     }
 }
 
+/// The button outline: a capsule, or a square in square Styles. Insettable so borders draw inside,
+/// exactly like the capsule did.
+nonisolated private struct FFButtonShape: InsettableShape {
+    var isSquare: Bool
+    var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        return isSquare ? Rectangle().path(in: r) : Capsule().path(in: r)
+    }
+
+    func inset(by amount: CGFloat) -> FFButtonShape {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+}
+
 private struct FFButtonBody: View {
     let configuration: ButtonStyle.Configuration
     let kind: FFButtonStyle.Kind
@@ -481,29 +524,34 @@ private struct FFButtonBody: View {
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: 52)
             .padding(.horizontal, FFSpace.s5)
-            .background(background, in: .capsule)
-            .overlay(Capsule().strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
+            .background(background, in: shape)
+            .overlay(shape.strokeBorder(Color.ffLine, lineWidth: FFStroke.card))
             .background(
-                Capsule().fill(Color.ffShadowInk)
+                shape.fill(Color.ffShadowInk)
                     .offset(x: isEnabled ? FFShadow.pop - offset : 0, y: isEnabled ? FFShadow.pop - offset : 0)
                     .opacity(isEnabled ? 1 : 0)
             )
             .offset(x: offset, y: offset)
             .opacity(isEnabled ? 1 : 0.45)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: pressed)
-            .contentShape(.capsule)
+            .contentShape(shape)
+    }
+
+    /// Capsule, or square where the Style is square (Field Guide).
+    private var shape: FFButtonShape {
+        FFButtonShape(isSquare: pick(playfulBold: false, arcade: false, fieldGuide: true))
     }
 
     private var background: Color {
         switch kind {
-        case .primary: return .ffAccent
+        case .primary: return pick(playfulBold: Color.ffAccent, arcade: Color.ffAccent, fieldGuide: Color.ffInk)
         case .secondary, .destructive: return .ffSurface
         }
     }
 
     private var foreground: Color {
         switch kind {
-        case .primary: return .ffOnAccent
+        case .primary: return pick(playfulBold: Color.ffOnAccent, arcade: Color.ffOnAccent, fieldGuide: Color.ffSurface)
         case .secondary: return .ffInk
         case .destructive: return .ffDanger
         }
@@ -528,6 +576,8 @@ struct FFMeterStyle: ProgressViewStyle {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade {
             ArcadeSegments(progress: fraction, tint: fill)
+        } else if StyleRuntime.current == .fieldGuide {
+            FieldGuideRuler(progress: fraction, tint: fill)
         } else {
             capsule(fraction: fraction)
         }

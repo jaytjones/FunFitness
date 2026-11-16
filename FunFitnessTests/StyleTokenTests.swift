@@ -62,7 +62,35 @@ struct StyleTokenTests {
         // Unreleased: even a long streak plus the purchase doesn't show it to anyone else.
         #expect(StyleID.resolve("arcade", isAvailable: earned.isAvailable) == .playfulBold)
         #expect(!earned.visibleStyles.contains(.arcade))
-        #expect(owner.visibleStyles == [.playfulBold, .arcade])
+        #expect(owner.visibleStyles == [.playfulBold, .arcade, .fieldGuide])
+    }
+
+    @Test func fieldGuideUsesItsOwnPalette() {
+        // Light = Daylight (parchment), dark = Lamplight (docs/design/field-guide/tokens.json).
+        #expect(FFColorToken.bg.pair(in: .fieldGuide) == (0xEDE5D0, 0x1A1813))
+        #expect(FFColorToken.accent.pair(in: .fieldGuide) == (0xA63D27, 0xE58A6E))
+        #expect(FFColorToken.typeDuration.pair(in: .fieldGuide) == (0x3D5873, 0x93AFCC))
+        // Selected chips invert to ink.
+        #expect(FFColorToken.brandYellow.pair(in: .fieldGuide) == FFColorToken.ink.pair(in: .fieldGuide))
+    }
+
+    @Test func everyTokenHasAFieldGuideValueExceptTheShadow() {
+        #expect(FFColorToken.allCases.filter { $0.fieldGuide == nil } == [.shadowInk])
+    }
+
+    @Test func fieldGuideTypeScale() {
+        #expect(FFTextStyle.displayHero.fieldGuideSize == 40)
+        #expect(FFTextStyle.body.fieldGuideDesign == .serif)
+        #expect(FFTextStyle.label.fieldGuideDesign == .monospaced)
+        #expect(FFTextStyle.caption.fieldGuideIsItalic)
+        #expect(FFTextStyle.tab.fieldGuideIsUppercase)
+        #expect(!FFTextStyle.display.fieldGuideIsUppercase)
+    }
+
+    @Test func fieldGuideIsUnreleasedAtEightWeeks() {
+        #expect(!StyleID.fieldGuide.isReleased)
+        #expect(StyleID.fieldGuide.streakWeeksToUnlock == 8)
+        #expect(StyleAccess(longestStreakWeeks: 4, ownsAllStyles: false, isOwner: false).status(of: .fieldGuide) == .locked(weeksToGo: 4))
     }
     #endif
 }
