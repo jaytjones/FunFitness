@@ -80,7 +80,7 @@ Plates are line drawings: `ink` strokes at 1.6px, round caps, dashed or dotted s
 
 ## Mapping to SwiftUI
 
-Ship the tokens as an asset catalog colour set per token (Any = Daylight, Dark = Lamplight) plus a small `FG` namespace. Fonts: bundle Fraunces, Newsreader and IBM Plex Mono (all OFL) and register them in Info.plist; `Font.custom(_:size:relativeTo:)` keeps Dynamic Type.
+Ship the tokens as an asset catalog colour set per token (Any = Daylight, Dark = Lamplight) plus a small `FG` namespace. Fonts (Jay, 2026-11-15): **system fonts** — New York (serif) for display, body and captions, SF Mono for labels, tabs and data. Fraunces, Newsreader and IBM Plex Mono were compared in a mockup and not adopted; the `--font-*` names below describe the original direction.
 
 ```swift
 import SwiftUI

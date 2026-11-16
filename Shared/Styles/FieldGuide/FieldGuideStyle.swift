@@ -8,9 +8,9 @@
 //
 //  UNRELEASED — Jay-only. Compiled only with INTERNAL_STYLES (see ArcadeStyle.swift).
 //
-//  Fonts: the spec calls for Fraunces / Newsreader / IBM Plex Mono. Following Arcade's choice
-//  (2026-11-15), system stand-ins for now: New York (serif) for display and body, SF Mono for
-//  labels, tabs and data.
+//  Fonts (Jay, 2026-11-15, after a side-by-side mockup): the system fonts — New York (serif) for
+//  display and body, SF Mono for labels, tabs and data. Fraunces / Newsreader / IBM Plex Mono
+//  from the spec are not bundled.
 //
 
 #if INTERNAL_STYLES

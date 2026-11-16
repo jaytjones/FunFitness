@@ -76,7 +76,7 @@ in-app purchase.
 ## Still open
 - Testers' build **3.2 (16)** (Release): Health fixes, indoor tracking, calories, the local-data
   notice. Not uploaded yet.
-- Field Guide fonts: system stand-ins for now. A Fraunces/Newsreader/IBM Plex Mono mockup on
-  request.
+- Field Guide fonts: decided — system fonts (New York + SF Mono); Fraunces/Newsreader/Plex not
+  adopted after the mockup.
 - Field Guide line-drawing plates: emoji until a drawing library exists (README).
 - 3.4 planning: accounts and a backend with non-Apple devices in mind (Jay, 2026-11-15).
