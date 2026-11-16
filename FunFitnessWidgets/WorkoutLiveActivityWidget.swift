@@ -17,8 +17,7 @@ struct WorkoutLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
             WorkoutLockScreenView(context: context)
-                .activityBackgroundTint(Color.ffSurface)
-                .activitySystemActionForegroundColor(Color.ffInk)
+                .modifier(LockScreenPanelStyle())
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -89,6 +88,32 @@ struct WorkoutLiveActivityWidget: Widget {
 
 /// Playful Bold Lock Screen card (LiveActivity.md): `surface` ground following the system
 /// appearance, the outlined title tag, the clock as the largest element. No offset shadows.
+/// The Lock Screen panel's ground. Field Guide (unreleased) sits on its fixed dark `live-ground`
+/// and is drawn in Lamplight, so ink stays readable whatever the phone's appearance
+/// (LiveActivity.md); other Styles use `surface` and follow the system.
+private struct LockScreenPanelStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        #if INTERNAL_STYLES
+        if StyleRuntime.current == .fieldGuide {
+            content
+                .environment(\.colorScheme, .dark)
+                .activityBackgroundTint(Color.ffLiveGround)
+                .activitySystemActionForegroundColor(Color.ffLiveInk)
+        } else {
+            standard(content)
+        }
+        #else
+        standard(content)
+        #endif
+    }
+
+    private func standard(_ content: Content) -> some View {
+        content
+            .activityBackgroundTint(Color.ffSurface)
+            .activitySystemActionForegroundColor(Color.ffInk)
+    }
+}
+
 private struct WorkoutLockScreenView: View {
     let context: ActivityViewContext<WorkoutActivityAttributes>
 

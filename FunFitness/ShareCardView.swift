@@ -71,6 +71,8 @@ struct ShareCard: View {
         #if INTERNAL_STYLES
         if StyleRuntime.current == .arcade {
             ArcadeShareCard(content: content)
+        } else if StyleRuntime.current == .fieldGuide {
+            FieldGuideShareCard(content: content)
         } else {
             playfulBold
         }
