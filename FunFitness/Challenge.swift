@@ -5,8 +5,8 @@
 //  Monthly challenges (v2.2). Each challenge is a locally-evaluated, badge-rewarded goal in
 //  FunFitness's own voice ("Lift a Hippo March"). Challenges are YEAR-AGNOSTIC: one is active in
 //  its calendar month every year, so completing it is a fresh badge each year — the renewable
-//  content calendar. Progress is the total effective value of the challenge's activity type logged
-//  within that month; the challenge completes when it reaches `targetSI`.
+//  content calendar. Progress is what was done within that month (see `ChallengeEngine.progress`);
+//  the challenge completes when it reaches `targetSI`.
 //
 
 import Foundation
@@ -83,43 +83,70 @@ enum ChallengeEngine {
         return ChallengeCatalog.all.first { $0.month == month }
     }
 
-    /// Total effective value of the challenge's type logged in the same calendar month+year as
-    /// `date`. Weight entries multiply by reps via `effectiveValue`; other types accumulate value.
+    /// What counts toward the challenge in the same calendar month+year as `date` (FB-0021):
+    /// - **Time:** minutes moved from any source, the same minutes Effort Points uses (Time logs,
+    ///   tracked walks/runs, manual walks/runs, strength sessions counted once, and estimates for
+    ///   entries with no recorded time). So "10 hours of moving" counts walks and lifting too.
+    /// - **Reps:** Reps logs plus the reps inside weight sets.
+    /// - **Distance, Weight:** that type's effective value (weight × reps).
+    /// Routes and sessions only matter for Time; callers without them get the estimates.
     static func progress(
         for challenge: Challenge,
         in activities: [ActivityLog],
+        routes: [EffortEngine.RouteFacts] = [],
+        sessions: [EffortEngine.SessionFacts] = [],
         on date: Date,
         calendar: Calendar = .current
     ) -> Double {
-        let month = calendar.component(.month, from: date)
-        let year  = calendar.component(.year, from: date)
-        return activities.lazy
-            .filter { $0.activityType == challenge.type }
-            .filter {
-                calendar.component(.month, from: $0.loggedAt) == month &&
-                calendar.component(.year,  from: $0.loggedAt) == year
+        let inMonth = { (day: Date) in calendar.isDate(day, equalTo: date, toGranularity: .month) }
+        let monthLogs = activities.filter { inMonth($0.loggedAt) }
+
+        switch challenge.type {
+        case .duration:
+            // A session counts on the day it started, so filter the entries, not just the logs.
+            return EffortEngine.entries(
+                logs: monthLogs.map(EffortEngine.LogFacts.init), routes: routes, sessions: sessions
+            )
+            .filter { inMonth($0.date) }
+            .reduce(0) { $0 + max(0, $1.minutes) }
+        case .reps:
+            return monthLogs.reduce(0) { total, log in
+                switch log.activityType {
+                case .reps:   total + log.value
+                case .weight: total + Double(log.reps ?? 1)
+                default:      total
+                }
             }
-            .reduce(0) { $0 + $1.effectiveValue }
+        case .distance, .weight:
+            return monthLogs
+                .filter { $0.activityType == challenge.type }
+                .reduce(0) { $0 + $1.effectiveValue }
+        }
     }
 
     static func isComplete(
         _ challenge: Challenge,
         in activities: [ActivityLog],
+        routes: [EffortEngine.RouteFacts] = [],
+        sessions: [EffortEngine.SessionFacts] = [],
         on date: Date,
         calendar: Calendar = .current
     ) -> Bool {
-        progress(for: challenge, in: activities, on: date, calendar: calendar) >= challenge.targetSI
+        progress(for: challenge, in: activities, routes: routes, sessions: sessions, on: date, calendar: calendar)
+            >= challenge.targetSI
     }
 
     /// Fractional progress in [0, 1] toward the target.
     static func fractionComplete(
         _ challenge: Challenge,
         in activities: [ActivityLog],
+        routes: [EffortEngine.RouteFacts] = [],
+        sessions: [EffortEngine.SessionFacts] = [],
         on date: Date,
         calendar: Calendar = .current
     ) -> Double {
         guard challenge.targetSI > 0 else { return 0 }
-        let p = progress(for: challenge, in: activities, on: date, calendar: calendar)
+        let p = progress(for: challenge, in: activities, routes: routes, sessions: sessions, on: date, calendar: calendar)
         return min(max(p / challenge.targetSI, 0), 1)
     }
 }

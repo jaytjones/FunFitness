@@ -14,6 +14,11 @@ final class AppViewModel {
         didSet { refreshTotals() }
     }
 
+    // Tracked routes and strength sessions, synced from ContentView's @Query results. Time
+    // challenges count their minutes (FB-0021).
+    var routeFacts: [EffortEngine.RouteFacts] = []
+    var sessionFacts: [EffortEngine.SessionFacts] = []
+
     // MARK: - Totals (cached per type)
 
     // Rebuilt in one pass whenever `activities` is reassigned. Scanning every activity on each
@@ -310,12 +315,14 @@ final class AppViewModel {
 
     /// Fractional progress [0,1] toward the given challenge this month.
     func challengeFraction(_ challenge: Challenge, on date: Date = Date()) -> Double {
-        ChallengeEngine.fractionComplete(challenge, in: activities, on: date)
+        ChallengeEngine.fractionComplete(
+            challenge, in: activities, routes: routeFacts, sessions: sessionFacts, on: date)
     }
 
     /// Raw accumulated value toward the challenge this month, in SI units.
     func challengeProgressValue(_ challenge: Challenge, on date: Date = Date()) -> Double {
-        ChallengeEngine.progress(for: challenge, in: activities, on: date)
+        ChallengeEngine.progress(
+            for: challenge, in: activities, routes: routeFacts, sessions: sessionFacts, on: date)
     }
 
     /// Whether this year's occurrence of the challenge has been awarded.

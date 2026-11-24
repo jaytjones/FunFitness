@@ -35,6 +35,16 @@ struct EffortEngineTests {
         #expect(EffortEngine.heartRateZone(averageBPM: 175, age: 40) == 5)   // 97%
     }
 
+    @Test func manualDistanceWithRecordedTimeUsesThatTime() {
+        // FB-0020 manual entries can carry a duration and walk/run; that beats the estimate.
+        let now = fixedNow()
+        var run = log(.distance, 5, at: now)
+        run.durationSeconds = 30 * 60
+        run.distanceKind = .run
+        let entries = EffortEngine.entries(logs: [run], routes: [], sessions: [])
+        #expect(entries == [EffortEngine.Entry(kind: .run, date: now, minutes: 30, isEstimated: false, averageHeartRate: nil)])
+    }
+
     @Test func trackedRunUsesMovingTimeAndRunIntensity() {
         let now = fixedNow()
         let run = log(.distance, 5, at: now)

@@ -4,6 +4,7 @@ All 20 TestFlight submissions to date, pulled with `scripts/feedback` (raw repor
 `docs/feedback/20261031_feedback.md` and `20261112_feedback.md`, screenshots and crash log in `docs/feedback/assets/`; these are
 gitignored and stay on Jay's Mac, since they hold tester details). All from JT Jones.
 
+- **New 2026-11-24 (3 items):** FB-0021 and FB-0022 against 3.2 (16), FB-0023 against 3.1 (13).
 - **New 2026-11-12 (1 item):** FB-0020, against 3.1 (12).
 - **New since the build 3 review (4 items):** FB-0001 to FB-0004, against 3.1 (6) and 3.1 (9).
   Each one below has the issue, its cause in the code, a fix, and a size estimate.
@@ -25,6 +26,9 @@ Estimates include tests.
 | FB-0004 | Milestone says "You've run" even for walks | 3.1 (6) | Copy | S | P2 | ✅ Fixed for build 10 |
 | FB-0003 | Live walk banner looks like every other card; should be pinned | 3.1 (6) | UX | M | P2 | ✅ Built for build 10, needs on-device check |
 | FB-0020 | FunFitness workouts don't show in the Fitness / Activity app | 3.1 (12) | Bug + UX | S–M | **P1** | Items 1–2 in 3.1 (13); items 3–4 + indoor tracking in 3.2 (14); on-device check next |
+| FB-0021 | November challenge shows no progress after distance and strength workouts | 3.2 (16) | Bug (design gap) | S–M | **P1** | ✅ Fixed for 3.2 (18); on-device check next |
+| FB-0022 | See previous sets (reps × weight) per exercise; progress-over-time charts | 3.2 (16) | Feature | M | P2 | Proposed |
+| FB-0023 | Does the app track treadmill walks? | 3.1 (13) | Question | — | — | ✅ Answered by 3.2 (14)+ Indoor tracking; confirm on 3.2 (16) |
 
 **Also for build 10 (not tester feedback):** the build was broken by `docs/design/` being added to the app
 target in `1c07e66` (duplicate `.md` names in the bundle). All docs were removed from the app's Copy Bundle
@@ -273,6 +277,56 @@ Watch app records with `HKWorkoutSession`, so Watch workouts always save.
 **Size: S** for the setting, wording and saved/failed message. **M** if we add calories to walks/runs.
 
 ---
+
+## FB-0021 · "Gobble 'Til You Wobble" shows no progress — P1 · S–M
+
+**Issue:** "Why isn't anything being tracked for the gobble 'til you wobble challenge? I've tracked
+both distance and strength workouts." (3.2 (16), 2026-11-20)
+
+**Cause:** November's challenge is a `.duration` challenge (10 hours, `Challenge.swift`), and
+`ChallengeEngine.progress` only sums logs whose `activityType == challenge.type`. Duration logs are
+the separate "Time" activity type; a tracked walk's `ActivityLog.durationSeconds` and a strength
+session's `WorkoutSession.durationSeconds` are never counted. So any month with a time challenge
+(Feb, Jul, Nov) shows 0 unless the person logs the "Time" type by hand. Same gap, smaller, for rep
+challenges (May, Sep, Dec): reps inside weighted sets aren't counted.
+
+**Fix (recommended):** time challenges count *minutes moved from any source*: `.duration` logs
++ `durationSeconds` on distance logs + timed strength sessions (sets in a session counted once,
+via the session, not per set). Pure change in `ChallengeEngine` with tests; the card copy
+("10 hours of moving") already fits. Decide whether rep challenges should also count reps from
+weighted sets (Jay). Badge reconcile already re-runs on change, so November would update
+immediately on the next build.
+
+**Done (2026-11-24):** Jay chose yes for rep challenges. `ChallengeEngine.progress` now counts:
+Time = Effort Points' minutes (Time logs, tracked routes, manual walk/run durations, timed
+strength sessions once, estimates for untimed entries); Reps = Reps logs + reps in weight sets.
+`EffortEngine` now uses manual distance durations too (the earlier "Effort Points could use
+manual durations" follow-up). ContentView syncs routes and sessions into `AppViewModel` and
+re-checks the challenge when they change. Tests in `ChallengeTests` and `EffortEngineTests`.
+
+## FB-0022 · Previous sets per exercise; progress charts — P2 · M
+
+**Issue:** "Is there a way to see recent sets completed with a given workout? … how many reps at
+what weight I previously completed … Or even, progress over time charts."
+
+**Today:** Progress shows one personal record per named exercise (`ExerciseProgressCards`) and
+muscles worked this week. There's no per-exercise history, and the live strength session doesn't
+show last time's sets.
+
+**Fix (proposed, two parts):**
+1. **"Last time" in the live strength session** (S): when an exercise is picked, show its most
+   recent session's sets ("Last: 3 × 10 @ 50 lb") and prefill weight/reps from it. Highest value
+   for the least work.
+2. **Exercise detail** (M): tap a PR card → recent sessions list + a Swift Charts line of best set
+   (or estimated 1RM) over time. Reuses `ExerciseStats` / `AnalyticsEngine` patterns.
+
+## FB-0023 · Treadmill walks — answered
+
+**Issue:** "Does the app track treadmill walks?" (3.1 (13), 2026-11-15)
+
+**Status:** this is what the Outdoor/Indoor picker in 3.2 (14)+ does (indoor = steps-based
+distance, indoor Health workout). 3.2 (16) is the first tester build with it; still needs Jay's
+on-device check of an indoor walk.
 
 ## Older feedback (FB-0005 to FB-0019) — status
 

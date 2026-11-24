@@ -91,6 +91,9 @@ nonisolated enum EffortEngine {
         let date: Date
         let sessionID: UUID?
         let averageHeartRate: Double?
+        /// A manual distance entry's recorded time and walk/run (FB-0020); nil when not given.
+        var durationSeconds: Double? = nil
+        var distanceKind: TrackedWorkoutKind? = nil
     }
 
     struct RouteFacts: Equatable, Sendable {
@@ -107,6 +110,7 @@ nonisolated enum EffortEngine {
 
     /// Turns logs into point-earning entries:
     /// - a tracked walk/run counts its moving time at walk or run intensity;
+    /// - a manual distance entry with a recorded time counts that time, as a walk or run;
     /// - any other distance entry is estimated as a walk (`estimatedMinutesPerKm`);
     /// - a Duration log counts its minutes;
     /// - a timed strength session counts its length once; sets outside one count
@@ -129,6 +133,14 @@ nonisolated enum EffortEngine {
                         kind: route.kind == .run ? .run : .walk,
                         date: log.date,
                         minutes: route.movingSeconds / 60,
+                        isEstimated: false,
+                        averageHeartRate: log.averageHeartRate
+                    ))
+                } else if let seconds = log.durationSeconds, seconds > 0 {
+                    result.append(Entry(
+                        kind: log.distanceKind == .run ? .run : .walk,
+                        date: log.date,
+                        minutes: seconds / 60,
                         isEstimated: false,
                         averageHeartRate: log.averageHeartRate
                     ))
@@ -207,7 +219,8 @@ extension EffortEngine.LogFacts {
     init(_ log: ActivityLog) {
         self.init(
             id: log.id, type: log.activityType, value: log.value, date: log.loggedAt,
-            sessionID: log.sessionID, averageHeartRate: log.avgHeartRate
+            sessionID: log.sessionID, averageHeartRate: log.avgHeartRate,
+            durationSeconds: log.durationSeconds, distanceKind: log.distanceKind
         )
     }
 }

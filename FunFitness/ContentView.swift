@@ -16,6 +16,8 @@ struct ContentView: View {
     @Query private var streakRecords: [StreakRecord]
     @Query private var unlockedChallenges: [UnlockedChallenge]
     @Query private var customExercises: [CustomExercise]
+    @Query private var routes: [RouteSummary]
+    @Query private var sessions: [WorkoutSession]
 
     @State private var viewModel = AppViewModel()
     @State private var selectedTab: AppTab = {
@@ -275,6 +277,7 @@ struct ContentView: View {
                         viewModel.unitPreference = profile.unitPref
                     }
                     viewModel.activities = activities
+                    syncRoutesAndSessions()
                     ExerciseLibrary.shared.setCustom(customExercises)
                     WatchConnector.shared.configure(context: modelContext, viewModel: viewModel)
                     WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
@@ -344,6 +347,15 @@ struct ContentView: View {
                     checkJourneyCheckpoints(silently: false)
                     // After the streak update, so the Watch gets the new streak too.
                     WatchConnector.shared.sendContext(pref: viewModel.unitPreference, viewModel: viewModel)
+                }
+                .onChange(of: routes.map(EffortEngine.RouteFacts.init)) {
+                    // A route or session can land after its log (end of a workout, or via CloudKit).
+                    syncRoutesAndSessions()
+                    reconcileChallenges()
+                }
+                .onChange(of: sessions.map(EffortEngine.SessionFacts.init)) {
+                    syncRoutesAndSessions()
+                    reconcileChallenges()
                 }
                 .onChange(of: profiles.first?.journeyStartedAt) {
                     // A journey just started (here or on another device): record its starting
@@ -529,6 +541,11 @@ struct ContentView: View {
 
     // MARK: - Challenge Reconciliation (v2.2)
 
+    private func syncRoutesAndSessions() {
+        viewModel.routeFacts = routes.map(EffortEngine.RouteFacts.init)
+        viewModel.sessionFacts = sessions.map(EffortEngine.SessionFacts.init)
+    }
+
     // Evaluates only the CURRENT month's challenge occurrence: awards its badge when the month's
     // logged total reaches the target, and revokes it if a same-month edit/delete drops the total
     // back below target. Past occurrences are permanent badges and are never re-evaluated.
@@ -539,7 +556,9 @@ struct ContentView: View {
         if let challenge = ChallengeEngine.activeChallenge(on: now) {
             let year = Calendar.current.component(.year, from: now)
             let key  = ChallengeEngine.unlockKey(id: challenge.id, year: year)
-            let complete = ChallengeEngine.isComplete(challenge, in: activities, on: now)
+            let complete = ChallengeEngine.isComplete(
+                challenge, in: activities,
+                routes: viewModel.routeFacts, sessions: viewModel.sessionFacts, on: now)
             let recorded = unlockedChallenges.first { $0.challengeKey == key }
 
             if complete && recorded == nil {
