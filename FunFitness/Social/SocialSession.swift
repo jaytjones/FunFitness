@@ -86,6 +86,16 @@ final class SocialSession {
     private(set) var isWorking = false
     private(set) var service: (any SocialService)?
 
+    // Friends and invites (step 3)
+    private(set) var friends: [SocialProfile] = []
+    private(set) var openInvites: [FriendInvite] = []
+    /// The latest invite I created, to show its code and share it.
+    private(set) var newInvite: FriendInvite?
+    /// A short result line after entering a code ("You're friends with Sam!").
+    private(set) var inviteMessage: String?
+    /// A code from an invite link opened before Friends was ready; used once the profile exists.
+    private(set) var pendingInviteCode: String?
+
     private let idStore: AppleIDStoring
     private let makeService: (PersonID) -> any SocialService
     private let isICloudAvailable: () async -> Bool
@@ -139,6 +149,85 @@ final class SocialSession {
         guard let service, let displayName = SocialProfile.cleanedName(name) else { return }
         let profile = SocialProfile(id: service.me, displayName: displayName, avatarEmoji: emoji, styleID: styleID)
         await perform { try await service.saveProfile(profile) } onSuccess: { self.state = .ready(profile) }
+        if case .ready = state, let code = pendingInviteCode {
+            await acceptInvite(code: code)
+        }
+    }
+
+    // MARK: Friends and invites (step 3)
+
+    /// Finishes half-done invites, then reloads friends and open invites. Quiet on failure: the
+    /// lists keep their last values (Friends refreshes again next time it's shown).
+    func refreshFriends() async {
+        guard let service, case .ready = state else { return }
+        do {
+            try await service.syncInvites()
+            friends = try await service.friends()
+            openInvites = try await service.openInvites()
+        } catch {
+            logger.error("Couldn't refresh friends: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    func createInvite() async {
+        guard let service else { return }
+        inviteMessage = nil
+        await perform {
+            let invite = try await service.createInvite()
+            self.newInvite = invite
+            self.openInvites.insert(invite, at: 0)
+        }
+    }
+
+    func dismissNewInvite() { newInvite = nil }
+
+    /// A typed code or an opened invite link. Before Friends is ready, the code waits.
+    func acceptInvite(code: String) async {
+        guard let normalized = FriendInvite.normalizedCode(code) else {
+            inviteMessage = "That doesn't look like an invite code. Codes are 6 letters and numbers."
+            return
+        }
+        guard let service, case .ready = state else {
+            pendingInviteCode = normalized
+            return
+        }
+        pendingInviteCode = nil
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            switch try await service.acceptInvite(code: normalized) {
+            case .friends(let friend):
+                inviteMessage = "You're friends with \(friend.displayName)!"
+                friends = try await service.friends()
+            case .waitingForInviter:
+                inviteMessage = "Invite accepted! You'll be friends as soon as they next open FunFitness."
+            }
+        } catch let error as SocialError {
+            inviteMessage = Self.message(for: error)
+        } catch {
+            logger.error("Couldn't accept invite: \(String(describing: error), privacy: .public)")
+            inviteMessage = Self.message(for: error)
+        }
+    }
+
+    /// Opened from a funfitness://friend/<code> link.
+    func handleInviteLink(_ url: URL) async {
+        guard url.scheme == "funfitness", url.host() == "friend" else { return }
+        await acceptInvite(code: url.absoluteString)
+    }
+
+    func removeFriend(_ person: PersonID) async {
+        guard let service else { return }
+        await perform { try await service.removeFriend(person) } onSuccess: {
+            self.friends.removeAll { $0.id == person }
+        }
+    }
+
+    func block(_ person: PersonID) async {
+        guard let service else { return }
+        await perform { try await service.block(person) } onSuccess: {
+            self.friends.removeAll { $0.id == person }
+        }
     }
 
     /// Saves edits (name, emoji, style, sharing). Shows the change at once and puts it back if
@@ -154,6 +243,10 @@ final class SocialSession {
         idStore.appleUserID = nil
         service = nil
         state = .signedOut
+        friends = []
+        openInvites = []
+        newInvite = nil
+        inviteMessage = nil
     }
 
     /// Removes the Friends profile and everything shared from it, then signs out.
@@ -211,6 +304,16 @@ final class SocialSession {
     }
 
     static func message(for error: Error) -> String {
+        if let social = error as? SocialError {
+            switch social {
+            case .inviteNotFound: return "That code didn't work. It may have been used already. Ask for a new one."
+            case .inviteExpired: return "That invite has expired. Ask for a new one."
+            case .ownInvite: return "That's your own invite. Send it to a friend instead."
+            case .alreadyFriends: return "You're already friends."
+            case .blocked: return "You can't add this person."
+            default: break
+            }
+        }
         if let ckError = error as? CKError {
             switch ckError.code {
             case .networkUnavailable, .networkFailure: return "No connection. Friends needs the internet."

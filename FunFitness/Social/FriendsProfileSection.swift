@@ -24,6 +24,8 @@ struct FriendsProfileSection: View {
     @State private var isEditingName = false
     @State private var nameDraft = ""
     @State private var emojiDraft = FriendsProfileSection.emojis[0]
+    @State private var codeDraft = ""
+    @State private var friendToBlock: SocialProfile?
 
     static let emojis = ["🦛", "🐘", "🦒", "🐢", "🦖", "🐙", "🦊", "🐧", "🦄", "🐝", "🍕", "🚀"]
 
@@ -53,6 +55,7 @@ struct FriendsProfileSection: View {
         .task {
             session.observeRevocation()
             await session.refresh()
+            await session.refreshFriends()
         }
         .onChange(of: styleID) {
             // Keep the Friends profile wearing the current style.
@@ -62,6 +65,23 @@ struct FriendsProfileSection: View {
         }
         .sheet(isPresented: $showHowItWorks) {
             NavigationStack { HowFriendsWorksView() }
+        }
+        .sheet(item: Binding(get: { session.newInvite }, set: { if $0 == nil { session.dismissNewInvite() } })) { invite in
+            NavigationStack { InviteSheet(invite: invite) }
+                .presentationDetents([.medium])
+        }
+        .confirmationDialog(
+            Text(verbatim: "Block \(friendToBlock?.displayName ?? "this friend")?"),
+            isPresented: Binding(get: { friendToBlock != nil }, set: { if !$0 { friendToBlock = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(role: .destructive) {
+                if let friend = friendToBlock { Task { await session.block(friend.id) } }
+            } label: {
+                Text(verbatim: "Block")
+            }
+        } message: {
+            Text(verbatim: "You'll stop seeing each other, and invites between you won't work. They aren't told.")
         }
         .confirmationDialog(
             Text(verbatim: "Delete your Friends profile?"),
@@ -198,6 +218,8 @@ struct FriendsProfileSection: View {
             }
 
             Divider()
+            friendsList
+            Divider()
             Text(verbatim: "What friends see")
                 .ffFont(.bodyStrong)
                 .foregroundStyle(Color.ffInk)
@@ -223,6 +245,88 @@ struct FriendsProfileSection: View {
                 .accessibilityIdentifier("friendsDeleteButton")
             }
         }
+    }
+
+    // MARK: Friends and invites (step 3)
+
+    private var friendsList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: session.friends.isEmpty ? "Friends" : "Friends · \(session.friends.count)")
+                .ffFont(.bodyStrong)
+                .foregroundStyle(Color.ffInk)
+                .padding(.top, 12)
+
+            if session.friends.isEmpty {
+                Text(verbatim: "No friends yet. Send an invite, or enter a friend's code below.")
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
+            }
+            ForEach(session.friends) { friend in
+                HStack(spacing: 10) {
+                    Text(friend.avatarEmoji).font(.title2).accessibilityHidden(true)
+                    Text(friend.displayName).ffFont(.body).foregroundStyle(Color.ffInk)
+                    Spacer()
+                    Menu {
+                        Button(role: .destructive) {
+                            Task { await session.removeFriend(friend.id) }
+                        } label: {
+                            Label { Text(verbatim: "Remove Friend") } icon: { Image(systemName: "person.badge.minus") }
+                        }
+                        Button(role: .destructive) {
+                            friendToBlock = friend
+                        } label: {
+                            Label { Text(verbatim: "Block") } icon: { Image(systemName: "hand.raised") }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundStyle(Color.ffInkMuted)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(Text(verbatim: "Options for \(friend.displayName)"))
+                }
+                .accessibilityElement(children: .contain)
+            }
+
+            Button {
+                Task { await session.createInvite() }
+            } label: {
+                Label { Text(verbatim: "Invite a Friend") } icon: { Image(systemName: "envelope.badge") }
+            }
+            .buttonStyle(.ffSecondary)
+            .disabled(session.isWorking)
+            .accessibilityIdentifier("friendsInviteButton")
+
+            if !session.openInvites.isEmpty {
+                Text(verbatim: "Waiting on \(session.openInvites.count) invite\(session.openInvites.count == 1 ? "" : "s"): \(session.openInvites.map(\.code).formatted(.list(type: .and)))")
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInkMuted)
+            }
+
+            HStack(spacing: 8) {
+                TextField(text: $codeDraft) { Text(verbatim: "Friend's code") }
+                    .ffFont(.body)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .ffWell(radius: FFRadius.sm)
+                    .accessibilityIdentifier("friendsCodeField")
+                Button {
+                    let code = codeDraft
+                    codeDraft = ""
+                    Task { await session.acceptInvite(code: code) }
+                } label: {
+                    Text(verbatim: "Add")
+                }
+                .buttonStyle(.ffPrimary)
+                .fixedSize()
+                .disabled(FriendInvite.normalizedCode(codeDraft) == nil || session.isWorking)
+            }
+            if let message = session.inviteMessage {
+                note(message)
+            }
+        }
+        .padding(.bottom, 12)
     }
 
     // MARK: Pieces
@@ -282,6 +386,53 @@ struct FriendsProfileSection: View {
             .ffFont(.caption)
             .foregroundStyle(Color.ffInkMuted)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Shows a new invite: the code to read out, and the link to send (Jay: both).
+private struct InviteSheet: View {
+    let invite: FriendInvite
+    @Environment(\.dismiss) private var dismiss
+
+    private var spacedCode: String {
+        let code = invite.code
+        return "\(code.prefix(3)) \(code.suffix(3))"
+    }
+
+    private var shareText: String {
+        let link = invite.link?.absoluteString ?? ""
+        return "Be my FunFitness friend! Open \(link) or enter code \(invite.code) in Profile › Friends. Good for 7 days."
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(verbatim: "Your invite code")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+            Text(verbatim: spacedCode)
+                .font(.system(size: 44, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color.ffInk)
+                .textSelection(.enabled)
+                .accessibilityLabel(Text(verbatim: invite.code.map(String.init).joined(separator: " ")))
+            Text(verbatim: "Good for 7 days, for one friend. You'll be friends once they enter it and you next open FunFitness.")
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+                .multilineTextAlignment(.center)
+            ShareLink(item: shareText) {
+                Label { Text(verbatim: "Send Invite Link") } icon: { Image(systemName: "square.and.arrow.up") }
+            }
+            .buttonStyle(.ffPrimary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.ffBg.ignoresSafeArea())
+        .navigationTitle(Text(verbatim: "Invite a Friend"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button { dismiss() } label: { Text(verbatim: "Done") }
+            }
+        }
     }
 }
 

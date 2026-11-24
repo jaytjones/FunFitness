@@ -323,6 +323,13 @@ struct ContentView: View {
                     // Friends (3.4): catch "Stop Using Apple ID" at launch and while running.
                     SocialSession.shared.observeRevocation()
                     await SocialSession.shared.refresh()
+                    await SocialSession.shared.refreshFriends()
+                }
+                .onOpenURL { url in
+                    // funfitness://friend/<code> invite links (3.4).
+                    guard url.scheme == "funfitness", url.host() == "friend" else { return }
+                    selectedTab = .you
+                    Task { await SocialSession.shared.handleInviteLink(url) }
                 }
                 #endif
                 .onChange(of: scenePhase) { _, phase in

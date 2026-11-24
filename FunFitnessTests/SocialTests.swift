@@ -38,7 +38,7 @@ struct SocialTests {
         try await a.saveProfile(profile(ana, "Ana", sharing: anaSharing))
         try await b.saveProfile(profile(ben, "Ben", sharing: benSharing))
         let invite = try await a.createInvite()
-        _ = try await b.acceptInvite(code: invite.code)
+        #expect(try await b.acceptInvite(code: invite.code) == .friends(profile(ana, "Ana", sharing: anaSharing)))
         return (a, b)
     }
 
@@ -93,6 +93,19 @@ struct SocialTests {
         await #expect(throws: SocialError.ownInvite) { _ = try await a.acceptInvite(code: invite.code) }
         _ = try await b.acceptInvite(code: invite.code)
         await #expect(throws: SocialError.inviteNotFound) { _ = try await c.acceptInvite(code: invite.code) }
+    }
+
+    @Test func openInvitesListOnlyMyUnusedOnes() async throws {
+        let store = InMemorySocialStore()
+        let a = InMemorySocialService(me: ana, store: store)
+        let b = InMemorySocialService(me: ben, store: store)
+        try await a.saveProfile(profile(ana, "Ana"))
+        try await b.saveProfile(profile(ben, "Ben"))
+        let used = try await a.createInvite()
+        let open = try await a.createInvite()
+        _ = try await b.acceptInvite(code: used.code)
+        #expect(try await a.openInvites().map(\.code) == [open.code])
+        #expect(try await b.openInvites().isEmpty)
     }
 
     @Test func expiredInvitesAreRefused() async throws {

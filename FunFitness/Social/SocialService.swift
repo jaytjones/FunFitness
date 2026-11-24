@@ -31,6 +31,15 @@ nonisolated enum SocialError: Error, Equatable, Sendable {
     case notAvailableYet
 }
 
+/// The result of entering someone's invite code or link.
+nonisolated enum InviteAcceptance: Equatable, Sendable {
+    /// Friends right away (the in-memory service; or the inviter's app already finished its side).
+    case friends(SocialProfile)
+    /// Our side is done; it completes when the inviter's app next syncs (shared zones need both
+    /// people to add each other to their own share).
+    case waitingForInviter
+}
+
 /// Everything Friends can do. Every call acts as the signed-in person (`me`).
 protocol SocialService: Sendable {
     var me: PersonID { get }
@@ -43,7 +52,11 @@ protocol SocialService: Sendable {
 
     // Friends
     func createInvite() async throws -> FriendInvite
-    func acceptInvite(code: String) async throws -> SocialProfile
+    func acceptInvite(code: String) async throws -> InviteAcceptance
+    /// My invites nobody has used yet (unexpired), newest first.
+    func openInvites() async throws -> [FriendInvite]
+    /// Finishes any half-done invite handshakes (both directions). Call on refresh.
+    func syncInvites() async throws
     /// Friends who aren't blocked in either direction, by name.
     func friends() async throws -> [SocialProfile]
     func removeFriend(_ person: PersonID) async throws
@@ -140,7 +153,7 @@ struct InMemorySocialService: SocialService {
         return invite
     }
 
-    func acceptInvite(code input: String) async throws -> SocialProfile {
+    func acceptInvite(code input: String) async throws -> InviteAcceptance {
         try await requireProfile()
         guard let code = FriendInvite.normalizedCode(input), let invite = await store.invites[code] else {
             throw SocialError.inviteNotFound
@@ -153,8 +166,18 @@ struct InMemorySocialService: SocialService {
         guard let friend = await store.profiles[invite.from] else { throw SocialError.inviteNotFound }
         await store.addFriendship(Friendship(id: UUID(), people: [me, invite.from], since: now()))
         await store.removeInvite(code)   // one use
-        return friend
+        return .friends(friend)
     }
+
+    func openInvites() async throws -> [FriendInvite] {
+        let date = now()
+        return await store.invites.values
+            .filter { $0.from == me && !$0.isExpired(at: date) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Nothing to finish: the in-memory store completes invites at once.
+    func syncInvites() async throws {}
 
     func friends() async throws -> [SocialProfile] {
         let ids = await activeFriendIDs()

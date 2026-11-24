@@ -123,6 +123,86 @@ struct SocialSessionTests {
         #expect(await store.profiles.isEmpty)
     }
 
+    // MARK: Friends and invites (step 3)
+
+    private func readySession(_ appleID: String, _ name: String, store: InMemorySocialStore) async -> SocialSession {
+        let s = session(store: store)
+        await s.signedIn(appleUserID: appleID)
+        await s.createProfile(name: name, emoji: "🦛", styleID: "playful-bold")
+        return s
+    }
+
+    @Test func inviteByCodeMakesBothSidesFriends() async throws {
+        let store = InMemorySocialStore()
+        let ana = await readySession("apple-ana", "Ana", store: store)
+        let ben = await readySession("apple-ben", "Ben", store: store)
+
+        await ana.createInvite()
+        let invite = try #require(ana.newInvite)
+        #expect(ana.openInvites.map(\.code) == [invite.code])
+
+        await ben.acceptInvite(code: invite.code.lowercased())
+        #expect(ben.inviteMessage == "You're friends with Ana!")
+        #expect(ben.friends.map(\.displayName) == ["Ana"])
+
+        await ana.refreshFriends()
+        #expect(ana.friends.map(\.displayName) == ["Ben"])
+        #expect(ana.openInvites.isEmpty)
+    }
+
+    @Test func inviteLinkOpenedBeforeSignInIsUsedAfterTheProfileIsMade() async throws {
+        let store = InMemorySocialStore()
+        let ana = await readySession("apple-ana", "Ana", store: store)
+        await ana.createInvite()
+        let link = try #require(ana.newInvite?.link)
+
+        let ben = session(store: store)
+        await ben.handleInviteLink(link)          // not signed in yet: the code waits
+        #expect(ben.pendingInviteCode != nil)
+        await ben.signedIn(appleUserID: "apple-ben")
+        await ben.createProfile(name: "Ben", emoji: "🐢", styleID: "playful-bold")
+        #expect(ben.friends.map(\.displayName) == ["Ana"])
+        #expect(ben.pendingInviteCode == nil)
+    }
+
+    @Test func badCodesExplainThemselves() async throws {
+        let store = InMemorySocialStore()
+        let ana = await readySession("apple-ana", "Ana", store: store)
+        await ana.acceptInvite(code: "nope")
+        #expect(ana.inviteMessage?.contains("doesn't look like an invite code") == true)
+        await ana.acceptInvite(code: "ABC234")
+        #expect(ana.inviteMessage == SocialSession.message(for: SocialError.inviteNotFound))
+        await ana.createInvite()
+        await ana.acceptInvite(code: try #require(ana.newInvite?.code))
+        #expect(ana.inviteMessage == SocialSession.message(for: SocialError.ownInvite))
+    }
+
+    @Test func removeAndBlockTakeFriendsOffTheList() async throws {
+        let store = InMemorySocialStore()
+        let ana = await readySession("apple-ana", "Ana", store: store)
+        let ben = await readySession("apple-ben", "Ben", store: store)
+        await ana.createInvite()
+        await ben.acceptInvite(code: try #require(ana.newInvite?.code))
+        await ana.refreshFriends()
+
+        await ana.block(PersonID(appleUserID: "apple-ben"))
+        #expect(ana.friends.isEmpty)
+        await ben.refreshFriends()
+        #expect(ben.friends.isEmpty)
+    }
+
+    @Test func handshakeRecordsRoundTrip() throws {
+        let handshake = SocialRecords.Handshake(
+            code: "ABC234", userRecordName: "_abc", shareURL: try #require(URL(string: "https://www.icloud.com/share/x")),
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000), expiresAt: Date(timeIntervalSince1970: 1_800_604_800)
+        )
+        let record = CKRecord(recordType: SocialRecords.inviteType)
+        SocialRecords.apply(handshake, to: record)
+        #expect(SocialRecords.handshake(from: record) == handshake)
+        #expect(SocialRecords.inviteRecordName("ABC234") == "invite-ABC234")
+        #expect(SocialRecords.responseRecordName("ABC234") == "response-ABC234")
+    }
+
     // MARK: CloudKit record mapping
 
     @Test func profileRecordRoundTrips() {

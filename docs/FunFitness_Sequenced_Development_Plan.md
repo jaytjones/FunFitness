@@ -241,7 +241,7 @@ Tests: unlock resolution is a pure function of (style, longest streak, has purch
 
 ## Release 3.4 — "Bring Your Friends"
 
-> **Status: steps 1–2 built (2026-11-24), behind `INTERNAL_SOCIAL`.** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
+> **Status: steps 1–3 built (2026-11-24), behind `INTERNAL_SOCIAL`.** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
 
 **Theme:** The social layer, in FunFitness's voice — for friends you invite, on Apple devices.
 
