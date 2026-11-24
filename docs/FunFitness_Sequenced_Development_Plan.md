@@ -241,7 +241,7 @@ Tests: unlock resolution is a pure function of (style, longest streak, has purch
 
 ## Release 3.4 — "Bring Your Friends"
 
-> **Status: planned (2026-11-24).** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
+> **Status: step 1 built (2026-11-24), behind `INTERNAL_SOCIAL`.** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
 
 **Theme:** The social layer, in FunFitness's voice — for friends you invite, on Apple devices.
 
@@ -294,12 +294,13 @@ Copy stays in FunFitness's voice and short — one "How Friends works" page link
 5. Friend Duels (weekly, silly units, consolation screens) and the friends leaderboard.
 6. App Privacy answers, privacy policy, App Store text; CloudKit schema deploy to Production (Jay).
 
-**Open questions for Jay**
-- How friends find each other: invite link only, code only, or both? (Recommend both; contacts matching no.)
-- Duel scoring: total in the duel's unit (fair to big lifters) or Effort Points (fair across activity types)?
-- Default visibility for a new profile: nothing shared until turned on (recommended), or unlocks on?
-- Does 3.4 ship behind a flag to Jay's group first, like the styles?
-- Sign-in placement: a Friends tab, or a section in Profile until there's enough to fill a tab?
+**Decisions (Jay, 2026-11-24)** — details, gating and the full limitations list (user-facing and technical) in `docs/20261124_3.4_design_decisions.md`
+- Friends find each other by **both** invite link and code; no contacts matching.
+- Duels are scored in **Effort Points**.
+- New profiles share **nothing until turned on**.
+- **Internal testers only** until launch: everything behind the `INTERNAL_SOCIAL` build flag (Debug + Internal, never Release), Internal TestFlight builds to the internal group; no owner check (testing needs several accounts).
+- Sign-in lives in a **Profile section**; a Friends tab only if Profile gets cluttered.
+- Still open: CloudKit public database vs per-person shared zones (`CKShare`) for stricter privacy — decide before step 2.
 
 **Why this order:** Social is deliberately late. It requires identity, benefits from content depth (2.2) and a finished visual identity (3.2–3.3), and is the first feature set with abuse surface area — kept small by invite-only friends.
 

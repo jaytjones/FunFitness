@@ -19,4 +19,15 @@ nonisolated enum BuildFlags {
         return false
         #endif
     }()
+
+    /// True in Debug and Internal builds: 3.4 Friends (unreleased) is compiled in. Internal
+    /// TestFlight builds go only to the internal testers' group (Jay, 2026-11-24). No owner check,
+    /// since testing friends needs more than one account.
+    static let internalSocial: Bool = {
+        #if INTERNAL_SOCIAL
+        return true
+        #else
+        return false
+        #endif
+    }()
 }

@@ -2,8 +2,9 @@
 //  BuildFlagsTests.swift
 //  FunFitnessTests
 //
-//  Unreleased styles must never reach testers (Jay, 2026-11-15). Tests run in Debug, where the
-//  flag is on, so these read the project file to check every configuration's setting directly.
+//  Unreleased styles (Jay, 2026-11-15) and 3.4 Friends (Jay, 2026-11-24) must never reach
+//  external testers or the App Store. Tests run in Debug, where the flags are on, so these read
+//  the project file to check every configuration's setting directly.
 //
 
 import Testing
@@ -50,6 +51,21 @@ struct BuildFlagsTests {
         let configs = try conditionsByConfiguration()
         #expect(configs.contains { $0.name == "Internal" && $0.conditions.contains("INTERNAL_STYLES") })
         #expect(configs.contains { $0.name == "Debug" && $0.conditions.contains("INTERNAL_STYLES") })
+    }
+
+    @Test(arguments: ["INTERNAL_STYLES", "INTERNAL_SOCIAL"])
+    func onlyDebugAndInternalSetTheFlag(_ flag: String) throws {
+        let configs = try conditionsByConfiguration()
+        #expect(configs.contains { $0.name == "Release" })
+        for config in configs where config.name == "Release" {
+            #expect(!config.conditions.contains(flag), "Release must not set \(flag)")
+        }
+        #expect(configs.contains { $0.name == "Internal" && $0.conditions.contains(flag) })
+        #expect(configs.contains { $0.name == "Debug" && $0.conditions.contains(flag) })
+    }
+
+    @Test func debugTestBuildHasTheSocialFlag() {
+        #expect(BuildFlags.internalSocial)
     }
 
     @Test func debugTestBuildHasTheFlag() {
