@@ -239,6 +239,10 @@ struct StrengthSessionView: View {
                 exerciseID: setType == .weight ? $weightExerciseID : $bodyweightExerciseID,
                 showError: showInputError && currentExercise == nil
             )
+            .onChange(of: weightExerciseID) { prefillFromExercise(type: .weight) }
+            .onChange(of: bodyweightExerciseID) { prefillFromExercise(type: .reps) }
+
+            lastTimeLine
 
             if setType == .weight {
                 HStack(spacing: 12) {
@@ -456,6 +460,55 @@ struct StrengthSessionView: View {
         if bodyweightText.isEmpty {
             let lastBodyweight = viewModel.activities.filter { $0.activityType == .reps }.max { $0.loggedAt < $1.loggedAt }
             bodyweightText = lastBodyweight.map { UnitConverter.wholeInputString($0.value) } ?? "10"
+        }
+    }
+
+    // MARK: - Last time (FB-0022)
+
+    /// This exercise's sets from its previous session, so the person can match or beat them.
+    @ViewBuilder
+    private var lastTimeLine: some View {
+        if let exercise = currentExercise {
+            let sets = ExerciseStats.lastTime(
+                exerciseID: exercise.id,
+                type: setType,
+                sets: viewModel.activities.filter { $0.exerciseID == exercise.id }.map(ExerciseStats.SetFacts.init),
+                excludingSession: manager.currentSessionID
+            )
+            if let first = sets.first {
+                let day = first.date.formatted(.dateTime.month(.abbreviated).day())
+                let summary = ExerciseStats.grouped(sets).map(groupText).formatted(.list(type: .and, width: .narrow))
+                Label {
+                    Text("Last time (\(day)): \(summary)")
+                } icon: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .ffFont(.caption)
+                .foregroundStyle(Color.ffInkMuted)
+                .accessibilityIdentifier("strengthLastTime")
+            }
+        }
+    }
+
+    /// "3 × 10 @ 50 lb" for weight sets, "3 × 12" for bodyweight reps.
+    private func groupText(_ group: ExerciseStats.SetGroup) -> String {
+        setType == .weight
+            ? "\(group.count) × \(group.reps ?? 1) @ \(UnitConverter.weightString(group.value, pref: pref))"
+            : "\(group.count) × \(UnitConverter.wholeInputString(group.value))"
+    }
+
+    /// Picking an exercise fills the fields from its most recent set (this session's, else the
+    /// last time's). Nothing changes for an exercise with no history.
+    private func prefillFromExercise(type: ActivityType) {
+        let id = type == .weight ? weightExerciseID : bodyweightExerciseID
+        guard let id, let last = viewModel.activities
+            .filter({ $0.exerciseID == id && $0.activityType == type })
+            .max(by: { $0.loggedAt < $1.loggedAt }) else { return }
+        if type == .weight {
+            weightText = UnitConverter.weightInputString(last.value, pref: pref)
+            repsText = "\(last.reps ?? 1)"
+        } else {
+            bodyweightText = UnitConverter.wholeInputString(last.value)
         }
     }
 

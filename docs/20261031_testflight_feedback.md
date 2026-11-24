@@ -27,7 +27,7 @@ Estimates include tests.
 | FB-0003 | Live walk banner looks like every other card; should be pinned | 3.1 (6) | UX | M | P2 | ✅ Built for build 10, needs on-device check |
 | FB-0020 | FunFitness workouts don't show in the Fitness / Activity app | 3.1 (12) | Bug + UX | S–M | **P1** | Items 1–2 in 3.1 (13); items 3–4 + indoor tracking in 3.2 (14); on-device check next |
 | FB-0021 | November challenge shows no progress after distance and strength workouts | 3.2 (16) | Bug (design gap) | S–M | **P1** | ✅ Fixed for 3.2 (18); on-device check next |
-| FB-0022 | See previous sets (reps × weight) per exercise; progress-over-time charts | 3.2 (16) | Feature | M | P2 | Proposed |
+| FB-0022 | See previous sets (reps × weight) per exercise; progress-over-time charts | 3.2 (16) | Feature | M | P2 | Part 1 ✅ for 3.2 (19); part 2 (exercise detail + chart) open |
 | FB-0023 | Does the app track treadmill walks? | 3.1 (13) | Question | — | — | ✅ Answered by 3.2 (14)+ Indoor tracking; confirm on 3.2 (16) |
 
 **Also for build 10 (not tester feedback):** the build was broken by `docs/design/` being added to the app
@@ -319,6 +319,12 @@ show last time's sets.
    for the least work.
 2. **Exercise detail** (M): tap a PR card → recent sessions list + a Swift Charts line of best set
    (or estimated 1RM) over time. Reuses `ExerciseStats` / `AnalyticsEngine` patterns.
+
+**Part 1 done (2026-11-24):** under the exercise picker in a live strength session, "Last time
+(Nov 18): 3 × 10 @ 50 lb, 1 × 8 @ 55 lb" (bodyweight: "3 × 12"). Last time = the most recent
+earlier session with that exercise (or the most recent day, for sets logged outside a session);
+the session in progress never counts. Picking an exercise fills weight and reps from its latest
+set. Pure logic in `ExerciseStats.lastTime` / `grouped`, tested in `ExerciseTests`.
 
 ## FB-0023 · Treadmill walks — answered
 

@@ -45,6 +45,9 @@ final class StrengthSessionManager {
     @ObservationIgnored private weak var viewModel: AppViewModel?
     @ObservationIgnored private var record: WorkoutSession?
 
+    /// The saved WorkoutSession's id once the first set is logged; nil before that.
+    var currentSessionID: UUID? { record?.id }
+
     private var liveActivity: WorkoutLiveActivityController { .shared }
 
     private init() {}

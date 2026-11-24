@@ -128,6 +128,61 @@ struct ExerciseTests {
         ExerciseStats.SetFacts(exerciseID: id, type: type, value: value, reps: reps, date: date)
     }
 
+    // MARK: - Last time (FB-0022)
+
+    private func sessionSet(_ id: String, _ value: Double, reps: Int?, at date: Date, session: UUID?,
+                            type: ActivityType = .weight) -> ExerciseStats.SetFacts {
+        ExerciseStats.SetFacts(exerciseID: id, type: type, value: value, reps: reps, date: date, sessionID: session)
+    }
+
+    @Test func lastTimeIsTheMostRecentEarlierSessionOldestFirst() {
+        let now = fixedNow()
+        let older = UUID(), previous = UUID(), current = UUID()
+        let twoWeeksAgo = cal.date(byAdding: .day, value: -14, to: now)!
+        let lastWeek = cal.date(byAdding: .day, value: -7, to: now)!
+        let sets = [
+            sessionSet("bench", 40, reps: 10, at: twoWeeksAgo, session: older),
+            sessionSet("bench", 50, reps: 8, at: lastWeek.addingTimeInterval(120), session: previous),
+            sessionSet("bench", 50, reps: 10, at: lastWeek, session: previous),
+            sessionSet("squat", 80, reps: 5, at: lastWeek, session: previous),     // other exercise
+            sessionSet("bench", 55, reps: 6, at: now, session: current),           // in progress
+        ]
+        let last = ExerciseStats.lastTime(exerciseID: "bench", type: .weight, sets: sets, excludingSession: current)
+        #expect(last.map(\.value) == [50, 50])
+        #expect(last.map(\.reps) == [10, 8])
+    }
+
+    @Test func lastTimeGroupsLooseSetsByDay() {
+        let now = fixedNow()
+        let yesterday = cal.date(byAdding: .day, value: -1, to: now)!
+        let sets = [
+            sessionSet("pushup", 15, reps: nil, at: yesterday, session: nil, type: .reps),
+            sessionSet("pushup", 12, reps: nil, at: yesterday.addingTimeInterval(300), session: nil, type: .reps),
+            sessionSet("pushup", 20, reps: nil, at: cal.date(byAdding: .day, value: -3, to: now)!, session: nil, type: .reps),
+        ]
+        let last = ExerciseStats.lastTime(exerciseID: "pushup", type: .reps, sets: sets, excludingSession: nil)
+        #expect(last.map(\.value) == [15, 12])
+    }
+
+    @Test func lastTimeIsEmptyWithoutEarlierSets() {
+        let current = UUID()
+        let sets = [sessionSet("bench", 50, reps: 10, at: fixedNow(), session: current)]
+        #expect(ExerciseStats.lastTime(exerciseID: "bench", type: .weight, sets: sets, excludingSession: current).isEmpty)
+        #expect(ExerciseStats.lastTime(exerciseID: "row", type: .weight, sets: sets, excludingSession: nil).isEmpty)
+    }
+
+    @Test func groupedFoldsConsecutiveIdenticalSets() {
+        let now = fixedNow()
+        let sets = [
+            set("bench", 50, reps: 10, at: now), set("bench", 50, reps: 10, at: now),
+            set("bench", 50, reps: 10, at: now), set("bench", 55, reps: 8, at: now),
+            set("bench", 50, reps: 10, at: now),
+        ]
+        #expect(ExerciseStats.grouped(sets) == [
+            .init(count: 3, value: 50, reps: 10), .init(count: 1, value: 55, reps: 8), .init(count: 1, value: 50, reps: 10),
+        ])
+    }
+
     @Test func musclesWorkedCountsThisWeekOnly() {
         let now = fixedNow()
         let lastWeek = cal.date(byAdding: .weekOfYear, value: -1, to: now)!

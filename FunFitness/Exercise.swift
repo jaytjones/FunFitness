@@ -167,6 +167,8 @@ nonisolated enum ExerciseStats {
         let value: Double
         let reps: Int?
         let date: Date
+        /// The WorkoutSession the set was logged in, if any.
+        var sessionID: UUID? = nil
     }
 
     struct MuscleCount: Equatable, Identifiable, Sendable {
@@ -223,6 +225,49 @@ nonisolated enum ExerciseStats {
         return best.values.sorted { $0.date > $1.date }
     }
 
+    /// The sets of one exercise from the last time it was done, oldest first (FB-0022). "Last
+    /// time" is the most recent session containing it, or, for sets logged outside a session, the
+    /// most recent day. Sets from `currentSessionID` (the session in progress) don't count, so the
+    /// answer stays put while the person logs today's sets. Empty when there's nothing earlier.
+    static func lastTime(
+        exerciseID: String,
+        type: ActivityType,
+        sets: [SetFacts],
+        excludingSession currentSessionID: UUID?,
+        calendar: Calendar = .current
+    ) -> [SetFacts] {
+        let matching = sets.filter {
+            $0.exerciseID == exerciseID && $0.type == type
+                && ($0.sessionID == nil || $0.sessionID != currentSessionID)
+        }
+        guard let latest = matching.max(by: { $0.date < $1.date }) else { return [] }
+        let sameOccasion: (SetFacts) -> Bool = { set in
+            if let session = latest.sessionID { return set.sessionID == session }
+            return set.sessionID == nil && calendar.isDate(set.date, inSameDayAs: latest.date)
+        }
+        return matching.filter(sameOccasion).sorted { $0.date < $1.date }
+    }
+
+    /// Consecutive identical sets folded together, for "3 × 10 @ 50 lb, 1 × 8 @ 55 lb".
+    struct SetGroup: Equatable, Sendable {
+        let count: Int
+        /// kg per rep for weight sets; the rep count for bodyweight sets.
+        let value: Double
+        let reps: Int?
+    }
+
+    static func grouped(_ sets: [SetFacts]) -> [SetGroup] {
+        var groups: [SetGroup] = []
+        for set in sets {
+            if let last = groups.last, last.value == set.value, last.reps == set.reps {
+                groups[groups.count - 1] = SetGroup(count: last.count + 1, value: last.value, reps: last.reps)
+            } else {
+                groups.append(SetGroup(count: 1, value: set.value, reps: set.reps))
+            }
+        }
+        return groups
+    }
+
     /// Heavier wins; at the same weight, more reps; at a tie, the earlier set keeps the record.
     private static func beats(_ candidate: Record, _ current: Record) -> Bool {
         if candidate.value != current.value { return candidate.value > current.value }
@@ -234,6 +279,9 @@ nonisolated enum ExerciseStats {
 
 extension ExerciseStats.SetFacts {
     init(_ log: ActivityLog) {
-        self.init(exerciseID: log.exerciseID, type: log.activityType, value: log.value, reps: log.reps, date: log.loggedAt)
+        self.init(
+            exerciseID: log.exerciseID, type: log.activityType, value: log.value, reps: log.reps, date: log.loggedAt,
+            sessionID: log.sessionID
+        )
     }
 }
