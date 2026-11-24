@@ -337,6 +337,47 @@ struct CloudKitSocialService: SocialService {
     func postWeeklyEffort(_ points: Double, weekStart: Date) async throws {}
     func duels() async throws -> [Duel] { [] }
 
+    // MARK: Schema (Debug)
+
+    #if DEBUG
+    /// Creates every Friends record type in the CloudKit **Development** schema with one account:
+    /// saves a throwaway record of each type with every field set, then deletes them. Launch a Debug
+    /// build with `-initFriendsSchema`. Like SwiftData's `-initCloudKitSchema`, Development only.
+    func initializeSchema() async throws {
+        let share = try await ensureZoneAndShare()
+        try await ensureLocalZone()
+        let url = share.url ?? URL(string: "https://www.icloud.com/share/schema")!
+        let date = Date()
+        let handshake = SocialRecords.Handshake(code: "SCHEMA", userRecordName: "schema", shareURL: url,
+                                                createdAt: date, expiresAt: date)
+
+        let profile = CKRecord(recordType: SocialRecords.profileType,
+                               recordID: CKRecord.ID(recordName: "schema-profile", zoneID: Self.zoneID))
+        SocialRecords.apply(SocialProfile(id: me, displayName: "Schema", avatarEmoji: "🦛", styleID: "playful-bold",
+                                          sharing: SharingSettings(shareUnlocks: true, shareStreak: true, shareWeeklyEffort: true)),
+                            to: profile)
+
+        func local(_ type: String) -> CKRecord {
+            let record = CKRecord(recordType: type, recordID: CKRecord.ID(recordName: "schema-\(type)", zoneID: Self.localZoneID))
+            SocialRecords.apply(handshake, to: record)
+            record[SocialRecords.Field.personID] = me.rawValue
+            return record
+        }
+        let privateRecords = [profile, local(SocialRecords.outgoingType), local(SocialRecords.pendingType),
+                              local(SocialRecords.blockedType)]
+        let publicRecords = [SocialRecords.inviteType, SocialRecords.responseType].map { type -> CKRecord in
+            let record = CKRecord(recordType: type, recordID: CKRecord.ID(recordName: "schema-\(type)"))
+            SocialRecords.apply(handshake, to: record)
+            return record
+        }
+
+        try await save(privateRecords, in: privateDB, policy: .allKeys)
+        try await save(publicRecords, in: publicDB, policy: .allKeys)
+        try await delete(privateRecords.map(\.recordID), in: privateDB)
+        try await delete(publicRecords.map(\.recordID), in: publicDB)
+    }
+    #endif
+
     // MARK: Helpers
 
     /// The record, or nil if it (or its zone) doesn't exist yet.

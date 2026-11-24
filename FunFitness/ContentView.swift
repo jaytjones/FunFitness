@@ -324,6 +324,12 @@ struct ContentView: View {
                     SocialSession.shared.observeRevocation()
                     await SocialSession.shared.refresh()
                     await SocialSession.shared.refreshFriends()
+                    #if DEBUG
+                    // `-initFriendsSchema`: create all Friends record types in CloudKit Development.
+                    if UserDefaults.standard.bool(forKey: "initFriendsSchema") {
+                        await SocialSession.initializeFriendsSchema()
+                    }
+                    #endif
                 }
                 .onOpenURL { url in
                     // funfitness://friend/<code> invite links (3.4).

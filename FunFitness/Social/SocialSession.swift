@@ -303,6 +303,22 @@ final class SocialSession {
         }
     }
 
+    #if DEBUG
+    /// Development-schema setup (see `CloudKitSocialService.initializeSchema`). Needs iCloud, not
+    /// Sign in with Apple. The result goes to the console under the "Friends" category.
+    static func initializeFriendsSchema() async {
+        let logger = Logger(subsystem: "com.jaytjones.FunFitness", category: "Friends")
+        let service = CloudKitSocialService(me: PersonID(appleUserID: "schema"),
+                                            containerIdentifier: PersistenceController.cloudKitContainerID)
+        do {
+            try await service.initializeSchema()
+            logger.notice("Friends schema initialized: 6 record types saved and removed in Development")
+        } catch {
+            logger.error("Friends schema init failed: \(String(describing: error), privacy: .public)")
+        }
+    }
+    #endif
+
     static func message(for error: Error) -> String {
         if let social = error as? SocialError {
             switch social {
