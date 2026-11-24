@@ -358,7 +358,7 @@ Details are in `20261013_testflight_feedback_build3.md`.
 | FB-0012 | Streak count overlaps share icon | A1 | ✅ 2.4.4 |
 | FB-0013 | Activity list hard to find | A6 | ✅ 2.4.4 (Recent Activity on Home, History label) |
 | FB-0014 | Time each session; estimate calories | C4 | ✅ 3.1 (8) |
-| FB-0015 | Improve the floating action button | D1 | **Postponed** to a full UI refresh: the button looks bland and nondescript |
+| FB-0015 | Improve the floating action button | D1 | **Closed (2026-11-24):** the 3.2 redesign's log button (and the Arcade / Field Guide versions) replaced it; Jay cancelled the separate refresh |
 | FB-0016 | Notes, weather, indoor/outdoor, music | C8 | Notes + indoor/outdoor ✅ 3.1 (8) · weather (M, WeatherKit) and music parked |
 | FB-0017 | Workout "score" that isn't calories | C7 | **Design draft** (`20261017_workout_score_design.md`), 4 open questions |
 | FB-0018 | Default to last-used activity type | A3 | ✅ 2.4.4 |
@@ -373,7 +373,7 @@ Details are in `20261013_testflight_feedback_build3.md`.
 2. **Next (from 2026-11-12):** FB-0020. Cause found: Health write permission was declined. In order: (1) find
    declined write permission + show saved/failed with a Settings link, plus error logging; (2) manual-log
    start + duration; (3) prompt + toggle rename; (4) walk/run calories so phone workouts count toward the rings.
-3. **Then:** answer C7's open questions; C3 → C6 with the ~3.3 content move. D1 waits for a UI refresh.
+3. **Then:** answer C7's open questions; C3 → C6 with the ~3.3 content move. D1 closed by the 3.2 redesign (2026-11-24).
 
 ## Decisions (Jay, 2026-10-31)
 
