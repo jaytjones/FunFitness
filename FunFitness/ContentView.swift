@@ -326,7 +326,7 @@ struct ContentView: View {
                     await SocialSession.shared.refreshFriends()
                     #if DEBUG
                     // `-initFriendsSchema`: create all Friends record types in CloudKit Development.
-                    if UserDefaults.standard.bool(forKey: "initFriendsSchema") {
+                    if ProcessInfo.processInfo.arguments.contains("-initFriendsSchema") {
                         await SocialSession.initializeFriendsSchema()
                     }
                     #endif
