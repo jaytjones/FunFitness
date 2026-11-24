@@ -225,10 +225,54 @@ nonisolated enum ExerciseStats {
         return best.values.sorted { $0.date > $1.date }
     }
 
-    /// The sets of one exercise from the last time it was done, oldest first (FB-0022). "Last
-    /// time" is the most recent session containing it, or, for sets logged outside a session, the
-    /// most recent day. Sets from `currentSessionID` (the session in progress) don't count, so the
-    /// answer stays put while the person logs today's sets. Empty when there's nothing earlier.
+    /// One time an exercise was done: a session, or for sets logged outside one, a day.
+    struct Occasion: Equatable, Sendable {
+        /// When its first set was logged.
+        let date: Date
+        /// Oldest first.
+        let sets: [SetFacts]
+
+        /// The set that shows progress: the heaviest (most reps at it) for a lift, the most reps
+        /// for a bodyweight move. The first such set on a tie.
+        var bestSet: SetFacts? {
+            sets.reduce(nil) { best, set in
+                guard let best else { return set }
+                if set.value != best.value { return set.value > best.value ? set : best }
+                return (set.reps ?? 1) > (best.reps ?? 1) ? set : best
+            }
+        }
+    }
+
+    /// Every time one exercise was done, newest first (FB-0022). Sets from `excludingSession`
+    /// (the session in progress) are left out.
+    static func history(
+        exerciseID: String,
+        type: ActivityType,
+        sets: [SetFacts],
+        excludingSession currentSessionID: UUID? = nil,
+        calendar: Calendar = .current
+    ) -> [Occasion] {
+        enum Key: Hashable { case session(UUID), day(Date) }
+        var byKey: [Key: [SetFacts]] = [:]
+        for set in sets where set.exerciseID == exerciseID && set.type == type {
+            if let session = set.sessionID {
+                guard session != currentSessionID else { continue }
+                byKey[.session(session), default: []].append(set)
+            } else {
+                byKey[.day(calendar.startOfDay(for: set.date)), default: []].append(set)
+            }
+        }
+        return byKey.values
+            .map { group in
+                let ordered = group.sorted { $0.date < $1.date }
+                return Occasion(date: ordered[0].date, sets: ordered)
+            }
+            .sorted { $0.date > $1.date }
+    }
+
+    /// The sets of one exercise from the last time it was done, oldest first: its most recent
+    /// occasion outside the session in progress, so the answer stays put while the person logs
+    /// today's sets. Empty when there's nothing earlier.
     static func lastTime(
         exerciseID: String,
         type: ActivityType,
@@ -236,16 +280,8 @@ nonisolated enum ExerciseStats {
         excludingSession currentSessionID: UUID?,
         calendar: Calendar = .current
     ) -> [SetFacts] {
-        let matching = sets.filter {
-            $0.exerciseID == exerciseID && $0.type == type
-                && ($0.sessionID == nil || $0.sessionID != currentSessionID)
-        }
-        guard let latest = matching.max(by: { $0.date < $1.date }) else { return [] }
-        let sameOccasion: (SetFacts) -> Bool = { set in
-            if let session = latest.sessionID { return set.sessionID == session }
-            return set.sessionID == nil && calendar.isDate(set.date, inSameDayAs: latest.date)
-        }
-        return matching.filter(sameOccasion).sorted { $0.date < $1.date }
+        history(exerciseID: exerciseID, type: type, sets: sets, excludingSession: currentSessionID, calendar: calendar)
+            .first?.sets ?? []
     }
 
     /// Consecutive identical sets folded together, for "3 × 10 @ 50 lb, 1 × 8 @ 55 lb".

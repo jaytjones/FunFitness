@@ -24,6 +24,11 @@ struct ProgressTabView: View {
 
     @State private var showHistory = false
     @State private var analyticsType: ActivityType = .distance
+    #if DEBUG
+    // Screenshots: `-previewExercise bench-press` opens that exercise's history (FB-0022).
+    @State private var previewExercise: Exercise? =
+        ExerciseLibrary.shared.exercise(id: UserDefaults.standard.string(forKey: "previewExercise"))
+    #endif
 
     private var pref: UnitPreference { viewModel.unitPreference }
 
@@ -105,6 +110,11 @@ struct ProgressTabView: View {
             .sheet(isPresented: $showHistory) {
                 ActivityHistorySheet(viewModel: viewModel)
             }
+            #if DEBUG
+            .navigationDestination(item: $previewExercise) { exercise in
+                ExerciseDetailView(exercise: exercise, type: exercise.type, activities: activities, pref: pref)
+            }
+            #endif
         }
     }
 

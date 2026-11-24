@@ -49,7 +49,15 @@ enum SampleData {
         entries[1].exerciseID = "bench-press"
         entries[2].exerciseID = "push-up"
         entries[6].exerciseID = "back-squat"
-        for entry in entries { context.insert(entry) }
+        // Earlier bench sets, so the exercise history (FB-0022) has a trend to chart.
+        let bench: [ActivityLog] = [
+            ActivityLog(type: .weight, value: 54.4, reps: 10, loggedAt: daysAgo(11, hour: 18)),
+            ActivityLog(type: .weight, value: 54.4, reps: 8, loggedAt: daysAgo(11, hour: 18.05)),
+            ActivityLog(type: .weight, value: 56.7, reps: 10, loggedAt: daysAgo(7, hour: 18)),
+            ActivityLog(type: .weight, value: 59.0, reps: 8, loggedAt: daysAgo(4, hour: 18)),
+        ]
+        for entry in bench { entry.exerciseID = "bench-press" }
+        for entry in entries + bench { context.insert(entry) }
         try? context.save()
     }
 }

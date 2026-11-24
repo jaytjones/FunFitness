@@ -477,7 +477,7 @@ struct StrengthSessionView: View {
             )
             if let first = sets.first {
                 let day = first.date.formatted(.dateTime.month(.abbreviated).day())
-                let summary = ExerciseStats.grouped(sets).map(groupText).formatted(.list(type: .and, width: .narrow))
+                let summary = ExerciseStats.summaryText(sets, type: setType, pref: pref)
                 Label {
                     Text("Last time (\(day)): \(summary)")
                 } icon: {
@@ -488,13 +488,6 @@ struct StrengthSessionView: View {
                 .accessibilityIdentifier("strengthLastTime")
             }
         }
-    }
-
-    /// "3 × 10 @ 50 lb" for weight sets, "3 × 12" for bodyweight reps.
-    private func groupText(_ group: ExerciseStats.SetGroup) -> String {
-        setType == .weight
-            ? "\(group.count) × \(group.reps ?? 1) @ \(UnitConverter.weightString(group.value, pref: pref))"
-            : "\(group.count) × \(UnitConverter.wholeInputString(group.value))"
     }
 
     /// Picking an exercise fills the fields from its most recent set (this session's, else the

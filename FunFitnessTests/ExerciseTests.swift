@@ -171,6 +171,34 @@ struct ExerciseTests {
         #expect(ExerciseStats.lastTime(exerciseID: "row", type: .weight, sets: sets, excludingSession: nil).isEmpty)
     }
 
+    @Test func historyListsEachSessionAndDayNewestFirst() {
+        let now = fixedNow()
+        let a = UUID(), b = UUID()
+        let day = { (offset: Int) in self.cal.date(byAdding: .day, value: offset, to: now)! }
+        let sets = [
+            sessionSet("bench", 40, reps: 10, at: day(-10), session: a),
+            sessionSet("bench", 45, reps: 8, at: day(-10).addingTimeInterval(90), session: a),
+            sessionSet("bench", 50, reps: 5, at: day(-3), session: nil),                // loose, own day
+            sessionSet("bench", 50, reps: 6, at: day(-3).addingTimeInterval(600), session: nil),
+            sessionSet("bench", 55, reps: 3, at: day(-1), session: b),
+            sessionSet("bench", 20, reps: 20, at: day(-1), session: b, type: .reps),     // other type
+        ]
+        let history = ExerciseStats.history(exerciseID: "bench", type: .weight, sets: sets)
+        #expect(history.map(\.sets.count) == [1, 2, 2])
+        #expect(history.map(\.date) == [day(-1), day(-3), day(-10)])
+    }
+
+    @Test func bestSetIsHeaviestThenMostReps() {
+        let now = fixedNow()
+        let occasion = ExerciseStats.Occasion(date: now, sets: [
+            set("bench", 50, reps: 10, at: now), set("bench", 55, reps: 5, at: now),
+            set("bench", 55, reps: 6, at: now), set("bench", 40, reps: 12, at: now),
+        ])
+        #expect(occasion.bestSet?.value == 55)
+        #expect(occasion.bestSet?.reps == 6)
+        #expect(ExerciseStats.Occasion(date: now, sets: []).bestSet == nil)
+    }
+
     @Test func groupedFoldsConsecutiveIdenticalSets() {
         let now = fixedNow()
         let sets = [
