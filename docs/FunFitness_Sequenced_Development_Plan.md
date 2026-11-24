@@ -241,21 +241,71 @@ Tests: unlock resolution is a pure function of (style, longest streak, has purch
 
 ## Release 3.4 — "Bring Your Friends"
 
-**Theme:** The social layer, in FunFitness's voice.
+> **Status: planned (2026-11-24).** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
+
+**Theme:** The social layer, in FunFitness's voice — for friends you invite, on Apple devices.
 
 **Scope**
-- **Sign in with Apple** (deferred from 2.1) for a real identity
-- Lightweight backend for social graph (friends, activity visibility) — CloudKit sharing or a small hosted service
-- Friends feed: see friends' unlocks, send a "high five"
-- **Friend Duels**: weekly head-to-heads scored in silly units ("who lifts more corgis this week?") with gentle, funny consolation screens
-- Friendly leaderboards denominated in theme units
-- Privacy controls: private-by-default, granular sharing
+- **Sign in with Apple** (deferred from 2.1), optional and only for social features. The app still works fully with no account; personal workouts stay in private iCloud exactly as today.
+- **Public profile:** display name you choose, an emoji avatar, and your style. Never your Apple ID email.
+- **Friends by invite only:** share an invite link or show a short code; the other person accepts. No search, no contacts upload, no strangers.
+- **Friends feed:** friends' badge and challenge unlocks and streak milestones; send a **high five**.
+- **Friend Duels:** weekly head-to-heads scored in silly units ("who lifts more corgis this week?"), with gentle, funny consolation screens.
+- **Friends leaderboard** in theme units (your friends only, never global).
+- **Privacy controls:** private by default; choose what friends see (unlocks, streak, duel totals); remove or block a friend; delete your social profile (and Sign in with Apple's "Stop Using" is honoured).
+- **"How Friends works"** page and the other user-facing notes below.
 
-**Why this order:** Social is deliberately late. It requires identity, benefits from content depth (2.2) and a finished visual identity (3.2–3.3), and is the first feature set with abuse/moderation surface area. By now the solo product is strong enough that social is amplification, not a crutch.
+**Architecture (Apple-only)**
+
+| Piece | How |
+|---|---|
+| Identity | Sign in with Apple's user ID (stable for this team, and accepted by Firebase / Supabase / any future backend). Name comes from the person, not Apple's share-my-name. |
+| Shared data | CloudKit **public database** in the existing container. Record types (draft): `SocialProfile` (Apple user ID hash, display name, avatar, style, visibility), `FriendInvite` (code, creator, expiry), `Friendship` (two profile IDs, status), `FeedEvent` (who, kind, payload, date), `HighFive`, `Duel` (two profiles, week, unit pack, each side's posted total). |
+| Who can edit | CloudKit security roles: a record is writable only by its creator; each side of a duel posts its own total record. |
+| Updates | CloudKit subscriptions → push for high fives, invites accepted, duel results. |
+| Personal workouts | Unchanged: SwiftData + private iCloud. Only small derived values (weekly totals, unlock IDs) are ever published, and only if the person allows it. |
+
+**Rules that keep a later backend move small** (agreed 2026-11-24)
+1. **One `SocialService` interface.** Screens never call CloudKit; a `CloudKitSocialService` implements it now, a backend version later.
+2. **People are identified by their Sign in with Apple ID**, never the CloudKit/iCloud user record ID (which can't leave Apple).
+3. **Shared data is small and rebuildable.** Totals and unlocks are re-derived from each phone's own workouts, so after a move each app republishes them. Only friendships need a one-time migration; old feed items and finished duels can be left behind.
+
+**Moving to a backend later (for non-Apple devices):** accounts carry over unchanged (same Apple user ID); write a backend `SocialService`, migrate friendships, let apps republish totals. Personal workout sync moving off iCloud is a separate, larger job that's needed for non-Apple devices regardless of this choice.
+
+**Known limitations — must be told to users** (Jay, 2026-11-24)
+
+| Limitation | Where users are told |
+|---|---|
+| Friends needs an Apple device signed in to iCloud, plus Sign in with Apple. People on Android or the web can't join yet. | Before sign-in; "How Friends works"; App Store description; invite link landing text |
+| Friends only — no search, no public leaderboards; you add people by invite. | "How Friends works"; empty Friends tab |
+| Duel totals come from each person's own app and aren't verified, so they're for fun between friends. | Duel screens (one line); "How Friends works" |
+| What friends can see (name, avatar, style, and only the stats you allow) and that it's stored in Apple's iCloud public database for this app. Your workouts themselves are never shared. | Privacy settings; "How Friends works"; privacy policy; App Privacy answers |
+| Updates can take a moment to arrive and need a network connection. | "How Friends works" |
+| If FunFitness later adds other devices, your account carries over, but older feed items and finished duels may not. | "How Friends works" (short note) |
+| Deleting your social profile removes it from friends' lists; your workouts stay. | Delete confirmation; privacy settings |
+
+Copy stays in FunFitness's voice and short — one "How Friends works" page linked from the Friends tab, sign-in screen, and Profile, plus one-line notes where each limitation matters.
+
+**Build order (draft)**
+1. `SocialService` interface + in-memory fake for tests and previews; record types in the CloudKit Development schema.
+2. Sign in with Apple, `SocialProfile`, privacy settings, delete profile, "How Friends works".
+3. Invites (link + code) and friendships; remove / block.
+4. Feed + high fives + push subscriptions.
+5. Friend Duels (weekly, silly units, consolation screens) and the friends leaderboard.
+6. App Privacy answers, privacy policy, App Store text; CloudKit schema deploy to Production (Jay).
+
+**Open questions for Jay**
+- How friends find each other: invite link only, code only, or both? (Recommend both; contacts matching no.)
+- Duel scoring: total in the duel's unit (fair to big lifters) or Effort Points (fair across activity types)?
+- Default visibility for a new profile: nothing shared until turned on (recommended), or unlocks on?
+- Does 3.4 ship behind a flag to Jay's group first, like the styles?
+- Sign-in placement: a Friends tab, or a section in Profile until there's enough to fill a tab?
+
+**Why this order:** Social is deliberately late. It requires identity, benefits from content depth (2.2) and a finished visual identity (3.2–3.3), and is the first feature set with abuse surface area — kept small by invite-only friends.
 
 **Why it's usable at this stage:** Users without friends on the app lose nothing; users with friends gain the accountability loop that market research shows carries people past month one.
 
-**Exit criteria:** Duel lifecycle works end-to-end; a friendless user never sees a hollow empty state; blocked users are invisible in both directions.
+**Exit criteria:** Sign in with Apple and sign-out / delete work; invite → accept → both see each other; a duel runs end to end and both phones agree on the result; a friendless user never sees a hollow empty state; blocked users are invisible in both directions; every limitation above is shown in the app; no CloudKit call outside `CloudKitSocialService`.
 
 ---
 
@@ -321,3 +371,4 @@ Tests: unlock resolution is a pure function of (style, longest streak, has purch
 - **2026-11-06 (Jay):** after 3.1, a visual-identity release is inserted. Playful Bold becomes the default style (today's look is retired, not kept as a fourth style); Arcade and Field Guide become unlockable (earned + purchased, rules TBD); the chosen style syncs across devices. Releases renumbered: 3.2 New Look, 3.3 Your Style, 3.4 Social (was 3.2), 3.5 Franchise (was 3.3).
 - **2026-11-15 (Jay):** Playful Bold keeps SF Pro Rounded (Fredoka/Nunito dropped); 3.2 complete after the device contrast/Dynamic Type check, first labelled 3.2 (14); 5K field test deferred. 3.3: unreleased styles are Jay-only, behind an `INTERNAL_STYLES` build flag (Debug + Internal configurations only), optional Internal TestFlight builds for Jay alone, and an owner check (iCloud user record ID) as a backstop; other features keep shipping from `main`. After launch, styles unlock by earning or buying; Jay gets them via the owner check and free offer codes. Unlock rules: a streak ladder on the longest streak ever (Arcade 4 weeks, Field Guide 8, +4 each after) or one "Unlock all styles" purchase; comparison packs unaffected.
 - **2026-11-15 (Jay):** Field Guide built in 3.3 (8-week goal, system serif stand-ins); Arcade stays Jay-only until Jay launches it; 3.3 code complete, unreleased. Local StoreKit test file added; App Store Connect product still to create.
+- **2026-11-24 (Jay):** 3.4 is Apple-only: Sign in with Apple + CloudKit public database, no backend of our own yet. Built behind one `SocialService` interface and keyed by the Sign in with Apple ID so a later cross-platform backend replaces only the social data layer. Limitations (Apple devices only, friends by invite, unverified duel totals, what's shared) must be documented to users. Weather (C8) parked; FB-0015 log-button refresh cancelled.
