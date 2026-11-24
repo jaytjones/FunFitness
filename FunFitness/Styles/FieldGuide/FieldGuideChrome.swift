@@ -39,18 +39,22 @@ struct FieldGuideTabBar: View {
                     Button {
                         selection = tab
                     } label: {
-                        VStack(spacing: 4) {
-                            Text(verbatim: tab.fieldGuideLabel)
-                                .ffFont(.tab)
-                                .fontWeight(isSelected ? .semibold : .medium)
-                                .lineLimit(1)
-                                .fixedSize()
-                                .foregroundStyle(isSelected ? Color.ffAccent : Color.ffInk)
-                            Rectangle()
-                                .fill(isSelected ? Color.ffAccent : .clear)
-                                .frame(height: 2)
-                        }
-                        .frame(minHeight: 44)
+                        // The underline is an overlay so it matches the word's width; as a
+                        // stacked Rectangle it stretched its tab and squeezed the others.
+                        Text(verbatim: tab.fieldGuideLabel)
+                            .ffFont(.tab)
+                            .fontWeight(isSelected ? .semibold : .medium)
+                            .lineLimit(1)
+                            // Shrink a little rather than run off the edge at large text sizes.
+                            .minimumScaleFactor(0.6)
+                            .foregroundStyle(isSelected ? Color.ffAccent : Color.ffInk)
+                            .padding(.bottom, 6)
+                            .overlay(alignment: .bottom) {
+                                Rectangle()
+                                    .fill(isSelected ? Color.ffAccent : .clear)
+                                    .frame(height: 2)
+                            }
+                            .frame(minHeight: 44)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
