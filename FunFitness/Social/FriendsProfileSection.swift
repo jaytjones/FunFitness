@@ -16,6 +16,8 @@ import AuthenticationServices
 struct FriendsProfileSection: View {
     /// The person's current style, carried onto their Friends profile.
     let styleID: String
+    /// For badge titles in the feed ("You've covered 5 miles!").
+    var pref: UnitPreference = .imperial
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var session = SocialSession.shared
@@ -219,6 +221,10 @@ struct FriendsProfileSection: View {
 
             Divider()
             friendsList
+            if !session.feed.isEmpty || !session.receivedHighFives.isEmpty {
+                Divider()
+                activity
+            }
             Divider()
             Text(verbatim: "What friends see")
                 .ffFont(.bodyStrong)
@@ -327,6 +333,67 @@ struct FriendsProfileSection: View {
             }
         }
         .padding(.bottom, 12)
+    }
+
+    // MARK: Feed and high fives (step 4)
+
+    private var activity: some View {
+        let names = Dictionary(session.friends.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let weekAgo = Date() - 7 * 86_400
+        let recentFives = session.receivedHighFives.filter { $0.date >= weekAgo }
+        let fiveNames = Array(Set(recentFives.compactMap { names[$0.from]?.displayName })).sorted()
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: "Friend activity")
+                .ffFont(.bodyStrong)
+                .foregroundStyle(Color.ffInk)
+                .padding(.top, 12)
+            if !fiveNames.isEmpty {
+                Text(verbatim: "🙌 High fives this week from \(fiveNames.formatted(.list(type: .and)))")
+                    .ffFont(.caption)
+                    .foregroundStyle(Color.ffInk)
+            }
+            ForEach(session.feed.prefix(10)) { event in
+                if let friend = names[event.author] {
+                    feedRow(event, friend: friend)
+                }
+            }
+        }
+        .padding(.bottom, 12)
+    }
+
+    private func feedRow(_ event: FeedEvent, friend: SocialProfile) -> some View {
+        let badgeTitle: String? = if case .badgeUnlocked(let id) = event.kind {
+            ComparisonEngine.milestone(withId: id)?.title(pref: pref)
+        } else { nil }
+        let challengeTitle: String? = if case .challengeCompleted(let id, _) = event.kind {
+            ChallengeCatalog.challenge(id: id)?.title
+        } else { nil }
+        let line = FeedText.line(for: event, name: friend.displayName, badgeTitle: badgeTitle, challengeTitle: challengeTitle)
+        let sent = session.hasSentHighFive(to: friend.id, for: event.key)
+        return HStack(alignment: .top, spacing: 10) {
+            Text(friend.avatarEmoji).font(.title3).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: line).ffFont(.body).foregroundStyle(Color.ffInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(event.date, format: .relative(presentation: .named))
+                    .ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+            }
+            Spacer(minLength: 4)
+            Button {
+                Task { await session.sendHighFive(to: friend.id, for: event.key) }
+            } label: {
+                Text(verbatim: "🙌")
+                    .font(.title3)
+                    .frame(width: 44, height: 44)
+                    .background(sent ? Color.ffAccent.opacity(0.25) : Color.clear, in: .circle)
+                    .overlay(Circle().strokeBorder(sent ? Color.ffAccent : Color.ffLine, lineWidth: FFStroke.control))
+                    .opacity(sent ? 1 : 0.8)
+            }
+            .buttonStyle(.plain)
+            .disabled(sent)
+            .accessibilityLabel(Text(verbatim: sent ? "High five sent" : "High five \(friend.displayName)"))
+        }
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: Pieces

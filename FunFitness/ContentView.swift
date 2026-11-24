@@ -324,6 +324,7 @@ struct ContentView: View {
                     SocialSession.shared.observeRevocation()
                     await SocialSession.shared.refresh()
                     await SocialSession.shared.refreshFriends()
+                    publishToFriends()
                     #if DEBUG
                     // `-initFriendsSchema`: create all Friends record types in CloudKit Development.
                     if ProcessInfo.processInfo.arguments.contains("-initFriendsSchema") {
@@ -384,11 +385,22 @@ struct ContentView: View {
                 }
                 .onChange(of: achievements) {
                     viewModel.unlockedAchievementIds = Set(achievements.map(\.milestoneId))
+                    #if INTERNAL_SOCIAL
+                    publishToFriends()
+                    #endif
                 }
                 .onChange(of: unlockedChallenges) {
                     // Resync when a completed challenge arrives from another device via CloudKit.
                     viewModel.unlockedChallengeKeys = Set(unlockedChallenges.map(\.challengeKey))
+                    #if INTERNAL_SOCIAL
+                    publishToFriends()
+                    #endif
                 }
+                #if INTERNAL_SOCIAL
+                .onChange(of: streakRecords.first?.currentStreak) {
+                    publishToFriends()
+                }
+                #endif
                 .onChange(of: viewModel.pendingShieldActivation) {
                     if viewModel.pendingShieldActivation {
                         viewModel.pendingShieldActivation = false
@@ -558,6 +570,19 @@ struct ContentView: View {
     private func reconcileAchievements() {
         viewModel.reconcileAchievements(records: achievements, context: modelContext)
     }
+
+    #if INTERNAL_SOCIAL
+    /// Friends (3.4): hands recent unlocks and the streak to the feed; only what the person shares
+    /// is published, each once.
+    private func publishToFriends() {
+        let input = FeedPublishing.Input(
+            badges: achievements.map { (id: $0.milestoneId, date: $0.unlockedAt) },
+            challenges: unlockedChallenges.map { (id: $0.challengeId, year: $0.year, date: $0.unlockedAt) },
+            currentStreak: streakRecords.first?.currentStreak ?? 0
+        )
+        Task { await SocialSession.shared.publishRecent(input) }
+    }
+    #endif
 
     // MARK: - Challenge Reconciliation (v2.2)
 

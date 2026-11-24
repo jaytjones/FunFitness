@@ -169,6 +169,31 @@ struct SocialTests {
         #expect(try await b.feed().isEmpty)
     }
 
+    @Test func republishingReplacesAndHighFivesDontStack() async throws {
+        let (a, b) = try await friends(anaSharing: everything)
+        let earlier = Date(timeIntervalSinceNow: -3600)
+        try await a.publish(.badgeUnlocked(milestoneID: "D2"), at: earlier)
+        try await a.publish(.badgeUnlocked(milestoneID: "D2"))
+        #expect(try await b.feed().count == 1)
+
+        try await b.sendHighFive(to: ana, for: "badge-D2")
+        try await b.sendHighFive(to: ana, for: "badge-D2")
+        #expect(try await a.receivedHighFives().count == 1)
+    }
+
+    @Test func oldEventsLeaveTheFeed() async throws {
+        let (a, b) = try await friends(anaSharing: everything)
+        try await a.publish(.streakMilestone(weeks: 4), at: Date(timeIntervalSinceNow: -FeedEvent.feedWindow - 60))
+        #expect(try await b.feed().isEmpty)
+    }
+
+    @Test func feedKeysAndStreakMilestones() {
+        #expect(FeedEvent.Kind.badgeUnlocked(milestoneID: "D2").key == "badge-D2")
+        #expect(FeedEvent.Kind.challengeCompleted(challengeID: "gobble-wobble", year: 2026).key == "challenge-gobble-wobble-2026")
+        #expect(FeedEvent.Kind.streakMilestone(weeks: 8).key == "streak-8")
+        #expect([3, 4, 6, 8, 12].map(FeedEvent.isStreakMilestone) == [false, true, false, true, true])
+    }
+
     @Test func highFivesGoOnlyToFriends() async throws {
         let (a, b) = try await friends()
         try await b.sendHighFive(to: ana, for: nil)

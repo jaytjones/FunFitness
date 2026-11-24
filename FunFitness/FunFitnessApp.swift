@@ -7,12 +7,19 @@
 
 import SwiftUI
 import SwiftData
+#if INTERNAL_SOCIAL
+import CloudKit
+#endif
 
 @main
 struct FunFitnessApp: App {
     // Shared CloudKit-backed container (v2.1). Built by PersistenceController so the app and
     // the Siri intent use an identical sync configuration.
     private let sharedModelContainer: ModelContainer
+    #if INTERNAL_SOCIAL
+    // Friends (3.4, unreleased): receives the silent push when a friend's Friends data changes.
+    @UIApplicationDelegateAdaptor(FriendsAppDelegate.self) private var friendsAppDelegate
+    #endif
 
     init() {
         #if INTERNAL_STYLES
@@ -52,3 +59,24 @@ struct FunFitnessApp: App {
         .modelContainer(sharedModelContainer)
     }
 }
+
+#if INTERNAL_SOCIAL
+/// Friends (3.4): turns the shared-database subscription's silent push into "🙌 Sam high-fived
+/// you!" notifications (iCloud can't name people in its own alerts). Other pushes, such as
+/// SwiftData's iCloud sync, are left to CloudKit.
+final class FriendsAppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        application.registerForRemoteNotifications()
+        return true
+    }
+
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
+        guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo),
+              notification.subscriptionID == SocialRecords.subscriptionID else { return .noData }
+        let isBackground = application.applicationState != .active
+        return await SocialSession.shared.checkForNews(postNotifications: isBackground) ? .newData : .noData
+    }
+}
+#endif

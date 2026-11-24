@@ -17,7 +17,12 @@
 //  3. Ana's app, on its next sync, adds Bob to her share, accepts Bob's share and deletes the
 //     invite. Bob's app then accepts Ana's share and deletes the response.
 //  Every lookup is by record ID, so no public-database indexes are needed.
-//  Feed, high fives and duels arrive in steps 4–5 and throw `.notAvailableYet` until then.
+//
+//  Feed and high fives (step 4) live in each person's own Friends zone, so only friends read them:
+//  `FeedEvent` records are named after what happened (`event-badge-D2`), `HighFive` records after
+//  recipient + item, so repeats overwrite instead of piling up. A silent subscription on the shared
+//  database wakes the app when a friend's zone changes (see `SocialSession.checkForNews`).
+//  Duels arrive in step 5 and throw `.notAvailableYet` until then.
 //
 //  UNRELEASED — compiled only with INTERNAL_SOCIAL (Debug + Internal builds, never Release).
 //
@@ -41,11 +46,19 @@ nonisolated enum SocialRecords {
     static let outgoingType = "OutgoingInvite"
     static let pendingType = "PendingAcceptance"
     static let blockedType = "BlockedPerson"
+    // Friends zone (step 4)
+    static let eventType = "FeedEvent"
+    static let highFiveType = "HighFive"
+    static let subscriptionID = "friends-shared-database"
 
     static func inviteRecordName(_ code: String) -> String { "invite-\(code)" }
     static func responseRecordName(_ code: String) -> String { "response-\(code)" }
     static func pendingRecordName(_ code: String) -> String { "pending-\(code)" }
     static func blockedRecordName(_ userRecordName: String) -> String { "blocked-\(userRecordName)" }
+    static func eventRecordName(_ key: String) -> String { "event-\(key)" }
+    static func highFiveRecordName(to person: PersonID, eventKey: String?) -> String {
+        "highfive-\(person.rawValue.prefix(16))-\(eventKey ?? "general")"
+    }
 
     enum Field {
         static let personID = "personID"
@@ -60,6 +73,68 @@ nonisolated enum SocialRecords {
         static let expiresAt = "expiresAt"
         static let userRecordName = "userRecordName"
         static let shareURL = "shareURL"
+        static let kind = "kind"
+        static let ref = "ref"
+        static let year = "year"
+        static let weeks = "weeks"
+        static let date = "date"
+        static let fromPersonID = "fromPersonID"
+        static let toPersonID = "toPersonID"
+        static let eventKey = "eventKey"
+    }
+
+    // MARK: Feed (step 4)
+
+    static func apply(_ kind: FeedEvent.Kind, date: Date, to record: CKRecord) {
+        record[Field.date] = date
+        switch kind {
+        case .badgeUnlocked(let id):
+            record[Field.kind] = "badge"
+            record[Field.ref] = id
+        case .challengeCompleted(let id, let year):
+            record[Field.kind] = "challenge"
+            record[Field.ref] = id
+            record[Field.year] = year
+        case .streakMilestone(let weeks):
+            record[Field.kind] = "streak"
+            record[Field.weeks] = weeks
+        }
+    }
+
+    static func feedEvent(from record: CKRecord, author: PersonID) -> FeedEvent? {
+        guard record.recordType == eventType, let date = record[Field.date] as? Date else { return nil }
+        let kind: FeedEvent.Kind
+        switch record[Field.kind] as? String {
+        case "badge":
+            guard let id = record[Field.ref] as? String else { return nil }
+            kind = .badgeUnlocked(milestoneID: id)
+        case "challenge":
+            guard let id = record[Field.ref] as? String, let year = record[Field.year] as? Int else { return nil }
+            kind = .challengeCompleted(challengeID: id, year: year)
+        case "streak":
+            guard let weeks = record[Field.weeks] as? Int else { return nil }
+            kind = .streakMilestone(weeks: weeks)
+        default:
+            return nil
+        }
+        return FeedEvent(author: author, kind: kind, date: date)
+    }
+
+    static func apply(_ highFive: HighFive, to record: CKRecord) {
+        record[Field.fromPersonID] = highFive.from.rawValue
+        record[Field.toPersonID] = highFive.to.rawValue
+        record[Field.eventKey] = highFive.eventKey ?? ""
+        record[Field.date] = highFive.date
+    }
+
+    static func highFive(from record: CKRecord) -> HighFive? {
+        guard record.recordType == highFiveType,
+              let from = record[Field.fromPersonID] as? String,
+              let to = record[Field.toPersonID] as? String,
+              let date = record[Field.date] as? Date else { return nil }
+        let key = record[Field.eventKey] as? String
+        return HighFive(from: PersonID(rawValue: from), to: PersonID(rawValue: to),
+                        eventKey: key?.isEmpty == false ? key : nil, date: date)
     }
 
     static func apply(_ profile: SocialProfile, to record: CKRecord) {
@@ -274,6 +349,11 @@ struct CloudKitSocialService: SocialService {
             try await delete([record.recordID], in: privateDB)
         }
 
+        // My own feed items older than the feed window: nobody sees them any more.
+        let stale = try await allRecords(in: Self.zoneID, of: privateDB)
+            .filter { $0.recordType == SocialRecords.eventType && (($0[SocialRecords.Field.date] as? Date) ?? now) < now - FeedEvent.feedWindow }
+        if !stale.isEmpty { try await delete(stale.map(\.recordID), in: privateDB) }
+
         // Invites I accepted: join the inviter's share once they've added me.
         for record in try await localRecords(ofType: SocialRecords.pendingType) {
             guard let pending = SocialRecords.handshake(from: record) else { continue }
@@ -326,12 +406,60 @@ struct CloudKitSocialService: SocialService {
         try await removeFriend(person)
     }
 
-    // MARK: Later steps
+    // MARK: Feed and high fives (step 4)
 
-    func publish(_ kind: FeedEvent.Kind) async throws -> Bool { false }
-    func feed() async throws -> [FeedEvent] { [] }
-    func sendHighFive(to person: PersonID, for eventID: UUID?) async throws { throw SocialError.notAvailableYet }
-    func receivedHighFives() async throws -> [HighFive] { [] }
+    @discardableResult
+    func publish(_ kind: FeedEvent.Kind, at date: Date) async throws -> Bool {
+        guard let profile = try await profile() else { throw SocialError.noProfile }
+        guard kind.isShared(by: profile.sharing) else { return false }
+        try await ensureZoneAndShare()
+        let record = CKRecord(recordType: SocialRecords.eventType,
+                              recordID: CKRecord.ID(recordName: SocialRecords.eventRecordName(kind.key), zoneID: Self.zoneID))
+        SocialRecords.apply(kind, date: date, to: record)
+        try await save([record], in: privateDB, policy: .allKeys)
+        return true
+    }
+
+    /// Friends' events, re-checked against each friend's current sharing settings.
+    func feed() async throws -> [FeedEvent] {
+        let cutoff = Date() - FeedEvent.feedWindow
+        return try await friendContents()
+            .flatMap { friend in
+                friend.records.compactMap { SocialRecords.feedEvent(from: $0, author: friend.profile.id) }
+                    .filter { $0.date >= cutoff && $0.kind.isShared(by: friend.profile.sharing) }
+            }
+            .sorted { $0.date > $1.date }
+    }
+
+    func sendHighFive(to person: PersonID, for eventKey: String?) async throws {
+        guard try await zone(of: person) != nil else { throw SocialError.notFriends }
+        try await ensureZoneAndShare()
+        let highFive = HighFive(from: me, to: person, eventKey: eventKey, date: Date())
+        let record = CKRecord(recordType: SocialRecords.highFiveType, recordID: CKRecord.ID(
+            recordName: SocialRecords.highFiveRecordName(to: person, eventKey: eventKey), zoneID: Self.zoneID))
+        SocialRecords.apply(highFive, to: record)
+        try await save([record], in: privateDB, policy: .allKeys)
+    }
+
+    /// High fives friends sent me (they live in each sender's zone).
+    func receivedHighFives() async throws -> [HighFive] {
+        try await friendContents()
+            .flatMap { $0.records.compactMap(SocialRecords.highFive(from:)) }
+            .filter { $0.to == me }
+            .sorted { $0.date > $1.date }
+    }
+
+    /// A silent push whenever any friend's zone changes (shared databases only support database
+    /// subscriptions). Saving the same ID again is harmless.
+    func prepareNotifications() async throws {
+        let subscription = CKDatabaseSubscription(subscriptionID: SocialRecords.subscriptionID)
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+        _ = try await sharedDB.modifySubscriptions(saving: [subscription], deleting: [])
+    }
+
+    // MARK: Later steps
     func challenge(_ person: PersonID, weekStart: Date) async throws -> Duel { throw SocialError.notAvailableYet }
     func respond(to duelID: UUID, accept: Bool) async throws -> Duel { throw SocialError.notAvailableYet }
     func postWeeklyEffort(_ points: Double, weekStart: Date) async throws {}
@@ -341,7 +469,7 @@ struct CloudKitSocialService: SocialService {
 
     #if DEBUG
     /// Creates every Friends record type in the CloudKit **Development** schema with one account:
-    /// saves a throwaway record of each type with every field set, then deletes them. Launch a Debug
+    /// saves a throwaway record of each of the eight types with every field set, then deletes them. Launch a Debug
     /// build with `-initFriendsSchema`. Like SwiftData's `-initCloudKitSchema`, Development only.
     func initializeSchema() async throws {
         let share = try await ensureZoneAndShare()
@@ -363,7 +491,14 @@ struct CloudKitSocialService: SocialService {
             record[SocialRecords.Field.personID] = me.rawValue
             return record
         }
-        let privateRecords = [profile, local(SocialRecords.outgoingType), local(SocialRecords.pendingType),
+        let event = CKRecord(recordType: SocialRecords.eventType,
+                             recordID: CKRecord.ID(recordName: "schema-event", zoneID: Self.zoneID))
+        SocialRecords.apply(.challengeCompleted(challengeID: "schema", year: 2026), date: date, to: event)
+        event[SocialRecords.Field.weeks] = 4
+        let highFive = CKRecord(recordType: SocialRecords.highFiveType,
+                                recordID: CKRecord.ID(recordName: "schema-highfive", zoneID: Self.zoneID))
+        SocialRecords.apply(HighFive(from: me, to: me, eventKey: "schema", date: date), to: highFive)
+        let privateRecords = [profile, event, highFive, local(SocialRecords.outgoingType), local(SocialRecords.pendingType),
                               local(SocialRecords.blockedType)]
         let publicRecords = [SocialRecords.inviteType, SocialRecords.responseType].map { type -> CKRecord in
             let record = CKRecord(recordType: type, recordID: CKRecord.ID(recordName: "schema-\(type)"))
@@ -425,14 +560,19 @@ struct CloudKitSocialService: SocialService {
         return Self.localZoneID
     }
 
-    /// Every record of a type in the FriendsLocal zone (a full zone read: no query index needed).
+    /// Every record of a type in the FriendsLocal zone.
     private func localRecords(ofType type: String) async throws -> [CKRecord] {
+        try await allRecords(in: Self.localZoneID, of: privateDB).filter { $0.recordType == type }
+    }
+
+    /// Every record in a zone (a full zone read: no query index needed). Empty if the zone is gone.
+    private func allRecords(in zone: CKRecordZone.ID, of database: CKDatabase) async throws -> [CKRecord] {
         var records: [CKRecord] = []
         var token: CKServerChangeToken?
         var more = true
         do {
             while more {
-                let changes = try await privateDB.recordZoneChanges(inZoneWith: Self.localZoneID, since: token)
+                let changes = try await database.recordZoneChanges(inZoneWith: zone, since: token)
                 records += changes.modificationResultsByID.values.compactMap { try? $0.get().record }
                 token = changes.changeToken
                 more = changes.moreComing
@@ -440,7 +580,19 @@ struct CloudKitSocialService: SocialService {
         } catch let error as CKError where error.code == .zoneNotFound {
             return []
         }
-        return records.filter { $0.recordType == type }
+        return records
+    }
+
+    /// Each (unblocked) friend's profile and every record in their Friends zone.
+    private func friendContents() async throws -> [(profile: SocialProfile, records: [CKRecord])] {
+        let blocked = try await blockedRecordNames()
+        var result: [(profile: SocialProfile, records: [CKRecord])] = []
+        for zone in try await friendZones() where !blocked.contains(zone.ownerName) {
+            let records = try await allRecords(in: zone, of: sharedDB)
+            guard let profile = records.lazy.compactMap(SocialRecords.profile(from:)).first else { continue }
+            result.append((profile, records))
+        }
+        return result
     }
 
     private func blockedRecordNames() async throws -> Set<String> {

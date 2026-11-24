@@ -191,6 +191,31 @@ struct SocialSessionTests {
         #expect(ben.friends.isEmpty)
     }
 
+    @Test func sharedUnlocksReachTheFeedAndHighFivesComeBack() async throws {
+        let store = InMemorySocialStore()
+        let ana = await readySession("apple-ana", "Ana", store: store)
+        let ben = await readySession("apple-ben", "Ben", store: store)
+        await ana.createInvite()
+        await ben.acceptInvite(code: try #require(ana.newInvite?.code))
+        await ana.refreshFriends()
+
+        let input = FeedPublishing.Input(badges: [(id: "D2", date: Date())], challenges: [], currentStreak: 0)
+        await ana.publishRecent(input)            // sharing off: nothing
+        await ben.refreshFriends()
+        #expect(ben.feed.isEmpty)
+
+        guard case .ready(var profile) = ana.state else { Issue.record("expected ready"); return }
+        profile.sharing.shareUnlocks = true
+        await ana.update(profile)                 // turning it on publishes the recent unlock
+        await ben.refreshFriends()
+        #expect(ben.feed.map(\.key) == ["badge-D2"])
+
+        await ben.sendHighFive(to: PersonID(appleUserID: "apple-ana"), for: "badge-D2")
+        #expect(ben.hasSentHighFive(to: PersonID(appleUserID: "apple-ana"), for: "badge-D2"))
+        #expect(await ana.checkForNews(postNotifications: false))
+        #expect(ana.receivedHighFives.count == 1)
+    }
+
     @Test func handshakeRecordsRoundTrip() throws {
         let handshake = SocialRecords.Handshake(
             code: "ABC234", userRecordName: "_abc", shareURL: try #require(URL(string: "https://www.icloud.com/share/x")),

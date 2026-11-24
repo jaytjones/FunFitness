@@ -109,7 +109,8 @@ nonisolated struct Friendship: Identifiable, Equatable, Codable, Sendable {
     func other(than person: PersonID) -> PersonID? { people.first { $0 != person } }
 }
 
-/// Something a friend did, shown in the feed if their sharing allows it.
+/// Something a friend did, shown in the feed if their sharing allows it. Its `key` names what
+/// happened ("badge-D2"), so publishing the same unlock again replaces it instead of duplicating.
 nonisolated struct FeedEvent: Identifiable, Equatable, Codable, Sendable {
     enum Kind: Equatable, Codable, Sendable {
         /// A milestone badge (`Milestone.id`).
@@ -118,6 +119,15 @@ nonisolated struct FeedEvent: Identifiable, Equatable, Codable, Sendable {
         case challengeCompleted(challengeID: String, year: Int)
         /// A streak reaching this many weeks.
         case streakMilestone(weeks: Int)
+
+        /// Stable per person: one feed item per badge, per challenge year, per streak length.
+        var key: String {
+            switch self {
+            case .badgeUnlocked(let id): "badge-\(id)"
+            case .challengeCompleted(let id, let year): "challenge-\(id)-\(year)"
+            case .streakMilestone(let weeks): "streak-\(weeks)"
+            }
+        }
 
         /// Whether these sharing settings allow publishing this kind.
         func isShared(by sharing: SharingSettings) -> Bool {
@@ -128,19 +138,31 @@ nonisolated struct FeedEvent: Identifiable, Equatable, Codable, Sendable {
         }
     }
 
-    let id: UUID
     let author: PersonID
     let kind: Kind
     let date: Date
+
+    var key: String { kind.key }
+    /// Unique across friends (two friends can unlock the same badge).
+    var id: String { "\(author.rawValue)/\(key)" }
+
+    /// How long items stay in the feed.
+    static let feedWindow: TimeInterval = 30 * 86_400
+    /// Unlocks newer than this are published when sharing is (or gets) turned on.
+    static let publishWindow: TimeInterval = 7 * 86_400
+    /// Streak milestones worth announcing: every 4 weeks.
+    static func isStreakMilestone(_ weeks: Int) -> Bool { weeks >= 4 && weeks % 4 == 0 }
 }
 
+/// One per sender, recipient and feed item, so a friend can't be spammed.
 nonisolated struct HighFive: Identifiable, Equatable, Codable, Sendable {
-    let id: UUID
     let from: PersonID
     let to: PersonID
-    /// The feed event it answers, if any.
-    let eventID: UUID?
+    /// The recipient's feed item it answers (`FeedEvent.key`), or nil for a general high five.
+    let eventKey: String?
     let date: Date
+
+    var id: String { "\(from.rawValue)/\(to.rawValue)/\(eventKey ?? "general")" }
 }
 
 /// A weekly head-to-head, scored in Effort Points so walking, lifting and yoga compete fairly

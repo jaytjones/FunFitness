@@ -63,12 +63,16 @@ protocol SocialService: Sendable {
     func block(_ person: PersonID) async throws
 
     // Feed
-    /// Publishes an event if my sharing allows its kind; returns whether it was published.
-    @discardableResult func publish(_ kind: FeedEvent.Kind) async throws -> Bool
-    /// Friends' events, newest first, only kinds each friend currently shares.
+    /// Publishes an event (dated when it happened) if my sharing allows its kind; returns whether
+    /// it was published. The same kind again replaces the earlier one.
+    @discardableResult func publish(_ kind: FeedEvent.Kind, at date: Date) async throws -> Bool
+    /// Friends' events from the last 30 days, newest first, only kinds each friend currently shares.
     func feed() async throws -> [FeedEvent]
-    func sendHighFive(to person: PersonID, for eventID: UUID?) async throws
+    /// At most one per friend and feed item (sending again changes nothing).
+    func sendHighFive(to person: PersonID, for eventKey: String?) async throws
     func receivedHighFives() async throws -> [HighFive]
+    /// Sets up "a friend's Friends data changed" pushes (no-op where there are none).
+    func prepareNotifications() async throws
 
     // Duels (Effort Points)
     func challenge(_ person: PersonID, weekStart: Date) async throws -> Duel
@@ -76,6 +80,11 @@ protocol SocialService: Sendable {
     /// Posts my Effort Points for a week to each of my active duels that week.
     func postWeeklyEffort(_ points: Double, weekStart: Date) async throws
     func duels() async throws -> [Duel]
+}
+
+extension SocialService {
+    @discardableResult
+    func publish(_ kind: FeedEvent.Kind) async throws -> Bool { try await publish(kind, at: Date()) }
 }
 
 // MARK: - In-memory implementation
@@ -116,8 +125,14 @@ actor InMemorySocialStore {
         guard let index = friendships.firstIndex(where: { $0.includes(a) && $0.includes(b) }) else { return }
         friendships[index].blockedBy = blocker
     }
-    func addEvent(_ event: FeedEvent) { events.append(event) }
-    func addHighFive(_ highFive: HighFive) { highFives.append(highFive) }
+    func addEvent(_ event: FeedEvent) {
+        events.removeAll { $0.id == event.id }
+        events.append(event)
+    }
+    func addHighFive(_ highFive: HighFive) {
+        guard !highFives.contains(where: { $0.id == highFive.id }) else { return }
+        highFives.append(highFive)
+    }
     func setDuel(_ duel: Duel) { duels[duel.id] = duel }
 }
 
@@ -199,10 +214,10 @@ struct InMemorySocialService: SocialService {
     }
 
     @discardableResult
-    func publish(_ kind: FeedEvent.Kind) async throws -> Bool {
+    func publish(_ kind: FeedEvent.Kind, at date: Date) async throws -> Bool {
         let profile = try await requireProfile()
         guard kind.isShared(by: profile.sharing) else { return false }
-        await store.addEvent(FeedEvent(id: UUID(), author: me, kind: kind, date: now()))
+        await store.addEvent(FeedEvent(author: me, kind: kind, date: date))
         return true
     }
 
@@ -210,18 +225,21 @@ struct InMemorySocialService: SocialService {
         let friends = Set(await activeFriendIDs())
         let profiles = await store.profiles
         // Sharing is checked again at read time, so turning a setting off hides older events too.
+        let cutoff = now() - FeedEvent.feedWindow
         return await store.events
             .filter { event in
-                friends.contains(event.author)
+                event.date >= cutoff && friends.contains(event.author)
                     && profiles[event.author].map { event.kind.isShared(by: $0.sharing) } == true
             }
             .sorted { $0.date > $1.date }
     }
 
-    func sendHighFive(to person: PersonID, for eventID: UUID?) async throws {
+    func sendHighFive(to person: PersonID, for eventKey: String?) async throws {
         try await requireFriend(person)
-        await store.addHighFive(HighFive(id: UUID(), from: me, to: person, eventID: eventID, date: now()))
+        await store.addHighFive(HighFive(from: me, to: person, eventKey: eventKey, date: now()))
     }
+
+    func prepareNotifications() async throws {}
 
     func receivedHighFives() async throws -> [HighFive] {
         let friends = Set(await activeFriendIDs())

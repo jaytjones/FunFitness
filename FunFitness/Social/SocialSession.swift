@@ -15,6 +15,7 @@ import Foundation
 import AuthenticationServices
 import CloudKit
 import Security
+import UserNotifications
 import os
 
 /// Where the Sign in with Apple user ID is kept on this device.
@@ -96,6 +97,21 @@ final class SocialSession {
     /// A code from an invite link opened before Friends was ready; used once the profile exists.
     private(set) var pendingInviteCode: String?
 
+    // Feed and high fives (step 4)
+    private(set) var feed: [FeedEvent] = []
+    private(set) var receivedHighFives: [HighFive] = []
+    /// `HighFive.id`s sent from this device, to show them as sent.
+    private(set) var sentHighFiveIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: Keys.sentHighFives) ?? [])
+    /// The latest unlocks handed to `publishRecent`, re-used when sharing is turned on.
+    private var lastPublishInput: FeedPublishing.Input?
+    private var notificationsPrepared = false
+
+    private enum Keys {
+        static let sentHighFives = "friends.sentHighFives"
+        static let published = "friends.publishedKeys"
+        static let lastSeenNews = "friends.lastSeenNews"
+    }
+
     private let idStore: AppleIDStoring
     private let makeService: (PersonID) -> any SocialService
     private let isICloudAvailable: () async -> Bool
@@ -164,6 +180,14 @@ final class SocialSession {
             try await service.syncInvites()
             friends = try await service.friends()
             openInvites = try await service.openInvites()
+            feed = try await service.feed()
+            receivedHighFives = try await service.receivedHighFives()
+            // Seen in the app, so a later push doesn't announce it again.
+            UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews)
+            if !notificationsPrepared {
+                try await service.prepareNotifications()
+                notificationsPrepared = true
+            }
         } catch {
             logger.error("Couldn't refresh friends: \(String(describing: error), privacy: .public)")
         }
@@ -216,6 +240,76 @@ final class SocialSession {
         await acceptInvite(code: url.absoluteString)
     }
 
+    // MARK: Feed and high fives (step 4)
+
+    /// Publishes recent unlocks and streak milestones (only kinds the person shares; each once).
+    /// Called whenever badges, challenges or the streak change, and again when sharing is turned on.
+    func publishRecent(_ input: FeedPublishing.Input) async {
+        lastPublishInput = input
+        guard let service, case .ready = state else { return }
+        var published = Set(UserDefaults.standard.stringArray(forKey: Keys.published) ?? [])
+        published = FeedPublishing.forgetBrokenStreaks(published, currentStreak: input.currentStreak)
+        for (kind, date) in FeedPublishing.toPublish(input, alreadyPublished: published) {
+            do {
+                if try await service.publish(kind, at: date) { published.insert(kind.key) }
+            } catch {
+                logger.error("Couldn't publish \(kind.key, privacy: .public): \(String(describing: error), privacy: .public)")
+                break
+            }
+        }
+        UserDefaults.standard.set(Array(published), forKey: Keys.published)
+    }
+
+    func sendHighFive(to person: PersonID, for eventKey: String?) async {
+        guard let service else { return }
+        let id = HighFive(from: service.me, to: person, eventKey: eventKey, date: Date()).id
+        sentHighFiveIDs.insert(id)
+        do {
+            try await service.sendHighFive(to: person, for: eventKey)
+            UserDefaults.standard.set(Array(sentHighFiveIDs), forKey: Keys.sentHighFives)
+        } catch {
+            sentHighFiveIDs.remove(id)
+            inviteMessage = Self.message(for: error)
+        }
+    }
+
+    func hasSentHighFive(to person: PersonID, for eventKey: String?) -> Bool {
+        guard let me = service?.me else { return false }
+        return sentHighFiveIDs.contains(HighFive(from: me, to: person, eventKey: eventKey, date: Date()).id)
+    }
+
+    /// A friend's Friends data changed (silent push) or the app is checking in. Loads the feed and
+    /// high fives; in the background, posts a local notification for each new item (at most 3),
+    /// since iCloud can't put names in its own alerts. Returns whether anything was new.
+    @discardableResult
+    func checkForNews(postNotifications: Bool) async -> Bool {
+        if service == nil { await refresh() }
+        guard let service, case .ready = state else { return false }
+        do {
+            friends = try await service.friends()
+            feed = try await service.feed()
+            receivedHighFives = try await service.receivedHighFives()
+        } catch {
+            logger.error("Couldn't check Friends news: \(String(describing: error), privacy: .public)")
+            return false
+        }
+        let lastSeen = UserDefaults.standard.object(forKey: Keys.lastSeenNews) as? Date ?? Date() - 86_400
+        let names = Dictionary(friends.map { ($0.id, $0.displayName) }, uniquingKeysWith: { first, _ in first })
+        let lines = FeedText.newsLines(highFives: receivedHighFives, events: feed, names: names, since: lastSeen)
+        UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews)
+        if postNotifications {
+            for (index, line) in lines.prefix(3).enumerated() {
+                let content = UNMutableNotificationContent()
+                content.title = "FunFitness Friends"
+                content.body = line
+                content.sound = .default
+                try? await UNUserNotificationCenter.current().add(
+                    UNNotificationRequest(identifier: "friends-news-\(Date().timeIntervalSince1970)-\(index)", content: content, trigger: nil))
+            }
+        }
+        return !lines.isEmpty
+    }
+
     func removeFriend(_ person: PersonID) async {
         guard let service else { return }
         await perform { try await service.removeFriend(person) } onSuccess: {
@@ -236,6 +330,10 @@ final class SocialSession {
         guard let service, case .ready(let previous) = state, previous != profile else { return }
         state = .ready(profile)
         await perform { try await service.saveProfile(profile) } onFailure: { self.state = .ready(previous) }
+        // Sharing just turned on: publish recent unlocks now rather than at the next one.
+        if profile.sharing != previous.sharing, let input = lastPublishInput {
+            await publishRecent(input)
+        }
     }
 
     /// Forgets the Apple ID on this device. The Friends profile stays for when they sign back in.
@@ -247,6 +345,8 @@ final class SocialSession {
         openInvites = []
         newInvite = nil
         inviteMessage = nil
+        feed = []
+        receivedHighFives = []
     }
 
     /// Removes the Friends profile and everything shared from it, then signs out.
@@ -312,7 +412,7 @@ final class SocialSession {
                                             containerIdentifier: PersistenceController.cloudKitContainerID)
         do {
             try await service.initializeSchema()
-            logger.notice("Friends schema initialized: 6 record types saved and removed in Development")
+            logger.notice("Friends schema initialized: 8 record types saved and removed in Development")
         } catch {
             logger.error("Friends schema init failed: \(String(describing: error), privacy: .public)")
         }
