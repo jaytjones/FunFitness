@@ -318,6 +318,13 @@ struct ContentView: View {
                     viewModel.ownerCheck = await OwnerCheck.checkCurrentAccount(
                         containerIdentifier: PersistenceController.cloudKitContainerID)
                 }
+                #if INTERNAL_SOCIAL
+                .task {
+                    // Friends (3.4): catch "Stop Using Apple ID" at launch and while running.
+                    SocialSession.shared.observeRevocation()
+                    await SocialSession.shared.refresh()
+                }
+                #endif
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         // A session ended from the Live Activity's End button waits for review here.

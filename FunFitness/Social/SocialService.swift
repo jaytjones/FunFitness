@@ -27,6 +27,8 @@ nonisolated enum SocialError: Error, Equatable, Sendable {
     /// The action needs a sharing setting that's off (e.g. weekly effort for duels).
     case sharingOff
     case duelNotFound
+    /// Built in a later 3.4 step (the CloudKit service grows step by step).
+    case notAvailableYet
 }
 
 /// Everything Friends can do. Every call acts as the signed-in person (`me`).
