@@ -65,7 +65,7 @@ struct WatchConnectorTests {
         #expect(logs.count == 1)
         #expect(logs.first?.healthKitUUID == uuid)
         #expect(logs.first?.source == .healthKit)
-        #expect(logs.first?.avgHeartRate == 140)
+        #expect(logs.first?.heartRateAverage == 140)
 
         // The same workout again (e.g. Health import got it first) isn't counted twice.
         WatchConnector.shared.receive(WatchQuickLog(id: UUID(), kind: .distance, value: 5, date: Date(), healthKitUUID: uuid))

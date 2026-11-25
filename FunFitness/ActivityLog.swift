@@ -67,8 +67,9 @@ final class ActivityLog {
     var healthKitUUID: UUID?
     // Distance surface (3.1). Optional, so the schema stays CloudKit-legal and older builds ignore it.
     var surfaceRaw: String?
-    // Heart rate (bpm) read from Health for a tracked walk/run (3.1 B2) — whatever a Watch or
-    // other sensor recorded during it. nil when nothing was recorded or Health is off.
+    // LEGACY, always nil from 3.2 (19): heart rate used to be stored here and synced to iCloud.
+    // It now lives on the device only (HeartRateStore; App Review 5.1.3). Kept because a deployed
+    // CloudKit field can't be removed. Read `heartRateAverage` / `heartRateMaximum` instead.
     var avgHeartRate: Double?
     var maxHeartRate: Double?
     // The WorkoutSession this set belongs to (3.1 C1), by id — not a relationship. nil = on its own.

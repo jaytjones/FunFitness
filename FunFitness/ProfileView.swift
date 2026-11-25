@@ -394,6 +394,7 @@ struct ProfileView: View {
         for activity in activities   { modelContext.delete(activity)    }
         for achievement in achievements { modelContext.delete(achievement) }
         try? modelContext.delete(model: RouteSummary.self)   // tracked-run routes (3.1)
+        HeartRateStore.shared.removeAll()                    // device-only heart rate
         viewModel.activities = []
         viewModel.unlockedAchievementIds.removeAll()
         try? modelContext.save()

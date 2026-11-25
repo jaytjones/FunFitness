@@ -92,15 +92,41 @@ struct TrackedHeartRateSavingTests {
             context: context, viewModel: AppViewModel(), writeBackToHealth: false
         )
         let log = try #require(try context.fetch(FetchDescriptor<ActivityLog>()).first)
-        #expect(log.avgHeartRate == 118)
-        #expect(log.maxHeartRate == 141)
+        #expect(log.heartRateAverage == 118)
+        #expect(log.heartRateMaximum == 141)
+        // Device only (App Review 5.1.3): nothing in the fields that sync to iCloud.
+        #expect(log.avgHeartRate == nil)
+        #expect(log.maxHeartRate == nil)
     }
 
     @Test func noHeartRateLeavesTheFieldsEmpty() throws {
         let context = container.mainContext
         ActivityWriter.logTracked(result(), context: context, viewModel: AppViewModel(), writeBackToHealth: false)
         let log = try #require(try context.fetch(FetchDescriptor<ActivityLog>()).first)
+        #expect(log.heartRateAverage == nil)
+        #expect(log.heartRateMaximum == nil)
+    }
+
+    @Test func syncedHeartRateMovesToTheDeviceAndLeavesTheSyncedFields() {
+        let store = HeartRateStore(fileURL: nil)
+        let legacy = ActivityLog(type: .distance, value: 5)
+        legacy.avgHeartRate = 130
+        legacy.maxHeartRate = 162
+        let plain = ActivityLog(type: .distance, value: 3)
+        #expect(store.migrate([legacy, plain]) == 1)
+        #expect(store.reading(for: legacy.id) == HeartRateStore.Reading(average: 130, maximum: 162))
+        #expect(legacy.avgHeartRate == nil && legacy.maxHeartRate == nil)
+        #expect(store.reading(for: plain.id) == nil)
+        #expect(store.migrate([legacy, plain]) == 0)   // nothing left to move
+    }
+
+    @Test func deviceReadingWinsOverALateSyncedCopy() {
+        let store = HeartRateStore(fileURL: nil)
+        let log = ActivityLog(type: .distance, value: 5)
+        store.set(average: 120, maximum: 150, for: log.id)
+        log.avgHeartRate = 99      // an older build on another device synced a value
+        store.migrate([log])
+        #expect(store.reading(for: log.id)?.average == 120)
         #expect(log.avgHeartRate == nil)
-        #expect(log.maxHeartRate == nil)
     }
 }

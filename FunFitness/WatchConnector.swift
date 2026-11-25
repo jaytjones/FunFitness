@@ -145,8 +145,7 @@ final class WatchConnector: NSObject {
                     source: source, healthKitUUID: log.healthKitUUID,
                     context: context, viewModel: viewModel
                 )
-                result.activity.avgHeartRate = log.averageHeartRate
-                result.activity.maxHeartRate = log.maximumHeartRate
+                result.activity.setHeartRate(average: log.averageHeartRate, maximum: log.maximumHeartRate)
                 if isTracked, let moving = log.movingSeconds, let kind = log.trackedKind {
                     context.insert(RouteSummary(
                         activityID: result.activity.id,

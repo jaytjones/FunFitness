@@ -281,6 +281,8 @@ struct ContentView: View {
                         viewModel.unitPreference = profile.unitPref
                     }
                     viewModel.activities = activities
+                    // Heart rate stays on this device (App Review 5.1.3): move any synced values.
+                    if HeartRateStore.shared.migrate(activities) > 0 { try? modelContext.save() }
                     syncRoutesAndSessions()
                     ExerciseLibrary.shared.setCustom(customExercises)
                     WatchConnector.shared.configure(context: modelContext, viewModel: viewModel)
@@ -364,6 +366,7 @@ struct ContentView: View {
                 }
                 .onChange(of: activities) {
                     viewModel.activities = activities
+                    if HeartRateStore.shared.migrate(activities) > 0 { try? modelContext.save() }
                     reconcileAchievements()
                     reconcileChallenges()
                     #if INTERNAL_SOCIAL

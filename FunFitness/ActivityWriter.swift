@@ -152,8 +152,7 @@ struct ActivityWriter {
             type: .distance, value: distanceKm, reps: nil, date: workout.endedAt, source: .tracked,
             surface: surface, context: context, viewModel: viewModel
         )
-        result.activity.avgHeartRate = heartRate?.average
-        result.activity.maxHeartRate = heartRate?.maximum
+        result.activity.setHeartRate(average: heartRate?.average, maximum: heartRate?.maximum)
 
         let route = RouteSummary(
             activityID: result.activity.id,
@@ -173,9 +172,7 @@ struct ActivityWriter {
             let activity = result.activity
             Task { @MainActor in
                 if let late = await HealthKitManager.shared.heartRateSummary(for: workout) {
-                    activity.avgHeartRate = late.average
-                    activity.maxHeartRate = late.maximum
-                    try? context.save()
+                    activity.setHeartRate(average: late.average, maximum: late.maximum)
                 }
             }
         }

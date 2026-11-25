@@ -524,14 +524,14 @@ struct ActivityRow: View {
     private var subtitle: String {
         var parts = [activity.loggedAt.formatted(date: .abbreviated, time: .shortened)]
         if let surface = activity.surface { parts.append(surface.displayName) }
-        if let bpm = activity.avgHeartRate { parts.append("♥ \(Int(bpm.rounded())) avg") }
+        if let bpm = activity.heartRateAverage { parts.append("♥ \(Int(bpm.rounded())) avg") }
         return parts.joined(separator: " · ")
     }
 
     private var accessibilityLabel: String {
         let date = activity.loggedAt.formatted(date: .abbreviated, time: .shortened)
         let surface = activity.surface.map { ", on \($0.displayName.lowercased())" } ?? ""
-        let heartRate = activity.avgHeartRate.map { ", average heart rate \(Int($0.rounded())) beats per minute" } ?? ""
+        let heartRate = activity.heartRateAverage.map { ", average heart rate \(Int($0.rounded())) beats per minute" } ?? ""
         return "\(title), \(valueLabel)\(surface)\(heartRate), logged \(date)"
     }
 

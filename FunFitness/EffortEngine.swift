@@ -219,7 +219,7 @@ extension EffortEngine.LogFacts {
     init(_ log: ActivityLog) {
         self.init(
             id: log.id, type: log.activityType, value: log.value, date: log.loggedAt,
-            sessionID: log.sessionID, averageHeartRate: log.avgHeartRate,
+            sessionID: log.sessionID, averageHeartRate: log.heartRateAverage,
             durationSeconds: log.durationSeconds, distanceKind: log.distanceKind
         )
     }
