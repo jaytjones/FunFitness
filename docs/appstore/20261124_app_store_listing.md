@@ -4,8 +4,8 @@ Everything to enter in App Store Connect for the first App Store release, field 
 **Release build** (Playful Bold, no Friends, no Arcade / Field Guide, no style purchase): those stay internal
 until Jay launches them; add-on text for them is in section 12. Character limits are App Store Connect's.
 
-**Decide first (section 1):** health data in iCloud (App Review 5.1.3), seller name, privacy answers vs the
-privacy manifest. Then host the privacy policy and support page (`privacy_policy.md`, `support_page.md`).
+**Decide first (section 1):** seller name (1b). Health data in iCloud (1a) and the privacy manifest (1c) are
+done (fb3e43e). Then host the privacy policy and support page (`privacy_policy.md`, `support_page.md`).
 
 ---
 
@@ -29,6 +29,10 @@ Options (Jay to choose before submitting):
 
 Recommendation: option 1 for heart rate at least (it's the clearest case) before the first submission.
 
+**Done (fb3e43e):** heart rate now stays on the device (`HeartRateStore`, excluded from backups); existing
+synced values move there at launch and the iCloud copies are cleared. Imported Health workouts (distance
+entries) still sync with the person's log; the review notes explain it.
+
 ### 1b. Seller name
 
 The App Store shows the **account holder's name** as the seller. On an Individual account that's "Jay Jones".
@@ -44,7 +48,10 @@ which the developer can't read. By Apple's definition that's **Data Not Collecte
 
 The privacy manifest, though, currently declares Name, Email, Health, Fitness and Photos as *collected* (not
 linked, not tracking). Make the two agree: either remove those entries from the manifest (matches "Data Not
-Collected"; recommended) or declare the same types in App Privacy. Small change; ask and it's done.
+Collected"; recommended) or declare the same types in App Privacy.
+
+**Done (fb3e43e):** the manifest now declares no collected data, plus the required `UserDefaults` reasons
+(CA92.1, 1C8F.1); the widget, Watch app and Watch widget got their own manifests.
 
 ### 1d. Hosting
 
@@ -74,7 +81,7 @@ purchase with nothing to buy).
 | Secondary category | Lifestyle (or Entertainment) |
 | Content rights | Does not contain, show or access third-party content: **No third-party content** |
 | Age rating | See section 7 (expected **4+**) |
-| Copyright | **© 2026 Jay Jones** (or the company name, per 1b) — also set `NSHumanReadableCopyright` in the build |
+| Copyright | **© 2026 Jay Jones** (or the company name, per 1b). Already set in the build (`NSHumanReadableCopyright`) |
 | License agreement | Apple's standard EULA |
 
 Alternate subtitles: "Turn workouts into giraffes" (28) · "Fitness stats, made ridiculous" (30) ·
@@ -231,7 +238,8 @@ Expected rating: **4+**.
 > developer never receives it.
 >
 > iCloud sync is optional (Profile › iCloud Sync) and uses the person's own private CloudKit database, so their
-> log appears on their other devices. The developer has no access to it.
+> activity log (distances, weights, reps, times) appears on their other devices. Heart rate read from Apple
+> Health is never stored in iCloud: it stays on the device. The developer has no access to any of it.
 >
 > Location is used only while the person tracks a walk or run, to measure distance and draw the route. Motion
 > (steps) is used for indoor walks.
@@ -239,7 +247,6 @@ Expected rating: **4+**.
 > The Apple Watch app logs activities and tracks walks and runs; it syncs with the iPhone app. Live Activities
 > show an in-progress workout on the Lock Screen.
 
-(Adjust the iCloud paragraph to match the decision in 1a.)
 
 ## 10. Export compliance
 
@@ -248,8 +255,8 @@ uses Apple's built-in HTTPS/iCloud encryption, which is exempt.)
 
 ## 11. Checklist
 
-1. Decide 1a (health data in iCloud), 1b (seller name), 1c (manifest); make any code changes.
-2. Set the copyright string in the build; bump to build 19+; archive with the **FunFitness** scheme.
+1. Decide 1b (seller name). (1a and 1c are done; copyright is set.)
+2. Bump to build 19+; archive with the **FunFitness** scheme.
 3. Host the privacy policy and support page; paste the URLs.
 4. Fill App Information, Pricing, App Privacy, Age Rating (sections 2–3, 6–7).
 5. Upload screenshots (section 5), description, keywords, promotional text (section 4).

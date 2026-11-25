@@ -20,6 +20,7 @@ you choose, and in your own iCloud account if you turn on sync. We can't see any
 | Information | Where it's kept | Who can see it |
 |---|---|---|
 | Your workout log: distances, weights, reps, times, notes, exercises, streaks, badges, challenges | On your device, and in your private iCloud account if iCloud Sync is on | Only you |
+| Heart rate of walks and runs you track (read from Apple Health) | On this device only | Only you |
 | Routes of walks and runs you track | Same as above, and in Apple Health if you save workouts there | Only you |
 | Profile details you enter: name, email, birthday, height, weight, goal, photo | On your device, and in your private iCloud account if iCloud Sync is on | Only you |
 | Settings (units, reminders, comparison pack) | On your device / your iCloud | Only you |
@@ -39,8 +40,8 @@ screen. You can change this any time in the Settings app › Health › Data Acc
   calories, so your workouts live in one place.
 
 Health information is used only to show you your own progress. We never sell it, share it with anyone, use it
-for advertising or marketing, or use it to build profiles. [If heart rate stays on the device per the 1a
-decision: "Heart rate read from Health stays on your device."]
+for advertising or marketing, or use it to build profiles. Heart rate read from Health stays on your device:
+it isn't stored in iCloud.
 
 ## Location and motion
 
