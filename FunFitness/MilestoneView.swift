@@ -87,6 +87,10 @@ struct MilestoneView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .ffCard()
+                // Share is a small icon on the card, never a labelled button (Jay, 2026-11-15).
+                .overlay(alignment: .topTrailing) {
+                    shareButton.padding(FFSpace.s3)
+                }
                 .opacity(showContent ? 1.0 : 0.0)
                 .animation(reduceMotion ? .none : .easeOut(duration: 0.3), value: showContent)
                 .padding(.horizontal, 32)
@@ -103,10 +107,6 @@ struct MilestoneView: View {
                     .opacity(showContent ? 1.0 : 0.0)
                     .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.4), value: showContent)
                     .accessibilityIdentifier("keepGoingButton")
-
-                    shareButton
-                        .opacity(showContent ? 1.0 : 0.0)
-                        .animation(reduceMotion ? .none : .easeOut(duration: 0.6).delay(0.5), value: showContent)
                 }
                 .padding(.horizontal, 32)
                 .padding(.bottom, 40)
@@ -144,15 +144,19 @@ struct MilestoneView: View {
                 }
             }
         }
-        .buttonStyle(.ffSecondary)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Share"))
         .accessibilityIdentifier("milestoneShareButton")
     }
 
     private var shareLabel: some View {
-        HStack {
-            Image(systemName: "square.and.arrow.up")
-            Text("Share")
-        }
+        Image(systemName: "square.and.arrow.up")
+            .font(.body.weight(.semibold))
+            .foregroundStyle(Color.ffInk)
+            .frame(width: 44, height: 44)
+            .background(Color.ffSurfaceAlt, in: .circle)
+            .overlay(Circle().strokeBorder(Color.ffLine, lineWidth: FFStroke.control))
+            .contentShape(.circle)
     }
 }
 
