@@ -137,7 +137,7 @@ Alternate subtitles: "Turn workouts into giraffes" (28) · "Fitness stats, made 
 > **YOUR DATA STAYS YOURS**
 > • Works with Apple Health: import workouts and save the ones you track (optional)
 > • Syncs between your devices with your own iCloud (optional)
-> • Export your log any time (CSV or JSON)
+> • Export your log any time as a spreadsheet (CSV)
 > • No ads, no accounts, no tracking. FunFitness doesn't collect your data.
 >
 > FunFitness is for fun and motivation. It isn't a medical device; calorie and distance figures are estimates.

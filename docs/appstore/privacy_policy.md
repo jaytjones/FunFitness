@@ -60,7 +60,7 @@ your device, and can be turned off in the app or in Settings.
 
 ## Exports
 
-If you export your log (CSV or JSON), the file goes wherever you choose to send it. That's under your control.
+If you export your log (CSV), the file goes wherever you choose to send it. That's under your control.
 
 ## What we receive
 
