@@ -101,15 +101,24 @@ final class SocialSession {
     private(set) var feed: [FeedEvent] = []
     private(set) var receivedHighFives: [HighFive] = []
     /// `HighFive.id`s sent from this device, to show them as sent.
-    private(set) var sentHighFiveIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: Keys.sentHighFives) ?? [])
+    private(set) var sentHighFiveIDs: Set<String> = []
     /// The latest unlocks handed to `publishRecent`, re-used when sharing is turned on.
     private var lastPublishInput: FeedPublishing.Input?
     private var notificationsPrepared = false
 
+    // Duels and leaderboard (step 5)
+    private(set) var duels: [Duel] = []
+    /// This week's Effort Points for me and friends who share theirs.
+    private(set) var leaderboard: [PersonID: Double] = [:]
+    /// Last weekly totals sent, by week key, so unchanged numbers aren't re-sent.
+    private var postedEffort: [String: Double] = [:]
+    private var lastEffortInput: (thisWeek: Double, lastWeek: Double)?
+
+    /// Per person, so two Apple IDs on one device (or parallel tests) never share them.
     private enum Keys {
-        static let sentHighFives = "friends.sentHighFives"
-        static let published = "friends.publishedKeys"
-        static let lastSeenNews = "friends.lastSeenNews"
+        static func sentHighFives(_ me: PersonID) -> String { "friends.sentHighFives.\(me.rawValue.prefix(16))" }
+        static func published(_ me: PersonID) -> String { "friends.publishedKeys.\(me.rawValue.prefix(16))" }
+        static func lastSeenNews(_ me: PersonID) -> String { "friends.lastSeenNews.\(me.rawValue.prefix(16))" }
     }
 
     private let idStore: AppleIDStoring
@@ -182,8 +191,10 @@ final class SocialSession {
             openInvites = try await service.openInvites()
             feed = try await service.feed()
             receivedHighFives = try await service.receivedHighFives()
+            duels = try await service.duels()
+            leaderboard = try await service.weeklyEffort(weekStart: Self.weekStart(of: Date()))
             // Seen in the app, so a later push doesn't announce it again.
-            UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews)
+            UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews(service.me))
             if !notificationsPrepared {
                 try await service.prepareNotifications()
                 notificationsPrepared = true
@@ -247,7 +258,7 @@ final class SocialSession {
     func publishRecent(_ input: FeedPublishing.Input) async {
         lastPublishInput = input
         guard let service, case .ready = state else { return }
-        var published = Set(UserDefaults.standard.stringArray(forKey: Keys.published) ?? [])
+        var published = Set(UserDefaults.standard.stringArray(forKey: Keys.published(service.me)) ?? [])
         published = FeedPublishing.forgetBrokenStreaks(published, currentStreak: input.currentStreak)
         for (kind, date) in FeedPublishing.toPublish(input, alreadyPublished: published) {
             do {
@@ -257,7 +268,7 @@ final class SocialSession {
                 break
             }
         }
-        UserDefaults.standard.set(Array(published), forKey: Keys.published)
+        UserDefaults.standard.set(Array(published), forKey: Keys.published(service.me))
     }
 
     func sendHighFive(to person: PersonID, for eventKey: String?) async {
@@ -266,7 +277,7 @@ final class SocialSession {
         sentHighFiveIDs.insert(id)
         do {
             try await service.sendHighFive(to: person, for: eventKey)
-            UserDefaults.standard.set(Array(sentHighFiveIDs), forKey: Keys.sentHighFives)
+            UserDefaults.standard.set(Array(sentHighFiveIDs), forKey: Keys.sentHighFives(service.me))
         } catch {
             sentHighFiveIDs.remove(id)
             inviteMessage = Self.message(for: error)
@@ -289,14 +300,16 @@ final class SocialSession {
             friends = try await service.friends()
             feed = try await service.feed()
             receivedHighFives = try await service.receivedHighFives()
+            duels = try await service.duels()
         } catch {
             logger.error("Couldn't check Friends news: \(String(describing: error), privacy: .public)")
             return false
         }
-        let lastSeen = UserDefaults.standard.object(forKey: Keys.lastSeenNews) as? Date ?? Date() - 86_400
+        let lastSeen = UserDefaults.standard.object(forKey: Keys.lastSeenNews(service.me)) as? Date ?? Date() - 86_400
         let names = Dictionary(friends.map { ($0.id, $0.displayName) }, uniquingKeysWith: { first, _ in first })
-        let lines = FeedText.newsLines(highFives: receivedHighFives, events: feed, names: names, since: lastSeen)
-        UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews)
+        let lines = FeedText.newsLines(highFives: receivedHighFives, events: feed, duels: duels, me: service.me,
+                                       names: names, since: lastSeen)
+        UserDefaults.standard.set(Date(), forKey: Keys.lastSeenNews(service.me))
         if postNotifications {
             for (index, line) in lines.prefix(3).enumerated() {
                 let content = UNMutableNotificationContent()
@@ -308,6 +321,70 @@ final class SocialSession {
             }
         }
         return !lines.isEmpty
+    }
+
+    // MARK: Duels and leaderboard (step 5)
+
+    static func weekStart(of date: Date, calendar: Calendar = .current) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
+    }
+
+    /// Publishes this week's and last week's Effort Points (last week too, so late entries still
+    /// count toward a duel that just ended). Only when weekly effort is shared and the number moved.
+    func postEffort(thisWeek: Double, lastWeek: Double, now: Date = Date()) async {
+        lastEffortInput = (thisWeek, lastWeek)
+        guard let service, case .ready(let profile) = state, profile.sharing.shareWeeklyEffort else { return }
+        let weeks = [(Self.weekStart(of: now), thisWeek), (Self.weekStart(of: now - 7 * 86_400), lastWeek)]
+        for (start, points) in weeks {
+            let key = SocialWeek.key(for: start)
+            let rounded = (points * 10).rounded() / 10
+            guard postedEffort[key] != rounded else { continue }
+            do {
+                try await service.postWeeklyEffort(rounded, weekStart: start)
+                postedEffort[key] = rounded
+            } catch {
+                logger.error("Couldn't post weekly effort: \(String(describing: error), privacy: .public)")
+                return
+            }
+        }
+        leaderboard[service.me] = (thisWeek * 10).rounded() / 10
+    }
+
+    /// A duel for this week. Needs weekly effort shared (it's the score).
+    func challenge(_ person: PersonID) async {
+        guard let service, case .ready(let profile) = state else { return }
+        guard profile.sharing.shareWeeklyEffort else {
+            inviteMessage = Self.message(for: SocialError.sharingOff)
+            return
+        }
+        await perform {
+            let duel = try await service.challenge(person, weekStart: Self.weekStart(of: Date()))
+            self.duels.insert(duel, at: 0)
+        }
+    }
+
+    func respond(to duel: Duel, accept: Bool) async {
+        guard let service else { return }
+        if accept, case .ready(let profile) = state, !profile.sharing.shareWeeklyEffort {
+            inviteMessage = Self.message(for: SocialError.sharingOff)
+            return
+        }
+        await perform {
+            let updated = try await service.respond(to: duel.id, accept: accept)
+            if let index = self.duels.firstIndex(where: { $0.id == duel.id }) { self.duels[index] = updated }
+        }
+    }
+
+    /// Duels worth showing: this week's and last week's (last week's show their result).
+    func visibleDuels(now: Date = Date()) -> [Duel] {
+        let lastWeek = Self.weekStart(of: now - 7 * 86_400)
+        return duels.filter { $0.weekStart >= lastWeek }
+    }
+
+    func hasDuelThisWeek(with person: PersonID, now: Date = Date()) -> Bool {
+        let week = SocialWeek.key(for: Self.weekStart(of: now))
+        return duels.contains { $0.people.contains(person) && $0.status != .declined
+            && SocialWeek.key(for: $0.weekStart) == week }
     }
 
     func removeFriend(_ person: PersonID) async {
@@ -330,9 +407,13 @@ final class SocialSession {
         guard let service, case .ready(let previous) = state, previous != profile else { return }
         state = .ready(profile)
         await perform { try await service.saveProfile(profile) } onFailure: { self.state = .ready(previous) }
-        // Sharing just turned on: publish recent unlocks now rather than at the next one.
-        if profile.sharing != previous.sharing, let input = lastPublishInput {
-            await publishRecent(input)
+        // Sharing just turned on: publish recent unlocks and this week's effort now.
+        if profile.sharing != previous.sharing {
+            if let input = lastPublishInput { await publishRecent(input) }
+            if let effort = lastEffortInput {
+                postedEffort = [:]
+                await postEffort(thisWeek: effort.thisWeek, lastWeek: effort.lastWeek)
+            }
         }
     }
 
@@ -347,6 +428,9 @@ final class SocialSession {
         inviteMessage = nil
         feed = []
         receivedHighFives = []
+        duels = []
+        leaderboard = [:]
+        postedEffort = [:]
     }
 
     /// Removes the Friends profile and everything shared from it, then signs out.
@@ -378,6 +462,7 @@ final class SocialSession {
         }
         let service = makeService(PersonID(appleUserID: appleUserID))
         self.service = service
+        sentHighFiveIDs = Set(UserDefaults.standard.stringArray(forKey: Keys.sentHighFives(service.me)) ?? [])
         do {
             state = try await service.profile().map(State.ready) ?? .needsProfile
         } catch {
@@ -412,7 +497,7 @@ final class SocialSession {
                                             containerIdentifier: PersistenceController.cloudKitContainerID)
         do {
             try await service.initializeSchema()
-            logger.notice("Friends schema initialized: 8 record types saved and removed in Development")
+            logger.notice("Friends schema initialized: 11 record types saved and removed in Development")
         } catch {
             logger.error("Friends schema init failed: \(String(describing: error), privacy: .public)")
         }
@@ -427,6 +512,8 @@ final class SocialSession {
             case .ownInvite: return "That's your own invite. Send it to a friend instead."
             case .alreadyFriends: return "You're already friends."
             case .blocked: return "You can't add this person."
+            case .sharingOff: return "Turn on Weekly Effort Points in What Friends See to duel. It's the score."
+            case .duelNotFound: return "That duel isn't waiting on you any more."
             default: break
             }
         }

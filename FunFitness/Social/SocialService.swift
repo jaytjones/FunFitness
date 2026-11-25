@@ -77,9 +77,13 @@ protocol SocialService: Sendable {
     // Duels (Effort Points)
     func challenge(_ person: PersonID, weekStart: Date) async throws -> Duel
     func respond(to duelID: UUID, accept: Bool) async throws -> Duel
-    /// Posts my Effort Points for a week to each of my active duels that week.
+    /// Publishes my Effort Points for a week (needs weekly effort shared). Feeds the leaderboard
+    /// and my duels that week. Posting again replaces the number.
     func postWeeklyEffort(_ points: Double, weekStart: Date) async throws
+    /// Duels with friends, newest week first, each side's points filled in from their weekly effort.
     func duels() async throws -> [Duel]
+    /// This week's Effort Points for me and every friend who shares theirs.
+    func weeklyEffort(weekStart: Date) async throws -> [PersonID: Double]
 }
 
 extension SocialService {
@@ -97,8 +101,12 @@ actor InMemorySocialStore {
     var events: [FeedEvent] = []
     var highFives: [HighFive] = []
     var duels: [UUID: Duel] = [:]
+    /// Published weekly Effort Points: person → week key → points.
+    var efforts: [PersonID: [String: Double]] = [:]
 
     init() {}
+
+    func setEffort(_ points: Double, for person: PersonID, week: String) { efforts[person, default: [:]][week] = points }
 
     func friendship(between a: PersonID, and b: PersonID) -> Friendship? {
         friendships.first { $0.includes(a) && $0.includes(b) }
@@ -113,6 +121,7 @@ actor InMemorySocialStore {
         events.removeAll { $0.author == person }
         highFives.removeAll { $0.from == person || $0.to == person }
         duels = duels.filter { !$0.value.people.contains(person) }
+        efforts[person] = nil
     }
 
     func addInvite(_ invite: FriendInvite) { invites[invite.code] = invite }
@@ -252,7 +261,7 @@ struct InMemorySocialService: SocialService {
         let profile = try await requireProfile()
         try await requireFriend(person)
         guard profile.sharing.shareWeeklyEffort else { throw SocialError.sharingOff }
-        let duel = Duel(id: UUID(), challenger: me, opponent: person, weekStart: weekStart, status: .pending)
+        let duel = Duel(id: UUID(), challenger: me, opponent: person, weekStart: weekStart, status: .pending, createdAt: now())
         await store.setDuel(duel)
         return duel
     }
@@ -271,20 +280,36 @@ struct InMemorySocialService: SocialService {
 
     func postWeeklyEffort(_ points: Double, weekStart: Date) async throws {
         guard try await requireProfile().sharing.shareWeeklyEffort else { throw SocialError.sharingOff }
-        let calendar = Calendar.current
-        for var duel in await store.duels.values
-        where duel.people.contains(me) && duel.status == .active
-            && calendar.isDate(duel.weekStart, equalTo: weekStart, toGranularity: .weekOfYear) {
-            duel.points[me] = max(0, points)
-            await store.setDuel(duel)
-        }
+        await store.setEffort(max(0, points), for: me, week: SocialWeek.key(for: weekStart))
     }
 
     func duels() async throws -> [Duel] {
         let friends = Set(await activeFriendIDs())
+        let efforts = await store.efforts
+        let profiles = await store.profiles
         return await store.duels.values
             .filter { $0.people.contains(me) && $0.people.subtracting([me]).isSubset(of: friends) }
+            .map { duel in
+                var filled = duel
+                let week = SocialWeek.key(for: duel.weekStart)
+                for person in duel.people where profiles[person]?.sharing.shareWeeklyEffort == true {
+                    if let points = efforts[person]?[week] { filled.points[person] = points }
+                }
+                return filled
+            }
             .sorted { $0.weekStart > $1.weekStart }
+    }
+
+    func weeklyEffort(weekStart: Date) async throws -> [PersonID: Double] {
+        let people = Set(await activeFriendIDs()).union([me])
+        let efforts = await store.efforts
+        let profiles = await store.profiles
+        let week = SocialWeek.key(for: weekStart)
+        var result: [PersonID: Double] = [:]
+        for person in people where profiles[person]?.sharing.shareWeeklyEffort == true {
+            result[person] = efforts[person]?[week] ?? 0
+        }
+        return result
     }
 
     // MARK: Helpers

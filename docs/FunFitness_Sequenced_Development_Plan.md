@@ -241,7 +241,7 @@ Tests: unlock resolution is a pure function of (style, longest streak, has purch
 
 ## Release 3.4 — "Bring Your Friends"
 
-> **Status: steps 1–4 built (2026-11-24), behind `INTERNAL_SOCIAL`.** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
+> **Status: steps 1–5 built (2026-11-24), behind `INTERNAL_SOCIAL`; step 6 (privacy / App Store text, schema deploy) next.** Jay chose an **Apple-only** 3.4: Sign in with Apple for identity and CloudKit's public database for shared data, with no backend of our own. Reaching non-Apple devices comes later with a cross-platform backend; 3.4 is built so that move only replaces the social data layer (see "Moving to a backend later").
 
 **Theme:** The social layer, in FunFitness's voice — for friends you invite, on Apple devices.
 
@@ -299,7 +299,7 @@ Copy stays in FunFitness's voice and short — one "How Friends works" page link
 - Duels are scored in **Effort Points**.
 - New profiles share **nothing until turned on**.
 - **Internal testers only** until launch: everything behind the `INTERNAL_SOCIAL` build flag (Debug + Internal, never Release), Internal TestFlight builds to the internal group; no owner check (testing needs several accounts).
-- Sign-in lives in a **Profile section**; a Friends tab only if Profile gets cluttered.
+- Sign-in lived in a **Profile section** until step 5, when Friends got its own tab (Pals / Squad / Flock), as planned if Profile got cluttered.
 - Storage: **shared zones** — each person's Friends data in their own iCloud, shared with each friend via a zone-wide `CKShare` (no public access); replaces the public-database plan above for profiles, feed, high fives and duels. Invite codes use a minimal lookup record.
 
 **Why this order:** Social is deliberately late. It requires identity, benefits from content depth (2.2) and a finished visual identity (3.2–3.3), and is the first feature set with abuse surface area — kept small by invite-only friends.

@@ -66,15 +66,18 @@ nonisolated enum FeedText {
         }
     }
 
-    /// Notification lines for anything newer than `since`: high fives first, then friends' news.
-    static func newsLines(highFives: [HighFive], events: [FeedEvent], names: [PersonID: String], since: Date) -> [String] {
+    /// Notification lines for anything newer than `since`: duel challenges, high fives, then news.
+    static func newsLines(highFives: [HighFive], events: [FeedEvent], duels: [Duel] = [], me: PersonID? = nil,
+                          names: [PersonID: String], since: Date) -> [String] {
+        let challenges = duels.filter { $0.opponent == me && $0.status == .pending && $0.createdAt > since }
+            .compactMap { duel in names[duel.challenger].map { "⚔️ \($0) challenged you to a duel this week!" } }
         let fives = highFives.filter { $0.date > since }.compactMap { five in
             names[five.from].map { "🙌 \($0) high-fived you!" }
         }
         let news = events.filter { $0.date > since }.compactMap { event in
             names[event.author].map { line(for: event, name: $0, badgeTitle: nil, challengeTitle: nil) }
         }
-        return fives + news
+        return challenges + fives + news
     }
 }
 #endif

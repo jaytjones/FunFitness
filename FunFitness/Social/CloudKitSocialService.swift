@@ -22,7 +22,11 @@
 //  `FeedEvent` records are named after what happened (`event-badge-D2`), `HighFive` records after
 //  recipient + item, so repeats overwrite instead of piling up. A silent subscription on the shared
 //  database wakes the app when a friend's zone changes (see `SocialSession.checkForNews`).
-//  Duels arrive in step 5 and throw `.notAvailableYet` until then.
+//
+//  Duels and the leaderboard (step 5): each person publishes one `WeeklyEffort` record per week
+//  (only if they share weekly effort). A challenge is a `Duel` in the challenger's zone; the answer
+//  is a `DuelResponse` in the opponent's zone; each side's score is their own `WeeklyEffort` for
+//  that week. Both phones read the same records, so they reach the same result.
 //
 //  UNRELEASED — compiled only with INTERNAL_SOCIAL (Debug + Internal builds, never Release).
 //
@@ -50,6 +54,13 @@ nonisolated enum SocialRecords {
     static let eventType = "FeedEvent"
     static let highFiveType = "HighFive"
     static let subscriptionID = "friends-shared-database"
+    // Friends zone (step 5)
+    static let duelType = "Duel"
+    static let duelResponseType = "DuelResponse"
+    static let effortType = "WeeklyEffort"
+    static func duelRecordName(_ id: UUID) -> String { "duel-\(id.uuidString)" }
+    static func duelResponseRecordName(_ id: UUID) -> String { "duelresponse-\(id.uuidString)" }
+    static func effortRecordName(_ week: String) -> String { "effort-\(week)" }
 
     static func inviteRecordName(_ code: String) -> String { "invite-\(code)" }
     static func responseRecordName(_ code: String) -> String { "response-\(code)" }
@@ -81,6 +92,82 @@ nonisolated enum SocialRecords {
         static let fromPersonID = "fromPersonID"
         static let toPersonID = "toPersonID"
         static let eventKey = "eventKey"
+        static let duelID = "duelID"
+        static let challenger = "challenger"
+        static let opponent = "opponent"
+        static let weekStart = "weekStart"
+        static let accepted = "accepted"
+        static let week = "week"
+        static let points = "points"
+    }
+
+    // MARK: Duels and weekly effort (step 5)
+
+    static func apply(_ duel: Duel, to record: CKRecord) {
+        record[Field.duelID] = duel.id.uuidString
+        record[Field.challenger] = duel.challenger.rawValue
+        record[Field.opponent] = duel.opponent.rawValue
+        record[Field.weekStart] = duel.weekStart
+        record[Field.date] = duel.createdAt
+    }
+
+    /// The challenge as saved; status and points are filled in by the reader.
+    static func duel(from record: CKRecord) -> Duel? {
+        guard record.recordType == duelType,
+              let idString = record[Field.duelID] as? String, let id = UUID(uuidString: idString),
+              let challenger = record[Field.challenger] as? String,
+              let opponent = record[Field.opponent] as? String,
+              let weekStart = record[Field.weekStart] as? Date else { return nil }
+        return Duel(id: id, challenger: PersonID(rawValue: challenger), opponent: PersonID(rawValue: opponent),
+                    weekStart: weekStart, status: .pending, createdAt: record[Field.date] as? Date ?? weekStart)
+    }
+
+    static func apply(duelResponse duelID: UUID, accepted: Bool, date: Date, to record: CKRecord) {
+        record[Field.duelID] = duelID.uuidString
+        record[Field.accepted] = accepted
+        record[Field.date] = date
+    }
+
+    static func duelResponse(from record: CKRecord) -> (duelID: UUID, accepted: Bool)? {
+        guard record.recordType == duelResponseType,
+              let idString = record[Field.duelID] as? String, let id = UUID(uuidString: idString),
+              let accepted = record[Field.accepted] as? Bool else { return nil }
+        return (id, accepted)
+    }
+
+    static func apply(effort points: Double, week: String, weekStart: Date, to record: CKRecord) {
+        record[Field.week] = week
+        record[Field.points] = points
+        record[Field.date] = weekStart
+    }
+
+    static func effort(from record: CKRecord) -> (week: String, points: Double)? {
+        guard record.recordType == effortType, let week = record[Field.week] as? String,
+              let points = record[Field.points] as? Double else { return nil }
+        return (week, points)
+    }
+
+    /// Builds duels from everyone's records: challenges, answers (in the opponent's zone) and
+    /// weekly effort (only counted for people who currently share it).
+    static func assembleDuels(
+        challenges: [Duel],
+        responses: [PersonID: [UUID: Bool]],
+        efforts: [PersonID: [String: Double]],
+        sharesEffort: [PersonID: Bool],
+        calendar: Calendar = .current
+    ) -> [Duel] {
+        challenges.map { challenge in
+            var duel = challenge
+            if let accepted = responses[duel.opponent]?[duel.id] {
+                duel.status = accepted ? .active : .declined
+            }
+            let week = SocialWeek.key(for: duel.weekStart, calendar: calendar)
+            for person in duel.people where sharesEffort[person] == true {
+                if let points = efforts[person]?[week] { duel.points[person] = points }
+            }
+            return duel
+        }
+        .sorted { $0.weekStart != $1.weekStart ? $0.weekStart > $1.weekStart : $0.createdAt > $1.createdAt }
     }
 
     // MARK: Feed (step 4)
@@ -349,9 +436,17 @@ struct CloudKitSocialService: SocialService {
             try await delete([record.recordID], in: privateDB)
         }
 
-        // My own feed items older than the feed window: nobody sees them any more.
-        let stale = try await allRecords(in: Self.zoneID, of: privateDB)
-            .filter { $0.recordType == SocialRecords.eventType && (($0[SocialRecords.Field.date] as? Date) ?? now) < now - FeedEvent.feedWindow }
+        // My own old feed items and duel records: nobody sees them any more.
+        // Duels, answers and weekly totals after 8 weeks (the leaderboard and duels only look back a week).
+        let stale = try await allRecords(in: Self.zoneID, of: privateDB).filter { record in
+            let date = (record[SocialRecords.Field.date] as? Date) ?? now
+            switch record.recordType {
+            case SocialRecords.eventType: return date < now - FeedEvent.feedWindow
+            case SocialRecords.duelType, SocialRecords.duelResponseType, SocialRecords.effortType:
+                return date < now - 8 * 7 * 86_400
+            default: return false
+            }
+        }
         if !stale.isEmpty { try await delete(stale.map(\.recordID), in: privateDB) }
 
         // Invites I accepted: join the inviter's share once they've added me.
@@ -460,16 +555,93 @@ struct CloudKitSocialService: SocialService {
     }
 
     // MARK: Later steps
-    func challenge(_ person: PersonID, weekStart: Date) async throws -> Duel { throw SocialError.notAvailableYet }
-    func respond(to duelID: UUID, accept: Bool) async throws -> Duel { throw SocialError.notAvailableYet }
-    func postWeeklyEffort(_ points: Double, weekStart: Date) async throws {}
-    func duels() async throws -> [Duel] { [] }
+    // MARK: Duels and leaderboard (step 5)
+
+    func challenge(_ person: PersonID, weekStart: Date) async throws -> Duel {
+        guard let profile = try await profile() else { throw SocialError.noProfile }
+        guard try await zone(of: person) != nil else { throw SocialError.notFriends }
+        guard profile.sharing.shareWeeklyEffort else { throw SocialError.sharingOff }
+        let duel = Duel(id: UUID(), challenger: me, opponent: person, weekStart: weekStart, status: .pending, createdAt: Date())
+        try await ensureZoneAndShare()
+        let record = CKRecord(recordType: SocialRecords.duelType,
+                              recordID: CKRecord.ID(recordName: SocialRecords.duelRecordName(duel.id), zoneID: Self.zoneID))
+        SocialRecords.apply(duel, to: record)
+        try await save([record], in: privateDB, policy: .allKeys)
+        return duel
+    }
+
+    func respond(to duelID: UUID, accept: Bool) async throws -> Duel {
+        guard let profile = try await profile() else { throw SocialError.noProfile }
+        guard var duel = try await duels().first(where: { $0.id == duelID }),
+              duel.opponent == me, duel.status == .pending else { throw SocialError.duelNotFound }
+        if accept, !profile.sharing.shareWeeklyEffort { throw SocialError.sharingOff }
+        let record = CKRecord(recordType: SocialRecords.duelResponseType, recordID: CKRecord.ID(
+            recordName: SocialRecords.duelResponseRecordName(duelID), zoneID: Self.zoneID))
+        SocialRecords.apply(duelResponse: duelID, accepted: accept, date: Date(), to: record)
+        try await save([record], in: privateDB, policy: .allKeys)
+        duel.status = accept ? .active : .declined
+        return duel
+    }
+
+    func postWeeklyEffort(_ points: Double, weekStart: Date) async throws {
+        guard let profile = try await profile() else { throw SocialError.noProfile }
+        guard profile.sharing.shareWeeklyEffort else { throw SocialError.sharingOff }
+        try await ensureZoneAndShare()
+        let week = SocialWeek.key(for: weekStart)
+        let record = CKRecord(recordType: SocialRecords.effortType, recordID: CKRecord.ID(
+            recordName: SocialRecords.effortRecordName(week), zoneID: Self.zoneID))
+        SocialRecords.apply(effort: max(0, points), week: week, weekStart: weekStart, to: record)
+        try await save([record], in: privateDB, policy: .allKeys)
+    }
+
+    func duels() async throws -> [Duel] {
+        let mine = try await allRecords(in: Self.zoneID, of: privateDB)
+        let friends = try await friendContents()
+        let friendIDs = Set(friends.map(\.profile.id))
+        let myProfile = mine.lazy.compactMap(SocialRecords.profile(from:)).first
+
+        var challenges: [Duel] = mine.compactMap(SocialRecords.duel(from:)).filter { friendIDs.contains($0.opponent) }
+        var responses: [PersonID: [UUID: Bool]] = [me: Self.responses(in: mine)]
+        var efforts: [PersonID: [String: Double]] = [me: Self.efforts(in: mine)]
+        var sharesEffort: [PersonID: Bool] = [me: myProfile?.sharing.shareWeeklyEffort ?? false]
+        for friend in friends {
+            challenges += friend.records.compactMap(SocialRecords.duel(from:)).filter { $0.opponent == me }
+            responses[friend.profile.id] = Self.responses(in: friend.records)
+            efforts[friend.profile.id] = Self.efforts(in: friend.records)
+            sharesEffort[friend.profile.id] = friend.profile.sharing.shareWeeklyEffort
+        }
+        return SocialRecords.assembleDuels(challenges: challenges, responses: responses,
+                                           efforts: efforts, sharesEffort: sharesEffort)
+    }
+
+    func weeklyEffort(weekStart: Date) async throws -> [PersonID: Double] {
+        let week = SocialWeek.key(for: weekStart)
+        var result: [PersonID: Double] = [:]
+        let mine = try await allRecords(in: Self.zoneID, of: privateDB)
+        if mine.lazy.compactMap(SocialRecords.profile(from:)).first?.sharing.shareWeeklyEffort == true {
+            result[me] = Self.efforts(in: mine)[week] ?? 0
+        }
+        for friend in try await friendContents() where friend.profile.sharing.shareWeeklyEffort {
+            result[friend.profile.id] = Self.efforts(in: friend.records)[week] ?? 0
+        }
+        return result
+    }
+
+    private static func responses(in records: [CKRecord]) -> [UUID: Bool] {
+        Dictionary(records.compactMap(SocialRecords.duelResponse(from:)).map { ($0.duelID, $0.accepted) },
+                   uniquingKeysWith: { first, _ in first })
+    }
+
+    private static func efforts(in records: [CKRecord]) -> [String: Double] {
+        Dictionary(records.compactMap(SocialRecords.effort(from:)).map { ($0.week, $0.points) },
+                   uniquingKeysWith: { first, _ in first })
+    }
 
     // MARK: Schema (Debug)
 
     #if DEBUG
     /// Creates every Friends record type in the CloudKit **Development** schema with one account:
-    /// saves a throwaway record of each of the eight types with every field set, then deletes them. Launch a Debug
+    /// saves a throwaway record of each of the eleven types with every field set, then deletes them. Launch a Debug
     /// build with `-initFriendsSchema`. Like SwiftData's `-initCloudKitSchema`, Development only.
     func initializeSchema() async throws {
         let share = try await ensureZoneAndShare()
@@ -498,7 +670,17 @@ struct CloudKitSocialService: SocialService {
         let highFive = CKRecord(recordType: SocialRecords.highFiveType,
                                 recordID: CKRecord.ID(recordName: "schema-highfive", zoneID: Self.zoneID))
         SocialRecords.apply(HighFive(from: me, to: me, eventKey: "schema", date: date), to: highFive)
-        let privateRecords = [profile, event, highFive, local(SocialRecords.outgoingType), local(SocialRecords.pendingType),
+        let duelRecord = CKRecord(recordType: SocialRecords.duelType,
+                                  recordID: CKRecord.ID(recordName: "schema-duel", zoneID: Self.zoneID))
+        SocialRecords.apply(Duel(id: UUID(), challenger: me, opponent: me, weekStart: date, status: .pending, createdAt: date),
+                            to: duelRecord)
+        let response = CKRecord(recordType: SocialRecords.duelResponseType,
+                                recordID: CKRecord.ID(recordName: "schema-duelresponse", zoneID: Self.zoneID))
+        SocialRecords.apply(duelResponse: UUID(), accepted: true, date: date, to: response)
+        let effort = CKRecord(recordType: SocialRecords.effortType,
+                              recordID: CKRecord.ID(recordName: "schema-effort", zoneID: Self.zoneID))
+        SocialRecords.apply(effort: 1.5, week: "2026-W01", weekStart: date, to: effort)
+        let privateRecords = [profile, event, highFive, duelRecord, response, effort, local(SocialRecords.outgoingType), local(SocialRecords.pendingType),
                               local(SocialRecords.blockedType)]
         let publicRecords = [SocialRecords.inviteType, SocialRecords.responseType].map { type -> CKRecord in
             let record = CKRecord(recordType: type, recordID: CKRecord.ID(recordName: "schema-\(type)"))

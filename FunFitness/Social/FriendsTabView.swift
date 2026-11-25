@@ -1,10 +1,11 @@
 //
-//  FriendsProfileSection.swift
+//  FriendsTabView.swift
 //  FunFitness
 //
-//  Friends in Profile (3.4 step 2; Jay chose a Profile section over a tab for now): Sign in with
-//  Apple, create the Friends profile (name + emoji; style comes along), sharing switches (all off
-//  until turned on), "How Friends works", sign out and delete.
+//  The Friends tab (3.4; moved out of Profile in step 5 when it got crowded, as Jay planned):
+//  Sign in with Apple and the Friends profile, this week's leaderboard, duels, friend activity with
+//  high fives, friends and invites, what friends see (all off until turned on), sign out and delete.
+//  Tab labels: Pals (Playful Bold), Squad (Arcade), Flock (Field Guide).
 //
 //  UNRELEASED — compiled only with INTERNAL_SOCIAL; text is verbatim until launch.
 //
@@ -13,7 +14,7 @@
 import SwiftUI
 import AuthenticationServices
 
-struct FriendsProfileSection: View {
+struct FriendsTabView: View {
     /// The person's current style, carried onto their Friends profile.
     let styleID: String
     /// For badge titles in the feed ("You've covered 5 miles!").
@@ -25,34 +26,33 @@ struct FriendsProfileSection: View {
     @State private var showDeleteConfirm = false
     @State private var isEditingName = false
     @State private var nameDraft = ""
-    @State private var emojiDraft = FriendsProfileSection.emojis[0]
+    @State private var emojiDraft = FriendsTabView.emojis[0]
     @State private var codeDraft = ""
     @State private var friendToBlock: SocialProfile?
 
     static let emojis = ["🦛", "🐘", "🦒", "🐢", "🦖", "🐙", "🦊", "🐧", "🦄", "🐝", "🍕", "🚀"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(verbatim: "Friends (internal)")
-                    .ffFont(.headline)
-                    .foregroundStyle(Color.ffInk)
-                Spacer()
-                Button {
-                    showHowItWorks = true
-                } label: {
-                    Text(verbatim: "How Friends works")
-                        .ffFont(.caption)
-                        .foregroundStyle(Color.ffLink)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    content
                 }
-                .accessibilityIdentifier("friendsHowItWorksButton")
+                .padding()
             }
-            .padding(.horizontal)
-
-            content
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .ffCard()
-                .padding(.horizontal)
+            .background(Color.ffBg.ignoresSafeArea())
+            .navigationTitle(Text(verbatim: "Friends"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showHowItWorks = true
+                    } label: {
+                        Label { Text(verbatim: "How Friends works") } icon: { Image(systemName: "questionmark.circle") }
+                    }
+                    .accessibilityIdentifier("friendsHowItWorksButton")
+                }
+            }
+            .refreshable { await session.refreshFriends() }
         }
         .task {
             session.observeRevocation()
@@ -104,29 +104,43 @@ struct FriendsProfileSection: View {
     private var content: some View {
         switch session.state {
         case .checking:
-            HStack(spacing: 8) {
-                SwiftUI.ProgressView()
-                Text(verbatim: "Checking…").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+            card {
+                HStack(spacing: 8) {
+                    SwiftUI.ProgressView()
+                    Text(verbatim: "Checking…").ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+                }
             }
         case .signedOut:
-            signedOut
+            card { signedOut }
         case .iCloudUnavailable:
-            note("Friends keeps your profile in iCloud. Sign in to iCloud in Settings to use it.")
+            card { note("Friends keeps your profile in iCloud. Sign in to iCloud in Settings to use it.") }
         case .needsProfile:
-            createProfile
+            card { createProfile }
         case .ready(let profile):
             ready(profile)
         case .failed(let message):
-            VStack(alignment: .leading, spacing: 10) {
-                note(message)
-                Button {
-                    Task { await session.refresh() }
-                } label: {
-                    Text(verbatim: "Try Again")
+            card {
+                VStack(alignment: .leading, spacing: 10) {
+                    note(message)
+                    Button {
+                        Task { await session.refresh() }
+                    } label: {
+                        Text(verbatim: "Try Again")
+                    }
+                    .buttonStyle(.ffSecondary)
                 }
-                .buttonStyle(.ffSecondary)
             }
         }
+    }
+
+    private func card(@ViewBuilder _ content: () -> some View) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .ffCard()
+    }
+
+    private func cardTitle(_ text: String) -> some View {
+        Text(verbatim: text).ffFont(.headline).foregroundStyle(Color.ffInk)
     }
 
     // MARK: States
@@ -175,8 +189,38 @@ struct FriendsProfileSection: View {
         }
     }
 
+    @ViewBuilder
     private func ready(_ profile: SocialProfile) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        card { profileHeader(profile) }
+        if let message = session.inviteMessage {
+            card { note(message) }
+        }
+        card { leaderboard(profile) }
+        if !session.visibleDuels().isEmpty {
+            card { duelsList }
+        }
+        if !session.feed.isEmpty || !session.receivedHighFives.isEmpty {
+            card { activity }
+        }
+        card { friendsList }
+        card { sharing(profile) }
+        HStack {
+            signOutButton
+            Spacer()
+            Button(role: .destructive) {
+                showDeleteConfirm = true
+            } label: {
+                Text(verbatim: "Delete Friends Profile")
+            }
+            .ffFont(.bodyStrong)
+            .foregroundStyle(Color.ffDanger)
+            .accessibilityIdentifier("friendsDeleteButton")
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func profileHeader(_ profile: SocialProfile) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Text(profile.avatarEmoji).font(.largeTitle).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
@@ -194,62 +238,138 @@ struct FriendsProfileSection: View {
                 .ffFont(.bodyStrong)
                 .foregroundStyle(Color.ffLink)
             }
-            .padding(.bottom, 12)
-
             if isEditingName {
-                VStack(alignment: .leading, spacing: 10) {
-                    TextField(text: $nameDraft) { Text(verbatim: "Display name") }
-                        .ffFont(.body)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .ffWell(radius: FFRadius.sm)
-                    emojiPicker
-                    Button {
-                        var edited = profile
-                        edited.displayName = SocialProfile.cleanedName(nameDraft) ?? profile.displayName
-                        edited.avatarEmoji = emojiDraft
-                        isEditingName = false
-                        Task { await session.update(edited) }
-                    } label: {
-                        Text(verbatim: "Save")
-                    }
-                    .buttonStyle(.ffPrimary)
-                    .disabled(SocialProfile.cleanedName(nameDraft) == nil)
+                TextField(text: $nameDraft) { Text(verbatim: "Display name") }
+                    .ffFont(.body)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .ffWell(radius: FFRadius.sm)
+                emojiPicker
+                Button {
+                    var edited = profile
+                    edited.displayName = SocialProfile.cleanedName(nameDraft) ?? profile.displayName
+                    edited.avatarEmoji = emojiDraft
+                    isEditingName = false
+                    Task { await session.update(edited) }
+                } label: {
+                    Text(verbatim: "Save")
                 }
-                .padding(.bottom, 12)
+                .buttonStyle(.ffPrimary)
+                .disabled(SocialProfile.cleanedName(nameDraft) == nil)
             }
+        }
+    }
 
-            Divider()
-            friendsList
-            if !session.feed.isEmpty || !session.receivedHighFives.isEmpty {
-                Divider()
-                activity
-            }
-            Divider()
-            Text(verbatim: "What friends see")
-                .ffFont(.bodyStrong)
-                .foregroundStyle(Color.ffInk)
-                .padding(.top, 12)
+    private func sharing(_ profile: SocialProfile) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            cardTitle("What friends see")
             Text(verbatim: "Your name, emoji and style, plus only what you turn on here. Your workouts are never shared.")
                 .ffFont(.caption)
                 .foregroundStyle(Color.ffInkMuted)
             sharingToggle("Badges and challenges", "Your unlocks appear in friends' feeds.", \.shareUnlocks, profile)
             sharingToggle("Streak milestones", "When your streak hits a new mark.", \.shareStreak, profile)
             sharingToggle("Weekly Effort Points", "Needed for duels and the friends leaderboard.", \.shareWeeklyEffort, profile)
+        }
+    }
 
-            Divider().padding(.bottom, 12)
-            HStack {
-                signOutButton
-                Spacer()
-                Button(role: .destructive) {
-                    showDeleteConfirm = true
-                } label: {
-                    Text(verbatim: "Delete Friends Profile")
-                }
-                .ffFont(.bodyStrong)
-                .foregroundStyle(Color.ffDanger)
-                .accessibilityIdentifier("friendsDeleteButton")
+    // MARK: Leaderboard and duels (step 5)
+
+    /// Display name for anyone in Friends, "You" for me.
+    private func name(of person: PersonID) -> String {
+        if person == session.service?.me { return "You" }
+        return session.friends.first { $0.id == person }?.displayName ?? "A friend"
+    }
+
+    private func emoji(of person: PersonID, me profile: SocialProfile) -> String {
+        if person == profile.id { return profile.avatarEmoji }
+        return session.friends.first { $0.id == person }?.avatarEmoji ?? "🙂"
+    }
+
+    private func leaderboard(_ profile: SocialProfile) -> some View {
+        let names = Dictionary(session.leaderboard.keys.map { ($0, name(of: $0)) }, uniquingKeysWith: { first, _ in first })
+        let rows = FriendsLeaderboard.rows(points: session.leaderboard, names: names)
+        return VStack(alignment: .leading, spacing: 10) {
+            cardTitle("This week")
+            if !profile.sharing.shareWeeklyEffort {
+                note("Turn on Weekly Effort Points below to join the leaderboard and duels.")
             }
+            if rows.count < 2 {
+                note("Friends who share their weekly Effort Points show up here.")
+            }
+            ForEach(rows, id: \.person) { row in
+                let isMe = row.person == profile.id
+                HStack(spacing: 10) {
+                    Text(verbatim: "\(row.rank)")
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(Color.ffInkMuted)
+                        .frame(width: 24, alignment: .leading)
+                    Text(emoji(of: row.person, me: profile)).accessibilityHidden(true)
+                    Text(verbatim: name(of: row.person))
+                        .ffFont(isMe ? .bodyStrong : .body)
+                        .foregroundStyle(Color.ffInk)
+                    Spacer()
+                    Text(verbatim: "\(Int(row.points.rounded())) pts")
+                        .ffFont(.bodyStrong)
+                        .foregroundStyle(isMe ? Color.ffAccent : Color.ffInk)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private var duelsList: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            cardTitle("Duels")
+            ForEach(session.visibleDuels()) { duel in
+                duelRow(duel)
+            }
+            note("Scored in Effort Points. Totals come from each person's own app, so duels are on the honor system.")
+        }
+    }
+
+    @ViewBuilder
+    private func duelRow(_ duel: Duel) -> some View {
+        let me = session.service?.me
+        let other = me.map { duel.other(than: $0) } ?? duel.opponent
+        let otherName = name(of: other)
+        let mine = me.flatMap { duel.points[$0] } ?? 0
+        let theirs = duel.points[other] ?? 0
+        let score = "\(Int(mine.rounded())) – \(Int(theirs.rounded()))"
+        VStack(alignment: .leading, spacing: 6) {
+            switch (duel.status, duel.opponent == me) {
+            case (.pending, true):
+                Text(verbatim: "⚔️ \(otherName) challenged you this week").ffFont(.bodyStrong).foregroundStyle(Color.ffInk)
+                HStack(spacing: 10) {
+                    Button { Task { await session.respond(to: duel, accept: true) } } label: { Text(verbatim: "Accept") }
+                        .buttonStyle(.ffPrimary)
+                    Button { Task { await session.respond(to: duel, accept: false) } } label: { Text(verbatim: "Not this week") }
+                        .buttonStyle(.ffSecondary)
+                }
+                .disabled(session.isWorking)
+            case (.pending, false):
+                Text(verbatim: "⚔️ Waiting for \(otherName) to accept").ffFont(.body).foregroundStyle(Color.ffInk)
+            case (.declined, _):
+                Text(verbatim: duel.opponent == me ? "You passed on \(otherName)'s duel" : "\(otherName) passed this week")
+                    .ffFont(.body).foregroundStyle(Color.ffInkMuted)
+            case (.active, _):
+                Text(verbatim: "⚔️ You vs \(otherName) · \(score)").ffFont(.bodyStrong).foregroundStyle(Color.ffInk)
+                Text(verbatim: resultLine(duel, me: me, otherName: otherName))
+                    .ffFont(.caption).foregroundStyle(Color.ffInkMuted)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func resultLine(_ duel: Duel, me: PersonID?, otherName: String) -> String {
+        switch DuelEngine.outcome(of: duel, now: Date()) {
+        case .waiting: return ""
+        case .inProgress(let leader):
+            guard let leader else { return "Neck and neck so far. Ends Sunday night." }
+            return leader == me ? "You're ahead. Keep moving!" : "\(otherName) is ahead. Plenty of week left!"
+        case .won(let winner):
+            return winner == me ? DuelCopy.victory(loserName: otherName) : DuelCopy.consolation(winnerName: otherName, duelID: duel.id)
+        case .tie:
+            return DuelCopy.tie
         }
     }
 
@@ -257,10 +377,7 @@ struct FriendsProfileSection: View {
 
     private var friendsList: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(verbatim: session.friends.isEmpty ? "Friends" : "Friends · \(session.friends.count)")
-                .ffFont(.bodyStrong)
-                .foregroundStyle(Color.ffInk)
-                .padding(.top, 12)
+            cardTitle(session.friends.isEmpty ? "Friends" : "Friends · \(session.friends.count)")
 
             if session.friends.isEmpty {
                 Text(verbatim: "No friends yet. Send an invite, or enter a friend's code below.")
@@ -273,6 +390,12 @@ struct FriendsProfileSection: View {
                     Text(friend.displayName).ffFont(.body).foregroundStyle(Color.ffInk)
                     Spacer()
                     Menu {
+                        Button {
+                            Task { await session.challenge(friend.id) }
+                        } label: {
+                            Label { Text(verbatim: "Challenge to a Duel") } icon: { Image(systemName: "figure.fencing") }
+                        }
+                        .disabled(session.hasDuelThisWeek(with: friend.id))
                         Button(role: .destructive) {
                             Task { await session.removeFriend(friend.id) }
                         } label: {
@@ -328,11 +451,7 @@ struct FriendsProfileSection: View {
                 .fixedSize()
                 .disabled(FriendInvite.normalizedCode(codeDraft) == nil || session.isWorking)
             }
-            if let message = session.inviteMessage {
-                note(message)
-            }
         }
-        .padding(.bottom, 12)
     }
 
     // MARK: Feed and high fives (step 4)
@@ -343,10 +462,7 @@ struct FriendsProfileSection: View {
         let recentFives = session.receivedHighFives.filter { $0.date >= weekAgo }
         let fiveNames = Array(Set(recentFives.compactMap { names[$0.from]?.displayName })).sorted()
         return VStack(alignment: .leading, spacing: 10) {
-            Text(verbatim: "Friend activity")
-                .ffFont(.bodyStrong)
-                .foregroundStyle(Color.ffInk)
-                .padding(.top, 12)
+            cardTitle("Friend activity")
             if !fiveNames.isEmpty {
                 Text(verbatim: "🙌 High fives this week from \(fiveNames.formatted(.list(type: .and)))")
                     .ffFont(.caption)
@@ -358,7 +474,6 @@ struct FriendsProfileSection: View {
                 }
             }
         }
-        .padding(.bottom, 12)
     }
 
     private func feedRow(_ event: FeedEvent, friend: SocialProfile) -> some View {

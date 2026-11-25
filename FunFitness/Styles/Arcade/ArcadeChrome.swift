@@ -20,6 +20,9 @@ extension AppTab {
         case .home: return "Home"
         case .progress: return "Stats"
         case .badges: return "Cards"
+        #if INTERNAL_SOCIAL
+        case .friends: return "Squad"
+        #endif
         case .you: return "You"
         }
     }
@@ -37,18 +40,21 @@ struct ArcadeTabBar: View {
                 Button {
                     selection = tab
                 } label: {
-                    VStack(spacing: 3) {
-                        Text(verbatim: tab.arcadeLabel)
-                            .ffFont(.tab)
-                            .lineLimit(1)
-                            .fixedSize()
-                            .foregroundStyle(isSelected ? Color.ffAccent : Color.ffInk)
-                        // The underline marks the tab without relying on colour alone.
-                        Rectangle()
-                            .fill(isSelected ? Color.ffAccent : .clear)
-                            .frame(height: 2)
-                    }
-                    .padding(.horizontal, FFSpace.s2)
+                    // The underline marks the tab without relying on colour alone. It's an overlay
+                    // sized to the word; as a stacked Rectangle it stretched its tab.
+                    Text(verbatim: tab.arcadeLabel)
+                        .ffFont(.tab)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .fixedSize(horizontal: !AppTab.isCrowded, vertical: false)
+                        .foregroundStyle(isSelected ? Color.ffAccent : Color.ffInk)
+                        .padding(.bottom, 5)
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(isSelected ? Color.ffAccent : .clear)
+                                .frame(height: 2)
+                        }
+                        .padding(.horizontal, AppTab.isCrowded ? FFSpace.s1 : FFSpace.s2)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
                 }

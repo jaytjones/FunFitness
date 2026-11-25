@@ -11,9 +11,14 @@ import SwiftUI
 
 // MARK: - Tabs
 
-/// The four tabs. Labels are shortened so they fit at large text sizes (TabBar.md).
+/// The tabs. Labels are shortened so they fit at large text sizes (TabBar.md). Raw values are
+/// fixed (`-previewTab 3` = You); Friends (3.4, unreleased) sits before You in Debug/Internal builds.
 enum AppTab: Int, CaseIterable, Identifiable {
-    case home, progress, badges, you
+    case home = 0, progress = 1, badges = 2
+    #if INTERNAL_SOCIAL
+    case friends = 4
+    #endif
+    case you = 3
 
     var id: Int { rawValue }
 
@@ -26,16 +31,26 @@ enum AppTab: Int, CaseIterable, Identifiable {
         case .home:     return "Home"
         case .progress: return "Progress"
         case .badges:   return "Badges"
+        #if INTERNAL_SOCIAL
+        case .friends:  return "Pals"
+        #endif
         case .you:      return "You"
         }
     }
 
     /// For the system tab bar used at accessibility text sizes.
+    /// Four tabs fit at full size; the fifth (Friends, internal builds) needs tighter padding and
+    /// lets labels shrink a little so the bar still fits beside the LogButton.
+    static var isCrowded: Bool { allCases.count > 4 }
+
     var symbol: String {
         switch self {
         case .home:     return "house"
         case .progress: return "chart.line.uptrend.xyaxis"
         case .badges:   return "trophy"
+        #if INTERNAL_SOCIAL
+        case .friends:  return "person.2"
+        #endif
         case .you:      return "person.circle"
         }
     }
@@ -71,9 +86,10 @@ struct FFTabBar: View {
                     Text(tab.label)
                         .ffFont(.tab)
                         .lineLimit(1)
-                        .fixedSize()
+                        .minimumScaleFactor(0.75)
+                        .fixedSize(horizontal: !AppTab.isCrowded, vertical: false)
                         .foregroundStyle(isSelected ? Color.ffOnAccent : Color.ffInk)
-                        .padding(.horizontal, FFSpace.s2 + 2)
+                        .padding(.horizontal, AppTab.isCrowded ? FFSpace.s1 + 2 : FFSpace.s2 + 2)
                         .frame(minHeight: 44)
                                 .background {
                             if isSelected {

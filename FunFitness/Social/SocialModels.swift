@@ -180,8 +180,41 @@ nonisolated struct Duel: Identifiable, Equatable, Codable, Sendable {
     var status: Status
     /// Each side's posted Effort Points for the week. Unverified: they come from that person's app.
     var points: [PersonID: Double] = [:]
+    var createdAt: Date = .distantPast
 
     var people: Set<PersonID> { [challenger, opponent] }
+
+    func other(than person: PersonID) -> PersonID { person == challenger ? opponent : challenger }
+}
+
+/// One week of a person's Effort Points as published for friends (leaderboard and duels).
+nonisolated enum SocialWeek {
+    /// "2026-W48" for the week containing `date`, in this calendar. Both friends are assumed to
+    /// start weeks on the same day (a mismatch shifts which week a duel reads).
+    static func key(for date: Date, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        return String(format: "%04d-W%02d", parts.yearForWeekOfYear ?? 0, parts.weekOfYear ?? 0)
+    }
+}
+
+/// Friendly duel copy (Jay's brief: "gentle, funny consolation screens"). Deterministic per duel,
+/// so both phones and every refresh show the same line.
+nonisolated enum DuelCopy {
+    static let consolations = [
+        "%@ won this round. Your couch sends its thanks. 🛋️",
+        "%@ took it. Rematch? Your sneakers are already stretching. 👟",
+        "%@ edged ahead. Even sloths have comeback weeks. 🦥",
+        "%@ wins! You still out-moved every houseplant in the land. 🪴",
+        "%@ wins this one. The tortoise is drafting your next race plan. 🐢",
+    ]
+
+    static func consolation(winnerName: String, duelID: UUID) -> String {
+        let index = Int(duelID.uuid.0) % consolations.count
+        return String(format: consolations[index], winnerName)
+    }
+
+    static func victory(loserName: String) -> String { "You out-moved \(loserName)! 🏆" }
+    static let tie = "A dead heat! Same points, same glory. 🤝"
 }
 
 // MARK: - Rules

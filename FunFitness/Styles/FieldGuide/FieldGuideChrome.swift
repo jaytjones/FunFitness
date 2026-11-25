@@ -20,6 +20,9 @@ extension AppTab {
         case .home: return "Guide"
         case .progress: return "Progress"
         case .badges: return "Collection"
+        #if INTERNAL_SOCIAL
+        case .friends: return "Flock"
+        #endif
         case .you: return "Profile"
         }
     }

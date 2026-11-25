@@ -310,12 +310,6 @@ struct ProfileView: View {
                             .padding(.horizontal)
                         }
 
-                        #if INTERNAL_SOCIAL
-                        // Friends (3.4, unreleased): internal testers only.
-                        FriendsProfileSection(styleID: profile?.activeStyleID ?? StyleID.default.rawValue,
-                                              pref: viewModel.unitPreference)
-                        #endif
-
                         // Notifications
                         NotificationSettingsSection(profile: profile)
 

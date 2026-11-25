@@ -48,6 +48,10 @@ struct ContentView: View {
             tabContent(HomeView(viewModel: viewModel), tab: .home)
             tabContent(ProgressTabView(viewModel: viewModel), tab: .progress)
             tabContent(AchievementsView(viewModel: viewModel), tab: .badges)
+            #if INTERNAL_SOCIAL
+            tabContent(FriendsTabView(styleID: profiles.first?.activeStyleID ?? StyleID.default.rawValue,
+                                      pref: viewModel.unitPreference), tab: .friends)
+            #endif
             tabContent(ProfileView(viewModel: viewModel), tab: .you)
         }
         .tint(.ffInk)
@@ -335,7 +339,7 @@ struct ContentView: View {
                 .onOpenURL { url in
                     // funfitness://friend/<code> invite links (3.4).
                     guard url.scheme == "funfitness", url.host() == "friend" else { return }
-                    selectedTab = .you
+                    selectedTab = .friends
                     Task { await SocialSession.shared.handleInviteLink(url) }
                 }
                 #endif
@@ -362,6 +366,9 @@ struct ContentView: View {
                     viewModel.activities = activities
                     reconcileAchievements()
                     reconcileChallenges()
+                    #if INTERNAL_SOCIAL
+                    publishToFriends()
+                    #endif
                     updateStreak()
                     scheduleNotificationsIfNeeded()
                     writeWidgetData()
@@ -580,7 +587,22 @@ struct ContentView: View {
             challenges: unlockedChallenges.map { (id: $0.challengeId, year: $0.year, date: $0.unlockedAt) },
             currentStreak: streakRecords.first?.currentStreak ?? 0
         )
-        Task { await SocialSession.shared.publishRecent(input) }
+        // Weekly Effort Points for the leaderboard and duels (this week and last, from the last
+        // two weeks of logs; the session only sends numbers that changed).
+        let now = Date()
+        let recentStart = Calendar.current.date(byAdding: .day, value: -15, to: now) ?? .distantPast
+        let entries = EffortEngine.entries(
+            logs: activities.filter { $0.loggedAt >= recentStart }.map(EffortEngine.LogFacts.init),
+            routes: viewModel.routeFacts,
+            sessions: viewModel.sessionFacts
+        )
+        let age = profiles.first?.computedAge
+        let thisWeek = EffortEngine.weeklySummary(entries: entries, age: age, now: now).points
+        let lastWeek = EffortEngine.weeklySummary(entries: entries, age: age, now: now - 7 * 86_400).points
+        Task {
+            await SocialSession.shared.publishRecent(input)
+            await SocialSession.shared.postEffort(thisWeek: thisWeek, lastWeek: lastWeek, now: now)
+        }
     }
     #endif
 
