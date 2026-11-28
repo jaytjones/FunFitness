@@ -73,7 +73,7 @@ purchase with nothing to buy).
 | Field | Value |
 |---|---|
 | Name (30) | **FunFitness** — or, if taken, **FunFitness: Silly Stats** (24) |
-| Subtitle (30) | **Workouts measured in hippos** (27) |
+| Subtitle (30) | **Get fit, one giggle at a time** (29). Chosen 2026-11-27; "Workouts measured in hippos" was dropped because screenshot 1 already says "Your workouts, in hippos" |
 | Bundle ID | com.jaytjones.FunFitness |
 | SKU | FUNFITNESS-IOS-001 |
 | Primary language | English (U.S.) |
@@ -84,8 +84,9 @@ purchase with nothing to buy).
 | Copyright | **© 2026 Jay Jones** (or the company name, per 1b). Already set in the build (`NSHumanReadableCopyright`) |
 | License agreement | Apple's standard EULA |
 
-Alternate subtitles: "Turn workouts into giraffes" (28) · "Fitness stats, made ridiculous" (30) ·
-"Silly comparisons, real progress" (31: too long).
+Alternate subtitles: "Workout tracker with giggles" (28) · "Track walks, runs and lifts" (27) ·
+"Turn workouts into giraffes" (28) · "Fitness stats, made ridiculous" (30). "Silly comparisons, real progress"
+(31, too long) is now the header phrase (`header/`).
 
 ## 3. Pricing and Availability
 
@@ -153,9 +154,10 @@ Alternate subtitles: "Turn workouts into giraffes" (28) · "Fitness stats, made 
 
 ### Keywords (100, comma-separated, no spaces)
 
-> workout,tracker,walking,running,steps,gym,weightlifting,streak,habit,milestones,funny,motivation,log
+> workout,tracker,walking,running,steps,gym,weightlifting,strength,streak,habit,lift,funny,motivation
 
-(99 characters. Don't repeat words already in the name/subtitle: "fitness", "hippos", "workouts".)
+(99 characters; entered in App Store Connect 2026-11-27. "strength" and "lift" replaced "milestones" and "log".
+Don't repeat words already in the name/subtitle, e.g. "fitness", "fit", "giggle".)
 
 ### Support URL / Marketing URL
 
