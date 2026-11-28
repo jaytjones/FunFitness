@@ -1,12 +1,19 @@
 # App Store screenshots
 
-Upload `iphone/` (iPhone 6.9", 1320 × 2868) and `watch/` (Apple Watch Ultra 3, 422 × 514) in file order. Each filename ends in its pixel size; match it to the slot's size.
-`raw/` holds the uncaptioned captures the captioned set is made from. `iphone-6.5/` is the same set at
-1284 × 2778, for the 6.5" slot if App Store Connect asks for it.
+App Store Connect slots (checked 2026-11-27; each filename ends in its pixel size):
 
-Apple's rules (checked 2026-11-27): 6.9" accepts 1320 × 2868, 1290 × 2796 or 1260 × 2736; 6.5" accepts
-1284 × 2778 or 1242 × 2688; Watch Ultra 3 is 422 × 514. **No alpha channel**: simulator Watch captures
-have one, so run `scripts/screenshots/flatten.swift <in.png> <out.png>` on them.
+| Slot | Folder | Size |
+|---|---|---|
+| **iPhone with Dynamic Island (medium display)**, the required one | `iphone-medium/` | 1206 × 2622 |
+| iPhone with Dynamic Island (large display), optional | `iphone/` | 1320 × 2868 |
+| iPhone with Face ID (large display), optional | `iphone-6.5/` | 1284 × 2778 |
+| Apple Watch Ultra 3 | `watch/` | 422 × 514 |
+
+Upload in file order. Slots left empty are filled by App Store Connect scaling a neighbouring size.
+`iphone-medium/` is `iphone/` scaled with `sips -z 2622 1206`. iPhone Duo (1398 × 2034 outer, 2007 × 2853 inner)
+is optional now and becomes required in April 2027 for apps built with the iOS 27.1 SDK or later.
+`raw/` holds the uncaptioned captures. **No alpha channel** allowed: simulator Watch captures have one, so run
+`scripts/screenshots/flatten.swift <in.png> <out.png>` on them.
 
 ## iPhone 6.9" (upload all 6)
 

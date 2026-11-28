@@ -58,7 +58,7 @@ purchase. Field-by-field text is in `20261124_app_store_listing.md` (section num
 
 - [ ] Promotional text, Description, Keywords (copy from the listing).
 - [ ] Support URL; Marketing URL optional.
-- [ ] Upload iPhone (`screenshots/iphone/`, 6) and Apple Watch (`screenshots/watch/`, 3) screenshots in file order.
+- [ ] Upload iPhone (required slot "Dynamic Island (medium display)": `screenshots/iphone-medium/`; optional large slot: `screenshots/iphone/`, 6 each) and Apple Watch (`screenshots/watch/`, 3) screenshots in file order.
 - [ ] Select build **3.2 (19)** (after it finishes processing; answer export compliance if asked: "None of the
       algorithms mentioned" / exempt; the build already says it uses no non-exempt encryption).
 - [ ] App Review Information: sign-in **not required**; your name, phone, email; paste the **Notes for App
