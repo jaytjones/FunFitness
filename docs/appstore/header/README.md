@@ -9,10 +9,12 @@ Specs from Apple's "Creative assets specifications" page (checked 2026-11-27): P
 safe area (the rest may be cropped); one short phrase at most; no pricing, URLs, ©, awards or other platforms.
 English only, so localize the phrase if more languages are added later.
 
-Design: "Your workouts, in hippos!" with the hippo badge in the safe area; the walk and strength screenshots,
+Design: "Silly comparisons, real progress" with the hippo badge in the safe area. It's not "Your workouts, in
+hippos" because that's already the first screenshot's caption, and the subtitle is "Workouts measured in hippos".
+Also in the image: the walk and strength screenshots,
 an elephant, a giraffe and confetti in the auxiliary area. Made with `scripts/screenshots/header.swift`:
 
     swiftc -O header.swift -o header
-    header <out.png> <W> <H> <safeX> <safeY> <safeW> <safeH> <left.png> <right.png> [--guides]
+    header <out.png> <W> <H> <safeX> <safeY> <safeW> <safeH> <left.png> <right.png> '<phrase>' [--guides]
 
-`--guides` draws the safe area in red, for checking only. Use App Store Connect's Preview button to check the crops.
+`\n` in the phrase sets the line break; the text shrinks to fit the safe area. `--guides` draws the safe area in red, for checking only. Use App Store Connect's Preview button to check the crops.

@@ -1,4 +1,5 @@
-// header.swift <out.png> <W> <H> <safeX> <safeY> <safeW> <safeH> <leftShot.png> <rightShot.png> [--guides]
+// header.swift <out.png> <W> <H> <safeX> <safeY> <safeW> <safeH> <leftShot.png> <rightShot.png> <phrase> [--guides]
+// `\n` in the phrase forces a line break.
 // App Store product page header / universal asset: copy + hero emoji in the art safe area, tilted
 // screenshots, animals and confetti in the auxiliary area. Coordinates are top-left based (Apple's templates).
 import AppKit
@@ -81,12 +82,24 @@ ctx.setFillColor(NSColor(srgbRed: 1, green: 0xF4/255, blue: 0xCC/255, alpha: 1).
 ctx.fillEllipse(in: CGRect(x: badgeC.x - badgeR, y: badgeC.y - badgeR, width: 2*badgeR, height: 2*badgeR))
 emoji("🦛", size: 230 * s, center: CGPoint(x: badgeC.x, y: badgeC.y - 6 * s))
 
-var font = NSFont.systemFont(ofSize: 190 * s, weight: .heavy)
-font = NSFont(descriptor: font.fontDescriptor.withDesign(.rounded)!, size: 190 * s)!
-let para = NSMutableParagraphStyle(); para.alignment = .center; para.lineHeightMultiple = 0.9
-let text = NSAttributedString(string: "Your workouts,\nin hippos!", attributes: [.font: font, .foregroundColor: ink, .paragraphStyle: para, .kern: -2 * s])
+// Headline: the largest size up to 190 (universal scale) where every line fits the safe area unwrapped.
+let phrase = a[10].replacingOccurrences(of: "\\n", with: "\n")
 let textBox = CGRect(x: safe.minX, y: safe.minY, width: safe.width, height: badgeC.y - badgeR - 30 * s - safe.minY)
-let ts = text.boundingRect(with: textBox.size, options: [.usesLineFragmentOrigin]).size
+let para = NSMutableParagraphStyle(); para.alignment = .center; para.lineHeightMultiple = 0.9
+var size = 190 * s
+var text = NSAttributedString()
+repeat {
+    let base = NSFont.systemFont(ofSize: size, weight: .heavy)
+    let font = NSFont(descriptor: base.fontDescriptor.withDesign(.rounded)!, size: size)!
+    text = NSAttributedString(string: phrase, attributes: [.font: font, .foregroundColor: ink, .paragraphStyle: para, .kern: -2 * s])
+    let widest = phrase.components(separatedBy: "\n").map {
+        NSAttributedString(string: $0, attributes: [.font: font, .kern: -2 * s]).size().width
+    }.max() ?? 0
+    let tall = text.boundingRect(with: CGSize(width: 10_000, height: 10_000), options: [.usesLineFragmentOrigin]).height
+    if widest <= textBox.width - 20 * s && tall <= textBox.height { break }
+    size -= 4 * s
+} while size > 60 * s
+let ts = text.boundingRect(with: CGSize(width: textBox.width, height: 10_000), options: [.usesLineFragmentOrigin]).size
 text.draw(with: CGRect(x: textBox.minX, y: textBox.midY - ts.height/2, width: textBox.width, height: ts.height), options: [.usesLineFragmentOrigin])
 
 if guides {
