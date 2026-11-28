@@ -1,7 +1,7 @@
 // compose.swift <raw.png> <caption> <out.png> [statusBarSource.png]
 import AppKit
 let a = CommandLine.arguments
-let W = 1320, H = 2868
+let W = Int(ProcessInfo.processInfo.environment["W"] ?? "") ?? 1320, H = Int(ProcessInfo.processInfo.environment["H"] ?? "") ?? 2868
 let yellow = NSColor(srgbRed: 1, green: 0xD4/255, blue: 0x3B/255, alpha: 1)
 let ink = NSColor(srgbRed: 0x1E/255, green: 0x16/255, blue: 0x40/255, alpha: 1)
 

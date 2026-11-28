@@ -1,7 +1,12 @@
 # App Store screenshots
 
 Upload `iphone/` (iPhone 6.9", 1320 × 2868) and `watch/` (Apple Watch Ultra 3, 422 × 514) in file order.
-`raw/` holds the uncaptioned captures the captioned set is made from.
+`raw/` holds the uncaptioned captures the captioned set is made from. `iphone-6.5/` is the same set at
+1284 × 2778, for the 6.5" slot if App Store Connect asks for it.
+
+Apple's rules (checked 2026-11-27): 6.9" accepts 1320 × 2868, 1290 × 2796 or 1260 × 2736; 6.5" accepts
+1284 × 2778 or 1242 × 2688; Watch Ultra 3 is 422 × 514. **No alpha channel**: simulator Watch captures
+have one, so run `scripts/screenshots/flatten.swift <in.png> <out.png>` on them.
 
 ## iPhone 6.9" (upload all 6)
 
@@ -38,6 +43,6 @@ Spare raws: `raw/extra-exercise-history.png` (`-previewExercise bench-press`) an
 - All the `-preview…` arguments are `#if DEBUG` only.
 - Captions: `scripts/screenshots/compose.swift` (SF Pro Rounded Heavy on brand yellow, ink border and hard
   shadow). `swiftc -O compose.swift -o compose`, then
-  `compose <raw.png> "<caption>" <out.png> [statusBarSource.png]`. `\n` in a caption forces a line break
+  `compose <raw.png> "<caption>" <out.png> [statusBarSource.png]`; `W=1284 H=2778 compose …` for the 6.5" set. `\n` in a caption forces a line break
   (04 uses `Lift smarter:\nsee last time's sets`). Pass `raw/01-home.png` as the fourth argument for a
   scrolled shot: it pastes a clean status bar over content that scrolled under it.
