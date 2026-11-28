@@ -19,12 +19,9 @@ purchase. Field-by-field text is in `20261124_app_store_listing.md` (section num
 
 ## 2. Finish the screenshots
 
-- [ ] On your iPhone, take: **tracking a walk with the route map** and **a live strength session showing
-      "Last time"**. Use the 6.9" size (1320 × 2868) or a Pro Max phone; otherwise I can frame them.
-- [ ] On your Apple Watch, take 3: quick log, tracking a walk, a complication (Side button + Digital Crown, or
-      the Watch app on iPhone). Size 422 × 514 (Ultra) or 416 × 496 (Series 46 mm).
-- [ ] iPhone order to upload: 01-home, 02-celebration, *your tracking shot*, 03-exercise-history *(or your
-      strength shot)*, 04-progress, 05-badges (in `screenshots/`, captions in its README). *(Listing 5)*
+- [x] Done 2026-11-27 in the simulator: 6 captioned iPhone shots in `screenshots/iphone/`, 3 Watch shots in
+      `screenshots/watch/` (order and captions in `screenshots/README.md`). *(Listing 5)*
+- [ ] Optional: swap in a real-device Watch complication shot if you'd like one.
 
 ## 3. Build and upload 3.2 (19)
 
@@ -61,7 +58,7 @@ purchase. Field-by-field text is in `20261124_app_store_listing.md` (section num
 
 - [ ] Promotional text, Description, Keywords (copy from the listing).
 - [ ] Support URL; Marketing URL optional.
-- [ ] Upload iPhone and Apple Watch screenshots.
+- [ ] Upload iPhone (`screenshots/iphone/`, 6) and Apple Watch (`screenshots/watch/`, 3) screenshots in file order.
 - [ ] Select build **3.2 (19)** (after it finishes processing; answer export compliance if asked: "None of the
       algorithms mentioned" / exempt; the build already says it uses no non-exempt encryption).
 - [ ] App Review Information: sign-in **not required**; your name, phone, email; paste the **Notes for App

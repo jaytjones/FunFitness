@@ -300,6 +300,23 @@ struct ContentView: View {
                        let milestone = ComparisonEngine.milestone(withId: id) {
                         viewModel.celebrate([milestone])
                     }
+                    // `-previewTracker walk`: a walk 24 minutes in, with its route on the map.
+                    if let raw = UserDefaults.standard.string(forKey: "previewTracker"),
+                       let kind = TrackedWorkoutKind(rawValue: raw) {
+                        Task {
+                            await WorkoutTracker.shared.startPreview(kind: kind, startedAt: Date().addingTimeInterval(-24 * 60))
+                            viewModel.showTracker = true
+                        }
+                    }
+                    // `-previewStrength YES`: a back squat session two sets in, showing "Last time".
+                    if UserDefaults.standard.bool(forKey: "previewStrength") {
+                        let manager = StrengthSessionManager.shared
+                        let start = Date().addingTimeInterval(-9 * 60)
+                        manager.start(restSeconds: 90, context: modelContext, viewModel: viewModel, at: start)
+                        _ = manager.logSet(type: .weight, valueSI: 72.6, reps: 8, exerciseID: "back-squat", at: start.addingTimeInterval(4 * 60))
+                        _ = manager.logSet(type: .weight, valueSI: 72.6, reps: 8, exerciseID: "back-squat", at: Date().addingTimeInterval(-35))
+                        viewModel.showStrengthSession = true
+                    }
                     #endif
                 }
                 .task(id: hasProfile) {

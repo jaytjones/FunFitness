@@ -118,6 +118,11 @@ struct HomeView: View {
                     .padding(.horizontal, FFSpace.s5)
                     .padding(.vertical, FFSpace.s4)
                 }
+                #if DEBUG
+                // Screenshots: `-previewScroll 0.3` opens this tab that far down (0 = top, 1 = bottom).
+                .defaultScrollAnchor(UserDefaults.standard.object(forKey: "previewScroll") == nil
+                    ? .top : UnitPoint(x: 0.5, y: UserDefaults.standard.double(forKey: "previewScroll")))
+                #endif
             }
             .navigationTitle("FunFitness")
             .toolbar(.hidden, for: .navigationBar)

@@ -88,6 +88,11 @@ struct ProgressTabView: View {
                     }
                     .padding()
                 }
+                #if DEBUG
+                // Screenshots: `-previewScroll 0.6` opens this tab that far down (0 = top, 1 = bottom).
+                .defaultScrollAnchor(UserDefaults.standard.object(forKey: "previewScroll") == nil
+                    ? .top : UnitPoint(x: 0.5, y: UserDefaults.standard.double(forKey: "previewScroll")))
+                #endif
             }
             .navigationTitle(navigationTitle)
             // Field Guide: the masthead heads the page; the bar keeps History.

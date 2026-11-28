@@ -264,3 +264,49 @@ final class WorkoutTracker {
         if accepted { liveActivity.update(for: self) }   // throttled
     }
 }
+
+#if DEBUG
+import MapKit
+
+extension WorkoutTracker {
+    /// Screenshots (`-previewTracker walk`): starts a workout that has already walked a loop
+    /// through Central Park, following real paths when MapKit directions are reachable. Point
+    /// timestamps are spread by distance from `startedAt` to now, so pace looks steady.
+    func startPreview(kind: TrackedWorkoutKind, startedAt: Date) async {
+        let waypoints = [
+            CLLocationCoordinate2D(latitude: 40.7681, longitude: -73.9812),
+            CLLocationCoordinate2D(latitude: 40.7728, longitude: -73.9784),
+            CLLocationCoordinate2D(latitude: 40.7722, longitude: -73.9733),
+            CLLocationCoordinate2D(latitude: 40.7679, longitude: -73.9745),
+            CLLocationCoordinate2D(latitude: 40.7669, longitude: -73.9790),
+        ]
+        var path: [CLLocationCoordinate2D] = [waypoints[0]]
+        for (from, to) in zip(waypoints, waypoints.dropFirst()) {
+            let request = MKDirections.Request()
+            request.source = MKMapItem(placemark: MKPlacemark(coordinate: from))
+            request.destination = MKMapItem(placemark: MKPlacemark(coordinate: to))
+            request.transportType = .walking
+            if let polyline = try? await MKDirections(request: request).calculate().routes.first?.polyline {
+                var coordinates = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: polyline.pointCount)
+                polyline.getCoordinates(&coordinates, range: NSRange(location: 0, length: polyline.pointCount))
+                path += coordinates
+            } else {
+                path.append(to)
+            }
+        }
+
+        start(kind: kind, at: startedAt)
+        let meters = zip(path, path.dropFirst()).map { CLLocation(latitude: $0.latitude, longitude: $0.longitude)
+            .distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude)) }
+        let total = max(meters.reduce(0, +), 1)
+        let seconds = Date().timeIntervalSince(startedAt) - 5
+        var covered = 0.0
+        for (index, coordinate) in path.enumerated() {
+            if index > 0 { covered += meters[index - 1] }
+            _ = accumulator.add(RoutePoint(
+                latitude: coordinate.latitude, longitude: coordinate.longitude,
+                timestamp: startedAt.addingTimeInterval(seconds * covered / total), horizontalAccuracy: 5))
+        }
+    }
+}
+#endif

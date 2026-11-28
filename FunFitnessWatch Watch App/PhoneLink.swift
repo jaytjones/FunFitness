@@ -31,6 +31,23 @@ final class PhoneLink: NSObject {
         if context == nil, let data = UserDefaults.standard.data(forKey: Self.contextKey) {
             context = try? JSONDecoder().decode(WatchContext.self, from: data)
         }
+        #if DEBUG
+        // Screenshots: `-seedSampleData` shows stats and exercises without a paired iPhone.
+        if ProcessInfo.processInfo.arguments.contains("-seedSampleData") {
+            context = WatchContext(
+                usesMetric: false,
+                exercises: [
+                    WatchExercise(id: "back-squat", name: "Back Squat", kind: .lift),
+                    WatchExercise(id: "bench-press", name: "Bench Press", kind: .lift),
+                    WatchExercise(id: "push-up", name: "Push-Up", kind: .bodyweight),
+                ],
+                lastExerciseIDs: [WatchQuickLog.Kind.lift.rawValue: "back-squat", WatchQuickLog.Kind.bodyweight.rawValue: "push-up"],
+                lastLiftKg: 72.6, lastLiftReps: 8,
+                currentStreakWeeks: 3, effortPoints: 118, effortTarget: 150,
+                totalDistanceKm: 35.2, totalLiftedKg: 3192, updatedAt: Date()
+            )
+        }
+        #endif
     }
 
     func activate() {

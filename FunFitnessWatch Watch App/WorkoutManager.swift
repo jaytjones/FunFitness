@@ -60,8 +60,24 @@ final class WorkoutManager: NSObject {
 
     private override init() {}
 
+    #if DEBUG
+    private var previewStartedAt: Date?
+
+    /// Screenshots (`-previewWorkout walk`): a workout already under way, with no HealthKit session.
+    func startPreview(_ kind: Kind) {
+        self.kind = kind
+        previewStartedAt = Date().addingTimeInterval(-24 * 60)
+        distanceMeters = 2_253
+        heartRate = 112
+        phase = .running
+    }
+    #endif
+
     /// Moving time so far (pauses excluded), for a TimelineView clock.
     func elapsed(at date: Date) -> TimeInterval {
+        #if DEBUG
+        if let previewStartedAt { return date.timeIntervalSince(previewStartedAt) }
+        #endif
         guard let builder else { return finalElapsed }
         return builder.elapsedTime(at: date)
     }

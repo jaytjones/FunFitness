@@ -1,16 +1,43 @@
-# App Store screenshots (iPhone 6.9", 1320 × 2868)
+# App Store screenshots
 
-Captured 2026-11-24 on the iPhone 17 Pro Max simulator from a Debug build with the internal flags off
-(`SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG`, so: four tabs, Playful Bold, no Friends), sample data
-(`-seedSampleData`), a 9:41 status bar, and `-localDataNoticeDismissedAt` to hide the iCloud notice.
+Upload `iphone/` (iPhone 6.9", 1320 × 2868) and `watch/` (Apple Watch Ultra 3, 422 × 514) in file order.
+`raw/` holds the uncaptioned captures the captioned set is made from.
 
-| File | Caption |
-|---|---|
-| 01-home.png | Your workouts, in hippos |
-| 02-celebration.png (`-previewCelebration W2`) | Hit milestones you'll want to share |
-| 03-exercise-history.png (`-previewExercise bench-press`) | Watch your lifts climb |
-| 04-progress.png (`-previewTab 1`) | Every mile and pound adds up |
-| 05-badges.png (`-previewTab 2`) | Collect 42 silly milestones |
+## iPhone 6.9" (upload all 6)
 
-Still needed from a real device: tracking a walk with the route map, a live strength session with "Last time",
-and Apple Watch screenshots (422 × 514 or 416 × 496). Upload in the order above with the tracking shot third.
+| File | Caption | Launch arguments |
+|---|---|---|
+| iphone/01-home.png | Your workouts, in hippos | — |
+| iphone/02-celebration.png | Hit milestones you'll want to share | `-previewCelebration W2` |
+| iphone/03-track-walk.png | Track walks and runs, indoors or out | `-previewTracker walk` |
+| iphone/04-strength-session.png | Lift smarter: see last time's sets | `-previewStrength YES` |
+| iphone/05-progress.png | Watch your progress add up | `-previewTab 1 -previewScroll 0.55` |
+| iphone/06-streak.png | Keep your streak alive | `-previewScroll 0.3` (status bar patched, see below) |
+
+Spare raws: `raw/extra-exercise-history.png` (`-previewExercise bench-press`) and `raw/extra-badges.png`
+(`-previewTab 2`).
+
+## Apple Watch Ultra 3 (upload all 3, no captions)
+
+| File | Shows | Launch arguments |
+|---|---|---|
+| watch/01-home.png | This week's points, streak, Track | `-seedSampleData` |
+| watch/02-walk.png | A walk under way | `-seedSampleData -previewWorkout walk` |
+| watch/03-quick-log.png | Quick-log a lift | `-seedSampleData -previewQuickLog lift` |
+
+## How they were made (2026-11-27)
+
+- Debug build with the internal flags off, so the Release feature set (four tabs, Playful Bold, no Friends):
+  `xcodebuild … -derivedDataPath /tmp/ffshots SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG build`.
+- iPhone 17 Pro Max simulator; every launch adds `-seedSampleData -localDataNoticeDismissedAt <unix time>`;
+  status bar: `simctl status_bar … override --time 9:41 --dataNetwork wifi --wifiBars 3 --cellularBars 4
+  --batteryState discharging --batteryLevel 100`. The first launch after an install sometimes shows onboarding;
+  relaunch.
+- The walk follows MapKit walking directions through Central Park (needs network), with
+  `simctl privacy … grant location` and `simctl location … set 40.7669,-73.9790`.
+- All the `-preview…` arguments are `#if DEBUG` only.
+- Captions: `scripts/screenshots/compose.swift` (SF Pro Rounded Heavy on brand yellow, ink border and hard
+  shadow). `swiftc -O compose.swift -o compose`, then
+  `compose <raw.png> "<caption>" <out.png> [statusBarSource.png]`. `\n` in a caption forces a line break
+  (04 uses `Lift smarter:\nsee last time's sets`). Pass `raw/01-home.png` as the fourth argument for a
+  scrolled shot: it pastes a clean status bar over content that scrolled under it.

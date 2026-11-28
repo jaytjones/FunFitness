@@ -10,6 +10,10 @@ import SwiftUI
 struct ContentView: View {
     private let workout = WorkoutManager.shared
     private let link = PhoneLink.shared
+    #if DEBUG
+    // Screenshots: `-previewQuickLog lift` opens that Quick Log screen.
+    @State private var previewQuickLog = WatchQuickLog.Kind(rawValue: UserDefaults.standard.string(forKey: "previewQuickLog") ?? "")
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -84,6 +88,15 @@ struct ContentView: View {
             }
         }
         .navigationTitle("FunFitness")
+        #if DEBUG
+        .navigationDestination(item: $previewQuickLog) { QuickLogView(kind: $0) }
+        .onAppear {
+            // Screenshots: `-previewWorkout walk` shows a walk under way.
+            if let raw = UserDefaults.standard.string(forKey: "previewWorkout"), let kind = WorkoutManager.Kind(rawValue: raw) {
+                workout.startPreview(kind)
+            }
+        }
+        #endif
     }
 
     private func distanceText(_ km: Double) -> String {
