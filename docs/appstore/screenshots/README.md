@@ -1,6 +1,6 @@
 # App Store screenshots
 
-Upload `iphone/` (iPhone 6.9", 1320 × 2868) and `watch/` (Apple Watch Ultra 3, 422 × 514) in file order.
+Upload `iphone/` (iPhone 6.9", 1320 × 2868) and `watch/` (Apple Watch Ultra 3, 422 × 514) in file order. Each filename ends in its pixel size; match it to the slot's size.
 `raw/` holds the uncaptioned captures the captioned set is made from. `iphone-6.5/` is the same set at
 1284 × 2778, for the 6.5" slot if App Store Connect asks for it.
 
@@ -12,12 +12,12 @@ have one, so run `scripts/screenshots/flatten.swift <in.png> <out.png>` on them.
 
 | File | Caption | Launch arguments |
 |---|---|---|
-| iphone/01-home.png | Your workouts, in hippos | — |
-| iphone/02-celebration.png | Hit milestones you'll want to share | `-previewCelebration W2` |
-| iphone/03-track-walk.png | Track walks and runs, indoors or out | `-previewTracker walk` |
-| iphone/04-strength-session.png | Lift smarter: see last time's sets | `-previewStrength YES` |
-| iphone/05-progress.png | Watch your progress add up | `-previewTab 1 -previewScroll 0.55` |
-| iphone/06-streak.png | Keep your streak alive | `-previewScroll 0.3` (status bar patched, see below) |
+| iphone/01-home-1320x2868.png | Your workouts, in hippos | — |
+| iphone/02-celebration-1320x2868.png | Hit milestones you'll want to share | `-previewCelebration W2` |
+| iphone/03-track-walk-1320x2868.png | Track walks and runs, indoors or out | `-previewTracker walk` |
+| iphone/04-strength-session-1320x2868.png | Lift smarter: see last time's sets | `-previewStrength YES` |
+| iphone/05-progress-1320x2868.png | Watch your progress add up | `-previewTab 1 -previewScroll 0.55` |
+| iphone/06-streak-1320x2868.png | Keep your streak alive | `-previewScroll 0.3` (status bar patched, see below) |
 
 Spare raws: `raw/extra-exercise-history.png` (`-previewExercise bench-press`) and `raw/extra-badges.png`
 (`-previewTab 2`).
@@ -26,9 +26,9 @@ Spare raws: `raw/extra-exercise-history.png` (`-previewExercise bench-press`) an
 
 | File | Shows | Launch arguments |
 |---|---|---|
-| watch/01-home.png | This week's points, streak, Track | `-seedSampleData` |
-| watch/02-walk.png | A walk under way | `-seedSampleData -previewWorkout walk` |
-| watch/03-quick-log.png | Quick-log a lift | `-seedSampleData -previewQuickLog lift` |
+| watch/01-home-422x514.png | This week's points, streak, Track | `-seedSampleData` |
+| watch/02-walk-422x514.png | A walk under way | `-seedSampleData -previewWorkout walk` |
+| watch/03-quick-log-422x514.png | Quick-log a lift | `-seedSampleData -previewQuickLog lift` |
 
 ## How they were made (2026-11-27)
 
